@@ -2,7 +2,7 @@
 // Graph Canvas Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { generatePressureData } from '../../utils/graphGenerator';
@@ -28,6 +28,12 @@ export const GraphCanvas = () => {
   const date = useTestStore((state) => state.date);
   const pressureTests = useTestStore((state) => state.pressureTests);
   const theme = useThemeStore((state) => state.theme);
+
+  // Serialize pressureTests to prevent infinite loops from array reference changes
+  const pressureTestsKey = useMemo(
+    () => JSON.stringify(pressureTests),
+    [pressureTests]
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -82,7 +88,7 @@ export const GraphCanvas = () => {
     graphTitle,
     showInfo,
     date,
-    pressureTests,
+    pressureTestsKey, // Use serialized key instead of array
     theme,
   ]);
 
