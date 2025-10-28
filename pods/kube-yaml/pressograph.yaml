@@ -1,0 +1,187 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pressograph
+  labels:
+    app: pressograph
+    environment: production
+spec:
+  restartPolicy: Always
+
+  containers:
+  # ══════════════════════════════════════════════════════════════════
+  # PostgreSQL Database Container
+  # ══════════════════════════════════════════════════════════════════
+  - name: postgres
+    image: docker.io/library/postgres:18-trixie
+    imagePullPolicy: IfNotPresent
+
+    env:
+    - name: POSTGRES_DB
+      value: "pressograph"
+    - name: POSTGRES_USER
+      value: "pressograph"
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        configMapKeyRef:
+          name: pressograph-config
+          key: POSTGRES_PASSWORD
+
+    volumeMounts:
+    - name: postgres-data
+      mountPath: /var/lib/postgresql/data
+
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      allowPrivilegeEscalation: false
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+    livenessProbe:
+      exec:
+        command:
+        - pg_isready
+        - -U
+        - pressograph
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+
+  # ══════════════════════════════════════════════════════════════════
+  # Backend (Node.js API) Container
+  # ══════════════════════════════════════════════════════════════════
+  - name: backend
+    image: localhost/pressograph-backend:latest
+    imagePullPolicy: Never
+
+    envFrom:
+    - configMapRef:
+        name: pressograph-config
+
+    env:
+    - name: DATABASE_URL
+      value: "postgresql://pressograph:$(POSTGRES_PASSWORD)@localhost:5432/pressograph"
+    - name: NODE_ENV
+      value: "production"
+    - name: PORT
+      value: "3001"
+
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 3001
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 3001
+      initialDelaySeconds: 10
+      periodSeconds: 5
+
+  # ══════════════════════════════════════════════════════════════════
+  # Frontend (Nginx) Container
+  # ══════════════════════════════════════════════════════════════════
+  - name: frontend
+    image: localhost/pressograph-frontend:latest
+    imagePullPolicy: Never
+
+    ports:
+    - containerPort: 80
+      hostPort: 8080
+      protocol: TCP
+
+    securityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+        add:
+        - NET_BIND_SERVICE
+
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 80
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 3
+
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+  # ══════════════════════════════════════════════════════════════════
+  # Volumes
+  # ══════════════════════════════════════════════════════════════════
+  volumes:
+  - name: postgres-data
+    hostPath:
+      path: /var/lib/containers/storage/volumes/pressograph-db-data
+      type: DirectoryOrCreate
+
+---
+# ConfigMap for shared configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pressograph-config
+data:
+  # Database
+  POSTGRES_PASSWORD: "PrGr@ph_S3cur3_P@ssw0rd_2025"
+  POSTGRES_PORT: "5432"
+
+  # Backend
+  NODE_ENV: "production"
+
+  # JWT Authentication
+  JWT_SECRET: "PrGr@ph_JWT_S3cr3t_K3y_Ch@ng3_In_Pr0ducti0n_2025_XyZ"
+  JWT_REFRESH_SECRET: "PrGr@ph_Refr3sh_S3cr3t_K3y_Ch@ng3_In_Pr0ducti0n_2025_AbC"
+  JWT_EXPIRES_IN: "15m"
+  JWT_REFRESH_EXPIRES_IN: "7d"
+
+  # CORS and API
+  ALLOWED_ORIGINS: "https://pressograph.infra4.dev"
+  MAX_FILE_SIZE: "10mb"
+
+  # Frontend (build-time)
+  VITE_API_URL: "/api"

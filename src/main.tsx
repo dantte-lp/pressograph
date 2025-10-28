@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { createRoot } from 'react-dom/client';
+import { HeroUIProvider } from '@heroui/react';
+import { LanguageProvider } from './i18n';
 import App from './App.tsx';
 import './index.css';
 
@@ -13,5 +15,9 @@ if (!rootElement) {
 }
 
 createRoot(rootElement).render(
-  <App />
+  <HeroUIProvider>
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
+  </HeroUIProvider>
 );

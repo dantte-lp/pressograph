@@ -9,6 +9,11 @@ export interface PressureTest {
   id: string;
   time: number; // часы от начала испытания
   duration: number; // продолжительность в минутах
+  pressure?: number; // МПа - давление опрессовки (если не указано, используется workingPressure)
+  minPressure?: number; // МПа - минимальное давление во время удержания (дрейф вниз)
+  maxPressure?: number; // МПа - максимальное давление во время удержания (дрейф вверх)
+  targetPressure?: number; // МПа - целевое давление после сброса (если не указано, сбрасывается до 0)
+  holdDrift?: number; // МПа - дрейф давления во время удержания до следующего теста (может быть положительным или отрицательным)
 }
 
 /**
@@ -50,7 +55,7 @@ export interface Template {
 /**
  * Предустановленные шаблоны
  */
-export type PresetTemplate = 'standard' | 'daily' | 'extended';
+export type PresetTemplate = 'daily' | 'extended';
 
 /**
  * Опции для отображения информации

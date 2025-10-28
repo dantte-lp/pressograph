@@ -3,23 +3,43 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { useTestStore } from '../../store/useTestStore';
-import { Button } from '../ui/Button';
+import { useLanguage } from '../../i18n';
+import { Card, CardHeader, CardBody, Button } from '@heroui/react';
 import { generateId } from '../../utils/helpers';
 
 interface PresetInterval {
   label: string;
   hours: number;
+  icon: string;
+  color: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
 }
-
-const presetIntervals: PresetInterval[] = [
-  { label: '6h', hours: 6 },
-  { label: '8h', hours: 8 },
-  { label: '12h', hours: 12 },
-  { label: '24h', hours: 24 },
-];
 
 export const PresetButtons = () => {
   const { testDuration, pressureDuration, updateField } = useTestStore();
+  const { t } = useLanguage();
+
+  const presetIntervals: Omit<PresetInterval, 'color'>[] = [
+    {
+      label: '6ч',
+      hours: 6,
+      icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+      label: '8ч',
+      hours: 8,
+      icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+      label: '12ч',
+      hours: 12,
+      icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+      label: '24ч',
+      hours: 24,
+      icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+  ];
 
   const generateTestsForInterval = (intervalHours: number) => {
     const tests = [];
@@ -43,25 +63,38 @@ export const PresetButtons = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-        Quick Preset Intervals
-      </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        Generate intermediate tests at regular intervals based on test duration
-      </p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {presetIntervals.map((preset) => (
-          <Button
-            key={preset.hours}
-            variant="secondary"
-            onClick={() => applyPreset(preset.hours)}
-            type="button"
-          >
-            Every {preset.label}
-          </Button>
-        ))}
-      </div>
-    </div>
+    <Card shadow="lg" radius="lg">
+      <CardHeader className="flex-col items-start gap-2 pb-3">
+        <h2 className="text-base font-semibold text-foreground uppercase">
+          {t.quickPresetIntervals}
+        </h2>
+        <p className="text-sm text-default-500">
+          {t.quickPresetIntervalsDescription}
+        </p>
+      </CardHeader>
+      <CardBody className="gap-3 p-4">
+        <div className="grid grid-cols-2 gap-2">
+          {presetIntervals.map((preset) => (
+            <Button
+              key={preset.hours}
+              variant="bordered"
+              onPress={() => applyPreset(preset.hours)}
+              size="md"
+              className="h-16"
+              startContent={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={preset.icon} />
+                </svg>
+              }
+            >
+              <div className="flex flex-col items-start gap-0.5">
+                <span className="text-xs font-medium opacity-70">{t.every}</span>
+                <span className="font-semibold text-sm">{preset.label}</span>
+              </div>
+            </Button>
+          ))}
+        </div>
+      </CardBody>
+    </Card>
   );
 };

@@ -236,10 +236,37 @@ export const renderGraph = (
   }
 
   // Подпись оси X
-  ctx.font = '14px Arial';
+  ctx.font = 'bold 14px Arial';
   ctx.fillStyle = colors.text;
   ctx.textAlign = 'center';
-  ctx.fillText('Время', displayWidth / 2, displayHeight - 10);
+  ctx.fillText('Время', displayWidth / 2, displayHeight - 60);
+
+  // Проверка на наличие данных
+  if (points.length === 0) {
+    // Показываем сообщение об ошибке на графике
+    ctx.fillStyle = colors.infoBoxBg;
+    const errorBoxWidth = 400;
+    const errorBoxHeight = 100;
+    const errorBoxX = (displayWidth - errorBoxWidth) / 2;
+    const errorBoxY = (displayHeight - errorBoxHeight) / 2;
+
+    ctx.fillRect(errorBoxX, errorBoxY, errorBoxWidth, errorBoxHeight);
+    ctx.strokeStyle = '#ff6b6b';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(errorBoxX, errorBoxY, errorBoxWidth, errorBoxHeight);
+
+    ctx.fillStyle = '#ff6b6b';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠ Ошибка валидации', displayWidth / 2, errorBoxY + 35);
+
+    ctx.fillStyle = colors.text;
+    ctx.font = '14px Arial';
+    ctx.fillText('Дата окончания должна быть позже даты начала', displayWidth / 2, errorBoxY + 60);
+    ctx.fillText('Пожалуйста, исправьте даты в форме', displayWidth / 2, errorBoxY + 80);
+
+    return;
+  }
 
   // Рисование графика - заливка
   ctx.fillStyle = 'rgba(173, 216, 230, 0.3)';
@@ -278,13 +305,12 @@ export const renderGraph = (
     ctx.fillText(`Температура: ${temperature}°C`, margin.left + 20, margin.top + 75);
   } else if (showInfo === 'under') {
     ctx.fillStyle = colors.text;
-    ctx.font = '12px Arial';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'center';
-    const infoY = margin.top + graphHeight + 70;
-    ctx.fillText(
-      `Испытание №${testNumber} | Дата: ${date} | Рабочее давление: ${workingPressure} МПа | Температура: ${temperature}°C`,
-      displayWidth / 2,
-      infoY
-    );
+    // Информация под подписью "Время"
+    const baseY = displayHeight - 45;
+    ctx.fillText(`Испытание №${testNumber}`, displayWidth / 2, baseY);
+    ctx.fillText(`Дата: ${date}`, displayWidth / 2, baseY + 12);
+    ctx.fillText(`Рабочее давление: ${workingPressure} МПа | Температура: ${temperature}°C`, displayWidth / 2, baseY + 24);
   }
 };

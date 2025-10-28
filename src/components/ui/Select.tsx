@@ -1,15 +1,16 @@
 // ═══════════════════════════════════════════════════════════════════
-// Reusable Select Dropdown Component
+// HeroUI Select Wrapper Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { SelectHTMLAttributes, forwardRef } from 'react';
+import { Select as HeroSelect, SelectItem, SelectProps as HeroSelectProps } from '@heroui/react';
+import { forwardRef } from 'react';
 
 interface SelectOption {
   value: string;
   label: string;
 }
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends Omit<HeroSelectProps, 'label' | 'children'> {
   label: string;
   options: SelectOption[];
   error?: string;
@@ -17,45 +18,29 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, options, error, helperText, className = '', id, ...props }, ref) => {
-    const selectId = id || `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
-
+  ({ label, options, error, helperText, className = '', ...props }, ref) => {
     return (
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor={selectId}
-          className="text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {label}
-        </label>
-        <select
-          ref={ref}
-          id={selectId}
-          className={`
-            px-3 py-2 rounded-md border transition-colors
-            bg-white dark:bg-gray-800
-            border-gray-300 dark:border-gray-600
-            text-gray-900 dark:text-gray-100
-            focus:outline-none focus:ring-2 focus:ring-blue-500
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${error ? 'border-red-500 focus:ring-red-500' : ''}
-            ${className}
-          `}
-          {...props}
-        >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        {error && (
-          <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
-        )}
-        {helperText && !error && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">{helperText}</span>
-        )}
-      </div>
+      <HeroSelect
+        ref={ref}
+        label={label}
+        description={helperText}
+        errorMessage={error}
+        isInvalid={!!error}
+        variant="bordered"
+        className={className}
+        classNames={{
+          label: 'text-sm font-medium',
+          value: 'text-sm',
+          description: 'text-xs',
+        }}
+        {...props}
+      >
+        {options.map((option) => (
+          <SelectItem key={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </HeroSelect>
     );
   }
 );

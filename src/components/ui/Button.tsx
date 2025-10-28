@@ -1,37 +1,35 @@
 // ═══════════════════════════════════════════════════════════════════
-// Reusable Button Component
+// HeroUI Button Wrapper Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { Button as HeroButton, ButtonProps as HeroButtonProps } from '@heroui/react';
+import { forwardRef } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<HeroButtonProps, 'color' | 'variant'> {
   variant?: ButtonVariant;
   fullWidth?: boolean;
 }
 
-const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600',
-  secondary: 'bg-gray-600 hover:bg-gray-700 text-white border-gray-600',
-  danger: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
+const variantMap: Record<ButtonVariant, HeroButtonProps['color']> = {
+  primary: 'primary',
+  secondary: 'default',
+  danger: 'danger',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', fullWidth = false, className = '', disabled, children, ...props }, ref) => {
-    const baseStyles = 'px-4 py-2 rounded-md font-medium transition-colors border disabled:opacity-50 disabled:cursor-not-allowed';
-    const widthStyles = fullWidth ? 'w-full' : '';
-    const variantStyle = variantStyles[variant];
-
+  ({ variant = 'primary', fullWidth = false, className = '', children, ...props }, ref) => {
     return (
-      <button
+      <HeroButton
         ref={ref}
-        className={`${baseStyles} ${variantStyle} ${widthStyles} ${className}`}
-        disabled={disabled}
+        color={variantMap[variant]}
+        fullWidth={fullWidth}
+        className={className}
         {...props}
       >
         {children}
-      </button>
+      </HeroButton>
     );
   }
 );

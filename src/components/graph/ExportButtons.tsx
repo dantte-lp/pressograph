@@ -3,30 +3,63 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { useRef } from 'react';
+import toast from 'react-hot-toast';
+import { useShallow } from 'zustand/react/shallow';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
-import { Button } from '../ui/Button';
+import { useLanguage } from '../../i18n';
+import { Card, CardHeader, CardBody, Button } from '@heroui/react';
 import { generatePressureData } from '../../utils/graphGenerator';
 import { exportToPNG, exportToPDF, exportSettings, importSettings } from '../../utils/export';
+import type { TestSettings } from '../../types';
 
 export const ExportButtons = () => {
-  const settings = useTestStore((state) => state.exportSettings());
+  const { t } = useLanguage();
+  const settings = useTestStore(
+    useShallow((state): TestSettings => ({
+      testNumber: state.testNumber,
+      startDate: state.startDate,
+      startTime: state.startTime,
+      endDate: state.endDate,
+      endTime: state.endTime,
+      testDuration: state.testDuration,
+      workingPressure: state.workingPressure,
+      maxPressure: state.maxPressure,
+      temperature: state.temperature,
+      pressureDuration: state.pressureDuration,
+      graphTitle: state.graphTitle,
+      showInfo: state.showInfo,
+      date: state.date,
+      pressureTests: state.pressureTests,
+    }))
+  );
   const importSettingsFn = useTestStore((state) => state.importSettings);
   const theme = useThemeStore((state) => state.theme);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportPNG = () => {
     const graphData = generatePressureData(settings);
+    if (graphData.points.length === 0) return; // Skip if validation failed
     exportToPNG(graphData, settings, theme);
+    toast.success('График экспортирован в PNG', {
+      duration: 2000,
+    });
   };
 
   const handleExportPDF = () => {
     const graphData = generatePressureData(settings);
+    if (graphData.points.length === 0) return; // Skip if validation failed
     exportToPDF(graphData, settings, theme);
+    toast.success('График экспортирован в PDF', {
+      duration: 2000,
+    });
   };
 
   const handleExportJSON = () => {
     exportSettings(settings);
+    toast.success('Настройки экспортированы в JSON', {
+      duration: 2000,
+    });
   };
 
   const handleImportJSON = () => {
@@ -41,10 +74,14 @@ export const ExportButtons = () => {
       file,
       (importedSettings) => {
         importSettingsFn(importedSettings);
-        alert('Settings imported successfully!');
+        toast.success('Настройки успешно импортированы!', {
+          duration: 3000,
+        });
       },
       (error) => {
-        alert(`Import failed: ${error}`);
+        toast.error(`Ошибка импорта: ${error}`, {
+          duration: 5000,
+        });
       }
     );
 
@@ -53,35 +90,79 @@ export const ExportButtons = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-        Export & Import
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Button variant="primary" onClick={handleExportPNG} type="button">
-          Export PNG
-        </Button>
-        <Button variant="primary" onClick={handleExportPDF} type="button">
-          Export PDF
-        </Button>
-        <Button variant="secondary" onClick={handleExportJSON} type="button">
-          Export JSON
-        </Button>
-        <Button variant="secondary" onClick={handleImportJSON} type="button">
-          Import JSON
-        </Button>
-      </div>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json"
-        onChange={handleFileChange}
-        className="hidden"
-        aria-label="Import JSON file"
-      />
-      <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-        Export the graph as PNG or PDF for reports. Save/load settings as JSON for later use.
-      </p>
-    </div>
+    <Card shadow="lg" radius="lg">
+      <CardHeader className="flex-col items-start gap-2 pb-3">
+        <h2 className="text-base font-semibold text-foreground uppercase">
+          {t.exportImport}
+        </h2>
+        <p className="text-sm text-default-500">
+          {t.exportDescription}
+        </p>
+      </CardHeader>
+      <CardBody className="p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <Button
+            variant="bordered"
+            onPress={handleExportPNG}
+            size="md"
+            className="h-16"
+            startContent={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            }
+          >
+            {t.exportPNG}
+          </Button>
+          <Button
+            variant="bordered"
+            onPress={handleExportPDF}
+            size="md"
+            className="h-16"
+            startContent={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            }
+          >
+            {t.exportPDF}
+          </Button>
+          <Button
+            variant="bordered"
+            onPress={handleExportJSON}
+            size="md"
+            className="h-16"
+            startContent={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+            }
+          >
+            {t.exportJSON}
+          </Button>
+          <Button
+            variant="bordered"
+            onPress={handleImportJSON}
+            size="md"
+            className="h-16"
+            startContent={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 17l4 4m0 0l4-4m-4 4V3" />
+              </svg>
+            }
+          >
+            {t.importJSON}
+          </Button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          onChange={handleFileChange}
+          className="hidden"
+          aria-label="Import JSON file"
+        />
+      </CardBody>
+    </Card>
   );
 };

@@ -3,17 +3,53 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { useThemeStore } from './store/useThemeStore';
-import { ThemeToggle } from './components/ui/ThemeToggle';
-import { TestParametersForm } from './components/forms/TestParametersForm';
-import { PressureTestsList } from './components/forms/PressureTestsList';
-import { PresetButtons } from './components/forms/PresetButtons';
-import { TemplateButtons } from './components/forms/TemplateButtons';
-import { GraphCanvas } from './components/graph/GraphCanvas';
-import { ExportButtons } from './components/graph/ExportButtons';
+import { useInitializationStore } from './store/useInitializationStore';
+import { useLanguage } from './i18n';
+import { NavBar } from './components/layout/NavBar';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { HomePage } from './pages/Home';
+import { LoginPage } from './pages/Login';
+import { SetupPage } from './pages/Setup';
+
+// Initialization Guard Component
+function InitializationGuard({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isInitialized, checkInitialization } = useInitializationStore();
+
+  useEffect(() => {
+    // Check initialization status on mount
+    checkInitialization();
+  }, [checkInitialization]);
+
+  useEffect(() => {
+    // Redirect to setup if not initialized (except if already on setup or share page)
+    if (isInitialized === false && !location.pathname.startsWith('/setup') && !location.pathname.startsWith('/share/')) {
+      navigate('/setup', { replace: true });
+    }
+  }, [isInitialized, navigate, location.pathname]);
+
+  // Show loading state while checking
+  if (isInitialized === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-solid border-primary border-r-transparent mb-4"></div>
+          <p className="text-default-600">Checking system status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
+  const { t } = useLanguage();
 
   // Apply theme to document
   useEffect(() => {
@@ -26,52 +62,67 @@ function App() {
   }, [theme]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Pressure Test Visualizer
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Generate professional pressure test graphs
-            </p>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
+    <BrowserRouter>
+      <InitializationGuard>
+        <div className="min-h-screen bg-background">
+          {/* Toast Notifications */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: theme === 'dark' ? '#1f2937' : '#fff',
+                color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
+                border: `2px solid ${theme === 'dark' ? '#374151' : '#d1d5db'}`,
+                boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#065f46',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#991b1b',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Configuration */}
-          <div className="lg:col-span-1 space-y-6">
-            <TemplateButtons />
-            <PresetButtons />
-          </div>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/setup" element={<SetupPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/share/:token" element={<div>Public Share Link (TODO)</div>} />
 
-          {/* Middle Column - Parameters & Tests */}
-          <div className="lg:col-span-2 space-y-6">
-            <TestParametersForm />
-            <PressureTestsList />
-          </div>
-        </div>
+            {/* Protected Routes */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  {/* Navigation Bar */}
+                  <NavBar />
 
-        {/* Graph Section */}
-        <div className="mt-6 space-y-6">
-          <GraphCanvas />
-          <ExportButtons />
-        </div>
-      </main>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    {/* Future protected routes can be added here */}
+                  </Routes>
 
-      {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
-        <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          <p>Pressure Test Visualizer - Generate professional test graphs with ease</p>
+                  {/* Footer */}
+                  <footer className="backdrop-blur-sm bg-content1 border-t border-divider mt-16">
+                    <div className="container mx-auto px-4 py-8 text-center">
+                      <p className="text-sm font-medium text-default-500">{t.footerText}</p>
+                    </div>
+                  </footer>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </div>
-      </footer>
-    </div>
+      </InitializationGuard>
+    </BrowserRouter>
   );
 }
 

@@ -6,11 +6,14 @@ import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
+import { useLanguage } from '../../i18n';
+import { Card, CardHeader, CardBody, Chip } from '@heroui/react';
 import { generatePressureData } from '../../utils/graphGenerator';
 import { renderGraph } from '../../utils/canvasRenderer';
 import type { TestSettings } from '../../types';
 
 export const GraphCanvas = () => {
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,9 +46,9 @@ export const GraphCanvas = () => {
     // Generate graph data
     const graphData = generatePressureData(settings);
 
-    // Get container width
+    // Get container width - увеличиваем ширину для лучшей видимости
     const containerWidth = container.clientWidth;
-    const aspectRatio = 1123 / 794; // Original aspect ratio
+    const aspectRatio = 1.6; // Увеличенное соотношение для растяжения по горизонтали
     const width = containerWidth;
     const height = width / aspectRatio;
 
@@ -59,16 +62,27 @@ export const GraphCanvas = () => {
   }, [settings, theme]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-        Pressure Test Graph
-      </h2>
-      <div ref={containerRef} className="w-full">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-auto border border-gray-200 dark:border-gray-700 rounded"
-        />
-      </div>
-    </div>
+    <Card shadow="lg" radius="lg">
+      <CardHeader className="flex justify-between items-center pb-5">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-default-900 dark:bg-default-100 rounded-md">
+            <svg className="w-5 h-5 text-default-50 dark:text-default-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h2 className="text-base font-semibold text-foreground uppercase">
+            {t.pressureTestGraph}
+          </h2>
+        </div>
+      </CardHeader>
+      <CardBody className="p-6">
+        <div ref={containerRef} className="w-full">
+          <canvas
+            ref={canvasRef}
+            className="w-full h-auto rounded-lg"
+          />
+        </div>
+      </CardBody>
+    </Card>
   );
 };

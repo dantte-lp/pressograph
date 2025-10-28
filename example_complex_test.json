@@ -1,0 +1,62 @@
+{
+  "testNumber": "20252710",
+  "startDate": "2025-10-27",
+  "startTime": "11:30:00",
+  "endDate": "2025-10-28",
+  "endTime": "11:45:00",
+  "testDuration": 24.25,
+  "workingPressure": 70,
+  "maxPressure": 72,
+  "temperature": 90,
+  "pressureDuration": 15,
+  "graphTitle": "Испытание давления 27-28.10.2025",
+  "showInfo": "under",
+  "date": "2025-10-28",
+  "pressureTests": [
+    {
+      "id": "test1",
+      "time": 0,
+      "duration": 30,
+      "pressure": 32,
+      "minPressure": 32,
+      "maxPressure": 32,
+      "targetPressure": 32,
+      "holdDrift": 0
+    },
+    {
+      "id": "test2",
+      "time": 0.5,
+      "duration": 15,
+      "pressure": 70.32,
+      "minPressure": 69.89,
+      "targetPressure": 30,
+      "holdDrift": 3.36
+    },
+    {
+      "id": "test3",
+      "time": 8,
+      "duration": 15,
+      "pressure": 70.53,
+      "minPressure": 70.01,
+      "targetPressure": 31,
+      "holdDrift": 1.65
+    },
+    {
+      "id": "test4",
+      "time": 17,
+      "duration": 15,
+      "pressure": 70.57,
+      "minPressure": 69.92,
+      "targetPressure": 32,
+      "holdDrift": 0.86
+    },
+    {
+      "id": "test5",
+      "time": 24,
+      "duration": 15,
+      "pressure": 70.10,
+      "minPressure": 69.87,
+      "targetPressure": 0
+    }
+  ]
+}

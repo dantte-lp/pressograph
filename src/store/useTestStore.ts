@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
-// import { persist } from 'zustand/middleware'; // Temporarily disabled for React 19 compatibility
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { TestSettings, PressureTest, PresetTemplate } from '../types';
 import { generateId } from '../utils/helpers';
 
@@ -12,7 +12,8 @@ interface TestStore extends TestSettings {
   updateField: <K extends keyof TestSettings>(field: K, value: TestSettings[K]) => void;
   addPressureTest: () => void;
   removePressureTest: (id: string) => void;
-  updatePressureTest: (id: string, field: keyof PressureTest, value: number) => void;
+  duplicatePressureTest: (id: string) => void;
+  updatePressureTest: <K extends keyof PressureTest>(id: string, field: K, value: PressureTest[K]) => void;
   loadPreset: (preset: PresetTemplate) => void;
   clearAllTests: () => void;
   importSettings: (settings: Partial<TestSettings>) => void;
@@ -37,23 +38,11 @@ const getDefaultSettings = (): TestSettings => ({
   pressureTests: [
     { id: generateId(), time: 6, duration: 15 },
     { id: generateId(), time: 12, duration: 15 },
-    { id: generateId(), time: 15, duration: 15 },
+    { id: generateId(), time: 14, duration: 15 },
   ],
 });
 
 const presetTemplates: Record<PresetTemplate, Partial<TestSettings>> = {
-  standard: {
-    testDuration: 15.33,
-    workingPressure: 70,
-    maxPressure: 72.71,
-    temperature: 90,
-    pressureDuration: 15,
-    pressureTests: [
-      { id: generateId(), time: 6, duration: 15 },
-      { id: generateId(), time: 12, duration: 15 },
-      { id: generateId(), time: 15, duration: 15 },
-    ],
-  },
   daily: {
     testDuration: 24,
     workingPressure: 70,
@@ -86,7 +75,9 @@ const presetTemplates: Record<PresetTemplate, Partial<TestSettings>> = {
   },
 };
 
-export const useTestStore = create<TestStore>()((set, get) => ({
+export const useTestStore = create<TestStore>()(
+  persist(
+    (set, get) => ({
       ...getDefaultSettings(),
 
       updateField: (field, value) => set({ [field]: value }),
@@ -104,6 +95,21 @@ export const useTestStore = create<TestStore>()((set, get) => ({
           pressureTests: state.pressureTests.filter((test) => test.id !== id),
         })),
 
+      duplicatePressureTest: (id) =>
+        set((state) => {
+          const testToDuplicate = state.pressureTests.find((test) => test.id === id);
+          if (!testToDuplicate) return state;
+
+          const duplicatedTest = {
+            ...testToDuplicate,
+            id: generateId(),
+          };
+
+          return {
+            pressureTests: [...state.pressureTests, duplicatedTest],
+          };
+        }),
+
       updatePressureTest: (id, field, value) =>
         set((state) => ({
           pressureTests: state.pressureTests.map((test) =>
@@ -113,9 +119,25 @@ export const useTestStore = create<TestStore>()((set, get) => ({
 
       loadPreset: (preset) => {
         const template = presetTemplates[preset];
+        const state = get();
+
+        // Calculate endDate and endTime based on testDuration
+        let endDate = state.endDate;
+        let endTime = state.endTime;
+
+        if (template.testDuration !== undefined) {
+          const startDateTime = new Date(`${state.startDate}T${state.startTime}`);
+          const endDateTime = new Date(startDateTime.getTime() + template.testDuration * 60 * 60 * 1000);
+
+          endDate = endDateTime.toISOString().split('T')[0];
+          endTime = endDateTime.toTimeString().split(' ')[0];
+        }
+
         set((state) => ({
           ...state,
           ...template,
+          endDate,
+          endTime,
         }));
       },
 
@@ -144,4 +166,10 @@ export const useTestStore = create<TestStore>()((set, get) => ({
       },
 
       resetToDefaults: () => set(getDefaultSettings()),
-    }));
+    }),
+    {
+      name: 'pressure-test-settings',
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);
