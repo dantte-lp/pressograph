@@ -2,61 +2,43 @@
 // Graph Canvas Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { generatePressureData } from '../../utils/graphGenerator';
 import { renderGraph } from '../../utils/canvasRenderer';
+import type { TestSettings } from '../../types';
 
 export const GraphCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Extract individual values to avoid object recreation
-  const testNumber = useTestStore((state) => state.testNumber);
-  const startDate = useTestStore((state) => state.startDate);
-  const startTime = useTestStore((state) => state.startTime);
-  const endDate = useTestStore((state) => state.endDate);
-  const endTime = useTestStore((state) => state.endTime);
-  const testDuration = useTestStore((state) => state.testDuration);
-  const workingPressure = useTestStore((state) => state.workingPressure);
-  const maxPressure = useTestStore((state) => state.maxPressure);
-  const temperature = useTestStore((state) => state.temperature);
-  const pressureDuration = useTestStore((state) => state.pressureDuration);
-  const graphTitle = useTestStore((state) => state.graphTitle);
-  const showInfo = useTestStore((state) => state.showInfo);
-  const date = useTestStore((state) => state.date);
-  const pressureTests = useTestStore((state) => state.pressureTests);
-  const theme = useThemeStore((state) => state.theme);
-
-  // Serialize pressureTests to prevent infinite loops from array reference changes
-  const pressureTestsKey = useMemo(
-    () => JSON.stringify(pressureTests),
-    [pressureTests]
+  // Use shallow comparison to prevent infinite loops
+  const settings = useTestStore(
+    useShallow((state): TestSettings => ({
+      testNumber: state.testNumber,
+      startDate: state.startDate,
+      startTime: state.startTime,
+      endDate: state.endDate,
+      endTime: state.endTime,
+      testDuration: state.testDuration,
+      workingPressure: state.workingPressure,
+      maxPressure: state.maxPressure,
+      temperature: state.temperature,
+      pressureDuration: state.pressureDuration,
+      graphTitle: state.graphTitle,
+      showInfo: state.showInfo,
+      date: state.date,
+      pressureTests: state.pressureTests,
+    }))
   );
+  const theme = useThemeStore((state) => state.theme);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-
-    // Create settings object
-    const settings = {
-      testNumber,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-      testDuration,
-      workingPressure,
-      maxPressure,
-      temperature,
-      pressureDuration,
-      graphTitle,
-      showInfo,
-      date,
-      pressureTests,
-    };
 
     // Generate graph data
     const graphData = generatePressureData(settings);
@@ -74,23 +56,7 @@ export const GraphCanvas = () => {
       scale: 2, // Higher DPI for crisp rendering
       theme,
     });
-  }, [
-    testNumber,
-    startDate,
-    startTime,
-    endDate,
-    endTime,
-    testDuration,
-    workingPressure,
-    maxPressure,
-    temperature,
-    pressureDuration,
-    graphTitle,
-    showInfo,
-    date,
-    pressureTestsKey, // Use serialized key instead of array
-    theme,
-  ]);
+  }, [settings, theme]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
