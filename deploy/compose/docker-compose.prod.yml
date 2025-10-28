@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════
+  # Production Frontend (Nginx)
+  # ═══════════════════════════════════════════════
+  frontend-prod:
+    build:
+      context: ../../
+      dockerfile: deploy/Containerfile
+    image: pressure-test-visualizer:latest
+    container_name: pressure-test-visualizer-prod
+    ports:
+      - "8080:80"
+    networks:
+      - visualizer-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  visualizer-net:
+    driver: bridge

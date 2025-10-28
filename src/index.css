@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Global Styles and Tailwind CSS Imports
+   ═══════════════════════════════════════════════════════════════════ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styles */
+@layer base {
+  * {
+    @apply scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent;
+  }
+
+  body {
+    @apply font-sans antialiased;
+  }
+
+  /* Ensure smooth transitions for theme switching */
+  html {
+    @apply transition-colors duration-200;
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thumb-gray-400::-webkit-scrollbar-thumb {
+    background-color: rgb(156, 163, 175);
+    border-radius: 4px;
+  }
+
+  .dark .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+    background-color: rgb(75, 85, 99);
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+
+  header,
+  footer {
+    @apply hidden;
+  }
+}
