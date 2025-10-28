@@ -1,11 +1,16 @@
-# Pressure Test Visualizer
+# Pressograph
 
-Современный веб-генератор графиков испытаний давления с поддержкой экспорта в PNG/PDF и темной темы.
+> Professional pressure test visualization platform with React, TypeScript, and PostgreSQL
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
-![React](https://img.shields.io/badge/React-19.0-61dafb)
-![Vite](https://img.shields.io/badge/Vite-6.0-646cff)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/dantte-lp/pressograph/blob/master/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19.2-61dafb)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-339933)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791)](https://www.postgresql.org/)
+[![GitHub Issues](https://img.shields.io/github/issues/dantte-lp/pressograph)](https://github.com/dantte-lp/pressograph/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/dantte-lp/pressograph/blob/master/CONTRIBUTING.md)
+
+**Live Demo**: [pressograph.infra4.dev](https://pressograph.infra4.dev)
 
 ## Особенности
 
@@ -314,14 +319,41 @@ sudo systemctl enable pressure-test-visualizer
 - Dark mode: class
 - Content: HTML и TSX файлы
 
-## Лицензия
+## Contributing
 
-MIT
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-## Автор
+### Quick Links
+- [Bug Reports](https://github.com/dantte-lp/pressograph/issues/new?template=bug_report.md)
+- [Feature Requests](https://github.com/dantte-lp/pressograph/issues/new?template=feature_request.md)
+- [Security Policy](SECURITY.md)
 
-Refactored from single HTML file to modern React + TypeScript application
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- 📚 [Documentation](https://github.com/dantte-lp/pressograph/tree/master/docs)
+- 🐛 [Issue Tracker](https://github.com/dantte-lp/pressograph/issues)
+- 💬 [Discussions](https://github.com/dantte-lp/pressograph/discussions)
+- 📧 Email: pavel.lavrukhin@infra4.dev
+
+## Acknowledgments
+
+Built with ❤️ by [Pavel Lavrukhin](https://github.com/dantte-lp)
+
+Special thanks to:
+- [React Team](https://react.dev/) for React 19
+- [NextUI Team](https://nextui.org/) for HeroUI components
+- [Tailwind Labs](https://tailwindcss.com/) for Tailwind CSS
+- [PostgreSQL Global Development Group](https://www.postgresql.org/)
+- All our [contributors](https://github.com/dantte-lp/pressograph/graphs/contributors)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=dantte-lp/pressograph&type=Date)](https://star-history.com/#dantte-lp/pressograph&Date)
 
 ---
 
-**Сделано с ❤️ используя React, TypeScript, и Podman**
+**Made with ❤️ using React, TypeScript, PostgreSQL, and Podman**
