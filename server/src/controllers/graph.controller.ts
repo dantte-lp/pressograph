@@ -1,23 +1,53 @@
 // ═══════════════════════════════════════════════════════════════════
-// Graph Generation Controller (Stub)
+// Graph Generation Controller
 // ═══════════════════════════════════════════════════════════════════
 
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../middleware/errorHandler';
 import { query } from '../config/database';
+import { validateTestSettings } from '../services/validation.service';
+import { generatePressureData } from '../utils/graphGenerator';
+import type { TestSettings } from '../types';
 
+/**
+ * Generate pressure test graph data
+ * POST /api/graph/generate
+ *
+ * Validates test settings and generates complete graph data with
+ * all calculated pressure points over time.
+ *
+ * @param req.body - TestSettings object
+ * @returns GraphData with calculated points, start and end timestamps
+ * @throws AppError 400 if validation fails
+ * @throws AppError 500 for unexpected errors
+ */
 export const generateGraph = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const settings = req.body;
+    const settings: TestSettings = req.body;
     const user = req.user!;
 
-    // TODO: Implement graph generation logic
-    // This will use the same logic from frontend graphGenerator.ts
+    // Validate settings before generation
+    const validation = validateTestSettings(settings);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        errors: validation.errors,
+      });
+    }
+
+    // Generate graph data
+    const graphData = generatePressureData(settings);
+
+    // TODO: Store graph generation in history table
+    // await query(
+    //   'INSERT INTO graph_history (user_id, test_number, settings, data) VALUES ($1, $2, $3, $4)',
+    //   [user.id, settings.testNumber, JSON.stringify(settings), JSON.stringify(graphData)]
+    // );
 
     res.json({
       success: true,
-      message: 'Graph generation not yet implemented',
-      settings,
+      data: graphData,
     });
   } catch (error) {
     next(error);
@@ -42,16 +72,26 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+/**
+ * Validate test settings without generating graph
+ * POST /api/graph/validate
+ *
+ * Performs comprehensive validation of test settings and returns
+ * detailed error information for frontend display.
+ *
+ * @param req.body - TestSettings object to validate
+ * @returns ValidationResult with valid flag and errors array
+ */
 export const validateSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const settings = req.body;
+    const settings: TestSettings = req.body;
 
-    // TODO: Implement validation logic
+    // Validate settings
+    const validation = validateTestSettings(settings);
 
     res.json({
       success: true,
-      valid: true,
-      errors: [],
+      ...validation,
     });
   } catch (error) {
     next(error);
