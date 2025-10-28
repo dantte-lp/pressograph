@@ -56,6 +56,7 @@ export const SetupPage = () => {
   // Database and schema info
   const [dbInfo, setDbInfo] = useState<DatabaseInfo | null>(null);
   const [schemaInfo, setSchemaInfo] = useState<SchemaInfo | null>(null);
+  const [userCount, setUserCount] = useState<number>(0);
   const [isCheckingEnv, setIsCheckingEnv] = useState(false);
 
   // Fetch database info when on environment check step
@@ -74,6 +75,7 @@ export const SetupPage = () => {
       if (data.success) {
         setDbInfo(data.database);
         setSchemaInfo(data.schema);
+        setUserCount(data.userCount);
       }
     } catch (err) {
       console.error('Failed to fetch database info:', err);
@@ -387,15 +389,25 @@ export const SetupPage = () => {
                     key="admin"
                     aria-label="Admin User"
                     startContent={
-                      <svg className="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
+                      userCount > 0 ? (
+                        <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      )
                     }
                     title={
                       <div className="flex items-center justify-between flex-1 pr-2">
                         <span className="font-medium">Admin User</span>
-                        <Chip size="sm" color="warning" variant="flat">
-                          Not Created
+                        <Chip
+                          size="sm"
+                          color={userCount > 0 ? "success" : "warning"}
+                          variant="flat"
+                        >
+                          {userCount > 0 ? `Created (${userCount})` : "Not Created"}
                         </Chip>
                       </div>
                     }
