@@ -1,0 +1,285 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pressograph-dev
+  labels:
+    app: pressograph
+    environment: development
+  annotations:
+    # Traefik labels for frontend (short names)
+    io.podman.annotations.label/traefik.enable: "true"
+    io.podman.annotations.label/traefik.http.routers.pg-dev.entrypoints: "https"
+    io.podman.annotations.label/traefik.http.routers.pg-dev.rule: "Host(`dev-pressograph.infra4.dev`)"
+    io.podman.annotations.label/traefik.http.routers.pg-dev.tls: "true"
+    io.podman.annotations.label/traefik.http.routers.pg-dev.tls.certresolver: "cloudflare"
+    io.podman.annotations.label/traefik.http.routers.pg-dev.service: "pg-dev-fe"
+    io.podman.annotations.label/traefik.http.services.pg-dev-fe.loadbalancer.server.port: "5173"
+
+    # Traefik labels for backend API (short names)
+    io.podman.annotations.label/traefik.http.routers.pg-dev-api.entrypoints: "https"
+    io.podman.annotations.label/traefik.http.routers.pg-dev-api.rule: "Host(`dev-pressograph.infra4.dev`) && PathPrefix(`/api`)"
+    io.podman.annotations.label/traefik.http.routers.pg-dev-api.tls: "true"
+    io.podman.annotations.label/traefik.http.routers.pg-dev-api.tls.certresolver: "cloudflare"
+    io.podman.annotations.label/traefik.http.routers.pg-dev-api.middlewares: "pg-dev-strip"
+    io.podman.annotations.label/traefik.http.routers.pg-dev-api.service: "pg-dev-be"
+    io.podman.annotations.label/traefik.http.middlewares.pg-dev-strip.stripprefix.prefixes: "/api"
+    io.podman.annotations.label/traefik.http.services.pg-dev-be.loadbalancer.server.port: "3001"
+spec:
+  restartPolicy: Always
+
+  containers:
+  # ══════════════════════════════════════════════════════════════════
+  # PostgreSQL Database Container (Development)
+  # ══════════════════════════════════════════════════════════════════
+  - name: postgres-dev
+    image: docker.io/library/postgres:18-trixie
+    imagePullPolicy: IfNotPresent
+
+    env:
+    - name: POSTGRES_DB
+      value: "pressograph_dev"
+    - name: POSTGRES_USER
+      value: "pressograph_dev"
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        configMapKeyRef:
+          name: pressograph-dev-config
+          key: POSTGRES_PASSWORD
+
+    volumeMounts:
+    - name: postgres-dev-data
+      mountPath: /var/lib/postgresql/data
+    - name: migrations
+      mountPath: /migrations
+      readOnly: true
+
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      allowPrivilegeEscalation: false
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    livenessProbe:
+      exec:
+        command:
+        - pg_isready
+        - -U
+        - pressograph_dev
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+
+  # ══════════════════════════════════════════════════════════════════
+  # Backend (Node.js API) Container - Development Mode with Hot Reload
+  # ══════════════════════════════════════════════════════════════════
+  - name: backend-dev
+    image: docker.io/library/node:22-trixie-slim
+    imagePullPolicy: IfNotPresent
+    workingDir: /app
+
+    envFrom:
+    - configMapRef:
+        name: pressograph-dev-config
+
+    env:
+    - name: DATABASE_URL
+      value: "postgresql://pressograph_dev:$(POSTGRES_PASSWORD)@localhost:5432/pressograph_dev"
+    - name: NODE_ENV
+      value: "development"
+    - name: PORT
+      value: "3001"
+    - name: DEBUG
+      value: "pressograph:*"
+    - name: LOG_LEVEL
+      value: "debug"
+
+    volumeMounts:
+    - name: backend-source
+      mountPath: /app
+    - name: backend-node-modules
+      mountPath: /app/node_modules
+
+    command:
+    - sh
+    - -c
+    - |
+      if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+        echo '📦 Installing backend dependencies...'
+        npm install
+        touch node_modules/.installed
+      fi
+      echo '🚀 Starting backend in development mode with hot reload...'
+      npm run dev
+
+    ports:
+    - containerPort: 3001
+      protocol: TCP
+
+    # Security context relaxed for development
+    # securityContext:
+    #   runAsUser: 1001
+    #   runAsGroup: 1001
+    #   allowPrivilegeEscalation: false
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 3001
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 5
+
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 3001
+      initialDelaySeconds: 30
+      periodSeconds: 10
+
+  # ══════════════════════════════════════════════════════════════════
+  # Frontend (Vite Dev Server) Container - Hot Reload
+  # ══════════════════════════════════════════════════════════════════
+  - name: frontend-dev
+    image: docker.io/library/node:22-trixie-slim
+    imagePullPolicy: IfNotPresent
+    workingDir: /app
+
+    env:
+    - name: VITE_API_URL
+      value: "/api"
+    - name: NODE_ENV
+      value: "development"
+
+    volumeMounts:
+    - name: frontend-source
+      mountPath: /app
+    - name: frontend-node-modules
+      mountPath: /app/node_modules
+    - name: backend-source
+      mountPath: /app/server
+      readOnly: true
+
+    command:
+    - sh
+    - -c
+    - |
+      if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+        echo '📦 Installing frontend dependencies...'
+        npm install
+        touch node_modules/.installed
+      fi
+      echo '🚀 Starting Vite dev server with hot reload...'
+      npm run dev -- --host 0.0.0.0 --port 5173
+
+    ports:
+    - containerPort: 5173
+      hostPort: 5174
+      protocol: TCP
+
+    # Security context relaxed for development
+    # securityContext:
+    #   runAsUser: 1001
+    #   runAsGroup: 1001
+    #   allowPrivilegeEscalation: false
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 5173
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 5
+
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 5173
+      initialDelaySeconds: 30
+      periodSeconds: 10
+
+  # ══════════════════════════════════════════════════════════════════
+  # Volumes
+  # ══════════════════════════════════════════════════════════════════
+  volumes:
+  - name: postgres-dev-data
+    hostPath:
+      path: /var/lib/containers/storage/volumes/pressograph-dev-db-data
+      type: DirectoryOrCreate
+
+  - name: migrations
+    hostPath:
+      path: /opt/projects/repositories/pressure-test-visualizer/server/migrations
+      type: Directory
+
+  - name: backend-source
+    hostPath:
+      path: /opt/projects/repositories/pressure-test-visualizer/server
+      type: Directory
+
+  - name: backend-node-modules
+    hostPath:
+      path: /var/lib/containers/storage/volumes/pressograph-dev-backend-modules
+      type: DirectoryOrCreate
+
+  - name: frontend-source
+    hostPath:
+      path: /opt/projects/repositories/pressure-test-visualizer
+      type: Directory
+
+  - name: frontend-node-modules
+    hostPath:
+      path: /var/lib/containers/storage/volumes/pressograph-dev-frontend-modules
+      type: DirectoryOrCreate
+
+---
+# ConfigMap for development configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pressograph-dev-config
+data:
+  # Database
+  POSTGRES_PASSWORD: "devpassword123"
+  POSTGRES_PORT: "5432"
+
+  # Backend
+  NODE_ENV: "development"
+
+  # JWT Authentication (DEV KEYS - NOT FOR PRODUCTION)
+  JWT_SECRET: "dev_jwt_secret_change_in_production"
+  JWT_REFRESH_SECRET: "dev_refresh_secret_change_in_production"
+  JWT_EXPIRES_IN: "15m"
+  JWT_REFRESH_EXPIRES_IN: "7d"
+
+  # CORS and API
+  ALLOWED_ORIGINS: "https://dev-pressograph.infra4.dev,http://localhost:5173,http://localhost:5174"
+  BASE_URL: "https://dev-pressograph.infra4.dev"
+  MAX_FILE_SIZE: "10mb"
+
+  # Frontend (build-time)
+  VITE_API_URL: "/api"
