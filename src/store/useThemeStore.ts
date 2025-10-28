@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+// import { persist } from 'zustand/middleware'; // Temporarily disabled for React 19 compatibility
 import type { Theme } from '../types';
 
 interface ThemeStore {
@@ -12,20 +12,13 @@ interface ThemeStore {
   setTheme: (theme: Theme) => void;
 }
 
-export const useThemeStore = create<ThemeStore>()(
-  persist(
-    (set) => ({
-      theme: 'light',
+export const useThemeStore = create<ThemeStore>()((set) => ({
+  theme: 'light',
 
-      toggleTheme: () =>
-        set((state) => ({
-          theme: state.theme === 'light' ? 'dark' : 'light',
-        })),
+  toggleTheme: () =>
+    set((state) => ({
+      theme: state.theme === 'light' ? 'dark' : 'light',
+    })),
 
-      setTheme: (theme) => set({ theme }),
-    }),
-    {
-      name: 'theme-preference',
-    }
-  )
-);
+  setTheme: (theme) => set({ theme }),
+}));

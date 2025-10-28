@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+// import { persist } from 'zustand/middleware'; // Temporarily disabled for React 19 compatibility
 import type { TestSettings, PressureTest, PresetTemplate } from '../types';
 import { generateId } from '../utils/helpers';
 
@@ -86,9 +86,7 @@ const presetTemplates: Record<PresetTemplate, Partial<TestSettings>> = {
   },
 };
 
-export const useTestStore = create<TestStore>()(
-  persist(
-    (set, get) => ({
+export const useTestStore = create<TestStore>()((set, get) => ({
       ...getDefaultSettings(),
 
       updateField: (field, value) => set({ [field]: value }),
@@ -146,9 +144,4 @@ export const useTestStore = create<TestStore>()(
       },
 
       resetToDefaults: () => set(getDefaultSettings()),
-    }),
-    {
-      name: 'pressure-test-settings',
-    }
-  )
-);
+    }));
