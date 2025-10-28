@@ -21,12 +21,20 @@ services:
       start_period: 5s
     labels:
       - "traefik.enable=true"
+      # HTTPS Router
       - "traefik.http.routers.pressure-test.entrypoints=https"
       - "traefik.http.routers.pressure-test.rule=Host(`dev-graph.infra4.dev`)"
       - "traefik.http.routers.pressure-test.tls=true"
       - "traefik.http.routers.pressure-test.tls.certresolver=cloudflare"
-      - "traefik.http.routers.pressure-test.middlewares=security-headers@file"
+      # Apply web-standard middleware chain (security headers, compression, rate limiting)
+      - "traefik.http.routers.pressure-test.middlewares=web-standard@file"
+      # Service configuration
       - "traefik.http.services.pressure-test.loadbalancer.server.port=80"
+      - "traefik.http.services.pressure-test.loadbalancer.server.scheme=http"
+      - "traefik.http.services.pressure-test.loadbalancer.healthcheck.path=/health"
+      - "traefik.http.services.pressure-test.loadbalancer.healthcheck.interval=30s"
+      - "traefik.http.services.pressure-test.loadbalancer.healthcheck.timeout=3s"
+      # Network
       - "traefik.docker.network=traefik-public"
 
 networks:
