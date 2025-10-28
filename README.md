@@ -12,272 +12,272 @@
 
 **Live Demo**: [pressograph.infra4.dev](https://pressograph.infra4.dev)
 
-## Особенности
+## Features
 
-- ⚡ **Современный стек**: React 19, TypeScript 5.7, Vite 6, Tailwind CSS 3.4
-- 🎨 **Темная/светлая тема** с сохранением настроек
-- 📊 **Canvas-based графики** с высоким разрешением
-- 📤 **Экспорт**: PNG (4K), PDF (A4 альбомная), JSON (настройки)
-- 🔄 **Hot reload** в режиме разработки
-- 🐳 **Контейнеризация**: Podman/Docker с multi-stage build
-- 📱 **Responsive design** для мобильных устройств
-- 💾 **Persistent storage** настроек в localStorage
-- 🎯 **TypeScript** строгая типизация
-- 🧩 **Модульная архитектура** с переиспользуемыми компонентами
+- ⚡ **Modern Stack**: React 19, TypeScript 5.7, Vite 6, Tailwind CSS 3.4
+- 🎨 **Dark/Light Theme** with persistent settings
+- 📊 **Canvas-based Charts** with high resolution rendering
+- 📤 **Export**: PNG (4K), PDF (A4 landscape), JSON (settings)
+- 🔄 **Hot Reload** in development mode
+- 🐳 **Containerization**: Podman/Docker with multi-stage build
+- 📱 **Responsive Design** for mobile devices
+- 💾 **Persistent Storage** of settings in localStorage
+- 🎯 **TypeScript** strict typing
+- 🧩 **Modular Architecture** with reusable components
 
-## Технологический стек
+## Technology Stack
 
 ### Frontend
-- **React 19** - UI библиотека
-- **TypeScript 5.7** - статическая типизация
-- **Vite 6** - сборщик и dev-сервер
+- **React 19** - UI library
+- **TypeScript 5.7** - static typing
+- **Vite 6** - build tool and dev server
 - **Tailwind CSS 3.4** - utility-first CSS framework
-- **Zustand 5** - управление состоянием
-- **jsPDF 2.5** - генерация PDF
-- **date-fns 4.1** - работа с датами
+- **Zustand 5** - state management
+- **jsPDF 2.5** - PDF generation
+- **date-fns 4.1** - date manipulation
 
-### Инфраструктура
-- **Podman/Docker** - контейнеризация
-- **Nginx 1.29 (Trixie)** - production веб-сервер
-- **Node.js (current-trixie-slim)** - runtime для сборки
+### Infrastructure
+- **Podman/Docker** - containerization
+- **Nginx 1.29 (Trixie)** - production web server
+- **Node.js (current-trixie-slim)** - build runtime
 
-## Быстрый старт
+## Quick Start
 
-### Требования
-- Podman или Docker
-- Podman Compose или Docker Compose
+### Requirements
+- Podman or Docker
+- Podman Compose or Docker Compose
 
-### Разработка
+### Development
 
 ```bash
-# Запуск dev-сервера с hot reload
+# Start dev server with hot reload
 make dev
 
-# Доступен по адресу: http://localhost:5173
+# Available at: http://localhost:5173
 ```
 
 ### Production
 
 ```bash
-# Сборка production образа
+# Build production image
 make build
 
-# Запуск production сервера
+# Start production server
 make prod
 
-# Доступен по адресу: http://localhost:8080
+# Available at: http://localhost:8080
 ```
 
-### Все команды Makefile
+### All Makefile Commands
 
 ```bash
-make help              # Показать все команды
-make dev               # Запустить dev-сервер
-make dev-build         # Пересобрать и запустить dev
-make dev-down          # Остановить dev-сервер
-make build             # Собрать production образ
-make prod              # Запустить production
-make prod-down         # Остановить production
-make logs              # Показать логи (ENV=dev|prod)
-make clean             # Удалить контейнеры и образы
-make stop              # Остановить все контейнеры
-make install           # Установить зависимости локально
-make lint              # Запустить ESLint
-make test              # Запустить тесты
-make status            # Показать статус контейнеров
-make info              # Системная информация
-make rebuild           # Полная пересборка
-make restart-dev       # Перезапустить dev
-make restart-prod      # Перезапустить prod
+make help              # Show all commands
+make dev               # Start dev server
+make dev-build         # Rebuild and start dev
+make dev-down          # Stop dev server
+make build             # Build production image
+make prod              # Start production
+make prod-down         # Stop production
+make logs              # Show logs (ENV=dev|prod)
+make clean             # Remove containers and images
+make stop              # Stop all containers
+make install           # Install dependencies locally
+make lint              # Run ESLint
+make test              # Run tests
+make status            # Show container status
+make info              # System information
+make rebuild           # Full rebuild
+make restart-dev       # Restart dev
+make restart-prod      # Restart prod
 ```
 
-## Структура проекта
+## Project Structure
 
 ```
 pressure-test-visualizer/
 ├── deploy/
 │   ├── compose/
-│   │   ├── docker-compose.dev.yml    # Development конфигурация
-│   │   └── docker-compose.prod.yml   # Production конфигурация
+│   │   ├── docker-compose.dev.yml    # Development configuration
+│   │   └── docker-compose.prod.yml   # Production configuration
 │   ├── Containerfile                 # Multi-stage build
-│   └── nginx.conf                    # Nginx конфигурация
+│   └── nginx.conf                    # Nginx configuration
 ├── src/
 │   ├── components/
-│   │   ├── ui/                       # UI компоненты (Button, Input, Select)
-│   │   ├── forms/                    # Формы (параметры, опрессовки)
-│   │   └── graph/                    # График и экспорт
+│   │   ├── ui/                       # UI components (Button, Input, Select)
+│   │   ├── forms/                    # Forms (parameters, pressure tests)
+│   │   └── graph/                    # Graph and export
 │   ├── store/
-│   │   ├── useTestStore.ts           # Zustand store для настроек
-│   │   └── useThemeStore.ts          # Zustand store для темы
+│   │   ├── useTestStore.ts           # Zustand store for settings
+│   │   └── useThemeStore.ts          # Zustand store for theme
 │   ├── types/
-│   │   └── index.ts                  # TypeScript типы
+│   │   └── index.ts                  # TypeScript types
 │   ├── utils/
-│   │   ├── helpers.ts                # Вспомогательные функции
-│   │   ├── graphGenerator.ts         # Генерация данных графика
-│   │   ├── canvasRenderer.ts         # Рендеринг на Canvas
-│   │   └── export.ts                 # Экспорт PNG/PDF/JSON
-│   ├── App.tsx                       # Главный компонент
-│   ├── main.tsx                      # Точка входа
-│   └── index.css                     # Глобальные стили
-├── public/                           # Статические файлы
-├── index.html                        # HTML шаблон
-├── package.json                      # Зависимости
-├── vite.config.ts                    # Vite конфигурация
-├── tailwind.config.js                # Tailwind конфигурация
-├── tsconfig.json                     # TypeScript конфигурация
-├── Makefile                          # Команды управления
-└── README.md                         # Документация
+│   │   ├── helpers.ts                # Helper functions
+│   │   ├── graphGenerator.ts         # Graph data generation
+│   │   ├── canvasRenderer.ts         # Canvas rendering
+│   │   └── export.ts                 # PNG/PDF/JSON export
+│   ├── App.tsx                       # Main component
+│   ├── main.tsx                      # Entry point
+│   └── index.css                     # Global styles
+├── public/                           # Static files
+├── index.html                        # HTML template
+├── package.json                      # Dependencies
+├── vite.config.ts                    # Vite configuration
+├── tailwind.config.js                # Tailwind configuration
+├── tsconfig.json                     # TypeScript configuration
+├── Makefile                          # Management commands
+└── README.md                         # Documentation
 ```
 
-## Архитектура
+## Architecture
 
-### Управление состоянием (Zustand)
+### State Management (Zustand)
 
-Приложение использует два store:
+The application uses two stores:
 
-1. **useTestStore** - настройки испытаний
-   - Параметры теста (давление, температура, даты)
-   - Промежуточные опрессовки
-   - Шаблоны и пресеты
-   - Импорт/экспорт настроек
+1. **useTestStore** - test settings
+   - Test parameters (pressure, temperature, dates)
+   - Intermediate pressure tests
+   - Templates and presets
+   - Import/export settings
 
-2. **useThemeStore** - тема оформления
-   - Переключение dark/light
-   - Сохранение в localStorage
+2. **useThemeStore** - theme management
+   - Dark/light mode toggle
+   - localStorage persistence
 
-### Генерация графика
+### Graph Generation
 
-1. **graphGenerator.ts** - создание точек данных с:
-   - Подъемами давления (30 сек)
-   - Удержанием с флуктуациями
-   - Сбросами давления
-   - Промежуточными опрессовками
+1. **graphGenerator.ts** - data point creation with:
+   - Pressure ramp-up (30 seconds)
+   - Hold with fluctuations
+   - Pressure release
+   - Intermediate pressure tests
 
-2. **canvasRenderer.ts** - рендеринг на Canvas:
-   - Оси и сетка
-   - График с заливкой
-   - Информационная панель
-   - Адаптация под тему
+2. **canvasRenderer.ts** - Canvas rendering:
+   - Axes and grid
+   - Graph with fill
+   - Information panel
+   - Theme adaptation
 
-### Экспорт
+### Export
 
-- **PNG**: Canvas → Blob → Download (4x разрешение)
+- **PNG**: Canvas → Blob → Download (4x resolution)
 - **PDF**: Canvas → jsPDF → Download (A4 landscape)
 - **JSON**: Settings → JSON → Download
 
-## Docker образы
+## Docker Images
 
 ### Development
 ```yaml
 image: node:current-trixie-slim
 ```
-- Hot reload с Vite
-- Volume mapping для кода
+- Hot reload with Vite
+- Volume mapping for code
 - Port 5173
 
 ### Production
 ```dockerfile
 # Build stage
 FROM node:current-trixie-slim AS builder
-# ... сборка приложения
+# ... application build
 
 # Runtime stage
 FROM nginx:1.29-trixie-perl
-# ... копирование dist
+# ... copy dist
 ```
-- Multi-stage оптимизированная сборка
-- Nginx для статики
+- Multi-stage optimized build
+- Nginx for static files
 - Port 8080
 - Health checks
 
-## Функционал
+## Features
 
-### Параметры испытания
-- Номер испытания
-- Дата и время начала/окончания
-- Продолжительность испытания
-- Рабочее и максимальное давление
-- Температура среды
-- Продолжительность опрессовки
+### Test Parameters
+- Test number
+- Start/end date and time
+- Test duration
+- Working and maximum pressure
+- Ambient temperature
+- Pressure test duration
 
-### Промежуточные опрессовки
-- Добавление/удаление опрессовок
-- Время (часы от начала)
-- Длительность (минуты)
-- Быстрые пресеты: 6ч, 8ч, 12ч, 24ч
+### Intermediate Pressure Tests
+- Add/remove tests
+- Time (hours from start)
+- Duration (minutes)
+- Quick presets: 6h, 8h, 12h, 24h
 
-### Шаблоны
-- **Стандартный** (15.33ч, 3 проверки)
-- **Суточный** (24ч, 5 проверок)
-- **Расширенный** (48ч, 7 проверок)
-- Сброс к дефолтным значениям
+### Templates
+- **Standard** (15.33h, 3 checks)
+- **Daily** (24h, 5 checks)
+- **Extended** (48h, 7 checks)
+- Reset to default values
 
-### Экспорт/Импорт
-- Экспорт графика в PNG (высокое разрешение)
-- Экспорт графика в PDF (A4 альбомная)
-- Экспорт настроек в JSON
-- Импорт настроек из JSON
+### Export/Import
+- Export graph to PNG (high resolution)
+- Export graph to PDF (A4 landscape)
+- Export settings to JSON
+- Import settings from JSON
 
-### Темизация
-- Светлая тема
-- Темная тема
-- Сохранение выбора
-- Адаптация графика под тему
+### Theming
+- Light theme
+- Dark theme
+- Saved preferences
+- Graph theme adaptation
 
-## Разработка
+## Development
 
-### Локальная установка (без контейнеров)
+### Local Installation (without containers)
 
 ```bash
-# Установка зависимостей
+# Install dependencies
 npm install
 
-# Запуск dev-сервера
+# Start dev server
 npm run dev
 
-# Сборка
+# Build
 npm run build
 
 # Preview production build
 npm run preview
 
-# Линтинг
+# Linting
 npm run lint
 ```
 
-### Добавление новых компонентов
+### Adding New Components
 
-1. Создайте компонент в `src/components/`
-2. Определите типы в `src/types/`
-3. Экспортируйте через `index.ts`
-4. Используйте Tailwind CSS для стилей
-5. Следуйте существующим паттернам
+1. Create component in `src/components/`
+2. Define types in `src/types/`
+3. Export through `index.ts`
+4. Use Tailwind CSS for styling
+5. Follow existing patterns
 
-### Работа с Canvas
+### Working with Canvas
 
-Рендеринг использует Canvas API с:
-- High DPI поддержкой (масштабирование)
-- Адаптивными цветами (тема)
-- Оптимизированной перерисовкой
+Rendering uses Canvas API with:
+- High DPI support (scaling)
+- Adaptive colors (theme)
+- Optimized redrawing
 
 ## Production Deployment
 
-### С использованием Podman/Docker
+### Using Podman/Docker
 
 ```bash
-# 1. Сборка образа
+# 1. Build image
 make build
 
-# 2. Запуск контейнера
+# 2. Start container
 make prod
 
-# 3. Проверка
+# 3. Check health
 curl http://localhost:8080/health
 ```
 
-### С использованием systemd (Quadlet)
+### Using systemd (Quadlet)
 
-Создайте файл `/etc/containers/systemd/pressure-test-visualizer.container`:
+Create file `/etc/containers/systemd/pressure-test-visualizer.container`:
 
 ```ini
 [Container]
@@ -299,25 +299,25 @@ sudo systemctl start pressure-test-visualizer
 sudo systemctl enable pressure-test-visualizer
 ```
 
-## Конфигурация
+## Configuration
 
 ### Vite
-Настройки в `vite.config.ts`:
-- Server host: 0.0.0.0 (для Docker)
+Settings in `vite.config.ts`:
+- Server host: 0.0.0.0 (for Docker)
 - Port: 5173
-- Hot reload с polling
+- Hot reload with polling
 
 ### Nginx
-Конфигурация в `deploy/nginx.conf`:
-- Gzip сжатие
-- Кеширование статики
+Configuration in `deploy/nginx.conf`:
+- Gzip compression
+- Static file caching
 - Security headers
 - Health check endpoint
 
 ### Tailwind CSS
-Конфигурация в `tailwind.config.js`:
+Configuration in `tailwind.config.js`:
 - Dark mode: class
-- Content: HTML и TSX файлы
+- Content: HTML and TSX files
 
 ## Contributing
 

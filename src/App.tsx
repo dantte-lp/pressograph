@@ -13,6 +13,10 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
 import { SetupPage } from './pages/Setup';
+import { History } from './pages/History';
+import { Admin } from './pages/Admin';
+import { Help } from './pages/Help';
+import { Profile } from './pages/Profile';
 
 // Initialization Guard Component
 function InitializationGuard({ children }: { children: React.ReactNode }) {
@@ -107,7 +111,10 @@ function App() {
 
                   <Routes>
                     <Route path="/" element={<HomePage />} />
-                    {/* Future protected routes can be added here */}
+                    <Route path="/history" element={<History />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/profile" element={<Profile />} />
                   </Routes>
 
                   {/* Footer */}
