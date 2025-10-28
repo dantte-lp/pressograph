@@ -5,7 +5,7 @@ services:
   # Development Frontend (Hot Reload with Vite)
   # ═══════════════════════════════════════════════
   frontend-dev:
-    image: node:current-trixie-slim
+    image: docker.io/node:current-trixie-slim
     container_name: pressure-test-visualizer-dev
     working_dir: /app
     volumes:

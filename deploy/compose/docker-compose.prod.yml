@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # ═══════════════════════════════════════════════
-  # Production Frontend (Nginx)
+  # Production Frontend (Nginx with Traefik)
   # ═══════════════════════════════════════════════
   frontend-prod:
     build:
@@ -10,18 +10,25 @@ services:
       dockerfile: deploy/Containerfile
     image: pressure-test-visualizer:latest
     container_name: pressure-test-visualizer-prod
-    ports:
-      - "8080:80"
     networks:
-      - visualizer-net
+      - traefik-public
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 3s
       retries: 3
-      start_period: 40s
+      start_period: 5s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pressure-test.entrypoints=https"
+      - "traefik.http.routers.pressure-test.rule=Host(`dev-graph.infra4.dev`)"
+      - "traefik.http.routers.pressure-test.tls=true"
+      - "traefik.http.routers.pressure-test.tls.certresolver=cloudflare"
+      - "traefik.http.routers.pressure-test.middlewares=security-headers@file"
+      - "traefik.http.services.pressure-test.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-public"
 
 networks:
-  visualizer-net:
-    driver: bridge
+  traefik-public:
+    external: true
