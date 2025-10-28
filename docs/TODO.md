@@ -76,39 +76,50 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 ### Sprint 1: Backend Graph Generation Core (Week 1) 🔴
 
 **Epic: Backend Graph Data Generation**
-- [ ] **US-001: Create Shared Type Definitions** (2h)
-  - [ ] Create `server/src/types/graph.types.ts`
-  - [ ] Copy types from `src/types/index.ts`
-  - [ ] Export: TestSettings, PressureTest, DataPoint, GraphData
-  - [ ] Add JSDoc comments for documentation
-  - [ ] Remove frontend-specific types (React dependencies)
+- [x] **US-001: Create Shared Type Definitions** (2h) ✅ COMPLETED
+  - [x] Create `server/src/types/graph.types.ts`
+  - [x] Copy types from `src/types/index.ts`
+  - [x] Export: TestSettings, PressureTest, DataPoint, GraphData
+  - [x] Add JSDoc comments for documentation
+  - [x] Remove frontend-specific types (React dependencies)
+  - [x] Added ValidationError and ValidationResult interfaces
+  - Commit: 8a0f34a
 
-- [ ] **US-002: Port Graph Generator to Backend** (4h)
-  - [ ] Create `server/src/utils/graphGenerator.ts`
-  - [ ] Copy generatePressureData function
-  - [ ] Copy generateIntermediatePoints function
-  - [ ] Copy generateDriftPoints function
-  - [ ] Remove react-hot-toast dependency
-  - [ ] Replace with AppError for validation errors
-  - [ ] Write unit tests (Jest)
+- [x] **US-002: Port Graph Generator to Backend** (4h) ✅ COMPLETED
+  - [x] Create `server/src/utils/graphGenerator.ts`
+  - [x] Copy generatePressureData function
+  - [x] Copy generateIntermediatePoints function
+  - [x] Copy generateDriftPoints function
+  - [x] Remove react-hot-toast dependency
+  - [x] Replace with AppError for validation errors
+  - [x] Create `server/src/utils/helpers.ts` with parseDateTime, addNoise
+  - [ ] Write unit tests (Jest) - DEFERRED to Sprint 2
+  - Commit: 07cdf20
 
-- [ ] **US-003: Implement Validation Service** (3h)
-  - [ ] Create `server/src/services/validation.service.ts`
-  - [ ] Validate date ranges (endDate > startDate)
-  - [ ] Validate pressure values (positive, workingPressure < maxPressure)
-  - [ ] Validate pressure tests (duration > 0, time sequence)
-  - [ ] Return detailed validation errors
-  - [ ] Write unit tests
+- [x] **US-003: Implement Validation Service** (3h) ✅ COMPLETED
+  - [x] Create `server/src/services/validation.service.ts`
+  - [x] Validate date ranges (endDate > startDate)
+  - [x] Validate pressure values (positive, workingPressure < maxPressure)
+  - [x] Validate pressure tests (duration > 0, time sequence)
+  - [x] Return detailed validation errors
+  - [x] Validate temperature ranges, date/time formats
+  - [x] Validate enum values (showInfo)
+  - [x] Validate unique IDs in pressure tests
+  - [ ] Write unit tests - DEFERRED to Sprint 2
+  - Commit: f64a30c
 
-- [ ] **US-004: Implement Graph Controller Generate Endpoint** (3h)
-  - [ ] Update `graph.controller.ts::generateGraph`
-  - [ ] Add request body validation (express-validator)
-  - [ ] Call validation.service
-  - [ ] Call graphGenerator.generatePressureData
-  - [ ] Save to graph_history table
-  - [ ] Return GraphData JSON response
-  - [ ] Add error handling
-  - [ ] Write integration tests
+- [x] **US-004: Implement Graph Controller Generate Endpoint** (3h) ✅ COMPLETED
+  - [x] Update `graph.controller.ts::generateGraph`
+  - [x] Call validation.service
+  - [x] Call graphGenerator.generatePressureData
+  - [x] Return GraphData JSON response
+  - [x] Add error handling with AppError
+  - [x] Implement POST /api/graph/validate endpoint
+  - [x] Add comprehensive JSDoc documentation
+  - [ ] Add request body validation (express-validator) - using TypeScript types
+  - [ ] Save to graph_history table - DEFERRED (optional for MVP)
+  - [ ] Write integration tests - DEFERRED to Sprint 2
+  - Commit: 1f85f72
 
 ### Sprint 2: Backend PNG Export (Week 1-2) 🔴
 
