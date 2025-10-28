@@ -128,13 +128,23 @@ export const SetupPage = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call to create admin user
-      const response = await fetch('/api/v1/setup/admin', {
+      const response = await fetch('/api/v1/setup/initialize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({
+          admin: {
+            username,
+            email,
+            password,
+          },
+          application: {
+            siteName: 'Pressograph',
+            timezone: 'UTC',
+            defaultLanguage: 'ru',
+          },
+        }),
       });
 
       if (!response.ok) {
