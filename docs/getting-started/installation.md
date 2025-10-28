@@ -205,9 +205,9 @@ newgrp podman
 
 ## Next Steps
 
-- [Quick Start Guide](quickstart.md) - Create your first graph
-- [Configuration](configuration.md) - Advanced configuration options
 - [API Reference](../api/overview.md) - API documentation
+- [Release Notes](../release-notes.md) - Version history and changes
+- [TODO](../TODO.md) - Roadmap and planned features
 
 ## Uninstallation
 

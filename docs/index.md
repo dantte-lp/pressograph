@@ -41,20 +41,20 @@ Pressograph is a comprehensive solution for creating, managing, and sharing pres
 ## Quick Links
 
 - [Installation Guide](getting-started/installation.md)
-- [Quick Start Tutorial](getting-started/quickstart.md)
 - [API Reference](api/overview.md)
 - [Release Notes](release-notes.md)
+- [Roadmap](TODO.md)
 
 ## Technology Stack
 
-- **Frontend**: React 19.2.0, TypeScript, Vite 7.1.12, HeroUI 2.8.5, Tailwind CSS 4.1.16
-- **Backend**: Node.js, Express.js 4.18.2, PostgreSQL 18.0
+- **Frontend**: React 19.2.0, TypeScript 5.9, Vite 7.1.12, HeroUI 2.8.5, Tailwind CSS 4.1.16
+- **Backend**: Node.js 22, Express.js 4.18.2, TypeScript 5.3, PostgreSQL 18.0
 - **Deployment**: Podman, Docker-compatible compose
 - **Documentation**: MkDocs Material
 
 ## System Requirements
 
-- Node.js 18+ (Frontend/Backend)
+- Node.js 22+ (Frontend/Backend)
 - PostgreSQL 18+ (Database)
 - Podman or Docker (Deployment)
 - Modern web browser with ES2020 support
@@ -63,7 +63,7 @@ Pressograph is a comprehensive solution for creating, managing, and sharing pres
 
 - [GitHub Issues](https://github.com/dantte-lp/pressograph/issues)
 - [API Documentation](api/overview.md)
-- [Contributing Guidelines](development/contributing.md)
+- [Installation Guide](getting-started/installation.md)
 
 ## License
 

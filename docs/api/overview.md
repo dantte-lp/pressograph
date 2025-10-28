@@ -5,7 +5,7 @@ Pressograph provides a comprehensive RESTful API for programmatic access to all 
 ## Base URL
 
 ```
-Production: https://api.pressograph.com/api/v1
+Production: https://pressograph.infra4.dev/api/v1
 Development: http://localhost:3001/api/v1
 ```
 
@@ -251,5 +251,5 @@ Official SDKs are planned for:
 For API support:
 
 - [GitHub Issues](https://github.com/dantte-lp/pressograph/issues)
-- [API Examples](examples.md)
-- [Endpoint Reference](endpoints.md)
+- [Installation Guide](../getting-started/installation.md)
+- [Release Notes](../release-notes.md)
