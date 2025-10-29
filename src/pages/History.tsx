@@ -4,10 +4,10 @@
 
 import React from 'react';
 import { Card, CardBody, CardHeader } from '@heroui/react';
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../i18n';
 
 export const History: React.FC = () => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -15,7 +15,7 @@ export const History: React.FC = () => {
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col gap-2 pb-4">
             <h1 className="text-3xl font-bold">
-              {t('navigation.history', 'Graph History')}
+              {t.history}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               View and manage your pressure test graphs
