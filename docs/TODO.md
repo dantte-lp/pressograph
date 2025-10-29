@@ -163,42 +163,60 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Write integration tests - DEFERRED to Sprint 2
   - Commit: 1f85f72
 
-### Sprint 2: Backend PNG Export (Week 1-2) 🔴
+### Sprint 2: Backend PNG Export (Week 1-2) ✅ COMPLETED (2025-10-29)
 
 **Epic: Server-Side PNG Generation**
-- [ ] **US-005: Setup node-canvas Environment** (1h)
-  - [ ] Install node-canvas: `npm install canvas`
-  - [ ] Update Dockerfile with build dependencies
-  - [ ] Test canvas import in backend
-  - [ ] Document system requirements in README
+- [x] **US-005: Setup node-canvas Environment** (1h) ✅ COMPLETED
+  - [x] Install node-canvas: `npm install canvas`
+  - [x] Update Dockerfile with build dependencies (Stage 1: build tools, Stage 2: runtime libs)
+  - [x] Test canvas import in backend
+  - [x] Verified build process with canvas native modules
+  - Commit: 858e4ae
 
-- [ ] **US-006: Port Canvas Renderer to Backend** (5h)
-  - [ ] Create `server/src/utils/canvasRenderer.ts`
-  - [ ] Copy renderGraph function from frontend
-  - [ ] Replace HTMLCanvasElement with node-canvas Canvas
-  - [ ] Test CanvasRenderingContext2D compatibility
-  - [ ] Handle font loading (registerFont for custom fonts)
-  - [ ] Write unit tests for rendering functions
+- [x] **US-006: Port Canvas Renderer to Backend** (3h) ✅ COMPLETED (2h ahead of schedule)
+  - [x] Create `server/src/utils/canvasRenderer.ts`
+  - [x] Copy renderGraph function from frontend
+  - [x] Replace HTMLCanvasElement with node-canvas Canvas
+  - [x] Test CanvasRenderingContext2D compatibility
+  - [x] Return PNG Buffer instead of void
+  - [x] Added formatDateTime helper to backend
+  - [ ] Handle font loading (registerFont for custom fonts) - using built-in Arial
+  - [ ] Write unit tests for rendering functions - DEFERRED
+  - Commit: deb3597
 
-- [ ] **US-007: Implement File Storage Service** (2h)
-  - [ ] Create `server/src/services/storage.service.ts`
-  - [ ] Create exports directory structure
-  - [ ] Implement file save (PNG buffer → file)
-  - [ ] Implement file read (for download)
-  - [ ] Implement file cleanup (old files)
-  - [ ] Add storage path to .env
-  - [ ] Write unit tests
+- [x] **US-007: Implement File Storage Service** (2h) ✅ COMPLETED
+  - [x] Create `server/src/services/storage.service.ts`
+  - [x] Create exports directory structure (automatic initialization)
+  - [x] Implement file save (PNG buffer → file with unique IDs)
+  - [x] Implement file read (with security checks)
+  - [x] Implement file cleanup (cleanupOldFiles method)
+  - [x] Add storage path to .env (STORAGE_PATH, STORAGE_MAX_AGE_HOURS)
+  - [x] Directory traversal prevention (security)
+  - [x] Storage statistics (getStorageInfo)
+  - [ ] Write unit tests - DEFERRED
+  - Commit: 7479c84
 
-- [ ] **US-008: Implement PNG Export Endpoint** (3h)
-  - [ ] Update `graph.controller.ts::exportPNG`
-  - [ ] Validate settings
-  - [ ] Generate graph data
-  - [ ] Create canvas and render
-  - [ ] Convert to PNG buffer
-  - [ ] Save to storage
-  - [ ] Save record to graph_history
-  - [ ] Return PNG stream or file path
-  - [ ] Write integration tests
+- [x] **US-008: Implement PNG Export Endpoint** (3h) ✅ COMPLETED
+  - [x] Update `graph.controller.ts::exportPNG`
+  - [x] Validate settings (test parameters)
+  - [x] Validate export parameters (scale, width, height)
+  - [x] Generate graph data (generatePressureData)
+  - [x] Create canvas and render (renderGraph)
+  - [x] Convert to PNG buffer
+  - [x] Save to storage (storageService)
+  - [x] Return PNG stream with headers (Content-Type, Content-Disposition)
+  - [x] Add storage service initialization in index.ts
+  - [x] Performance metrics (X-Generation-Time-Ms, X-File-Size)
+  - [x] Comprehensive error handling and logging
+  - [ ] Save record to graph_history - DEFERRED (optional)
+  - [ ] Write integration tests - DEFERRED
+  - Commit: 885043c
+
+**Sprint 2 Results:**
+- Estimated: 11 hours
+- Actual: 11 hours (US-006 saved 2h, reallocated to comprehensive features)
+- All core functionality implemented
+- Deferred: Unit tests, integration tests, font customization, graph_history persistence
 
 ### Sprint 3: Backend PDF Export (Week 2) 🔴
 
