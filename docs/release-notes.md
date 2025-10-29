@@ -88,8 +88,16 @@ Minor release adding authentication system and UI enhancements.
   - Loading states with spinner and toast notifications
   - Performance metrics display (file size, generation time)
   - Theme-aware rendering from store
-- Sprint 4 (Next) - Backend PDF Export (6 hours)
-- Sprint 5 - Help page with comprehensive documentation (7 hours)
+- ✅ **Sprint 4 COMPLETED (2025-10-29)** - Backend PDF Export
+  - PDFKit integration for server-side PDF generation
+  - Reuses PNG rendering from Sprint 2 for consistency
+  - Multiple page size support: A4, A3, Letter, Legal
+  - Custom metadata support (title, author, subject, keywords)
+  - Auto-scaling image to fit page with aspect ratio maintenance
+  - Footer with generation timestamp and test number
+  - Complete validation and error handling
+  - Performance metrics in response headers
+- Sprint 5 (Next) - Help page with comprehensive documentation (7 hours)
 - Sprint 6 - History page with graph management (9 hours)
 - Sprint 7 - Frontend improvements (error boundaries, loading states) (10 hours)
 
@@ -137,4 +145,4 @@ For guidelines on reporting issues and suggesting features, see our [GitHub Issu
 
 ---
 
-**Last Updated:** 2025-10-29 - Added v1.1.0 infrastructure modernization release
+**Last Updated:** 2025-10-29 - Sprint 4 (Backend PDF Export) completed

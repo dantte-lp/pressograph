@@ -266,34 +266,74 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - Error handling with graceful degradation
   - Theme-aware rendering (uses current theme from store)
 
-### Sprint 4: Backend PDF Export (Week 2) 🔴
+### Sprint 4: Backend PDF Export (Week 2) ✅ COMPLETED (2025-10-29)
 
 **Epic: Server-Side PDF Generation**
-- [ ] **US-009: Setup PDFKit Environment** (1h)
-  - [ ] Install PDFKit: `npm install pdfkit`
-  - [ ] Install types: `npm install -D @types/pdfkit`
-  - [ ] Test PDF generation (hello world)
-  - [ ] Test PDF stream creation
+- [x] **US-009: Setup PDFKit Environment** (1h) ✅ COMPLETED
+  - [x] Install PDFKit: `npm install pdfkit` (46 packages, 0 vulnerabilities)
+  - [x] Install types: `npm install -D @types/pdfkit`
+  - [x] Tested in Podman backend container
+  - [x] TypeScript compilation successful (0 errors)
+  - Commit: e9cdf8c (package updates)
 
-- [ ] **US-010: Implement PDF Export (PNG Embed Approach)** (4h)
-  - [ ] Update `graph.controller.ts::exportPDF`
-  - [ ] Reuse PNG generation logic
-  - [ ] Create PDF document with PDFKit
-  - [ ] Embed PNG into PDF page
-  - [ ] Set PDF metadata (title, author, subject)
-  - [ ] Set page size (A4 default)
-  - [ ] Convert to buffer
-  - [ ] Save to storage and database
-  - [ ] Write integration tests
+- [x] **US-010: Implement PDF Export (PNG Embed Approach)** (4h) ✅ COMPLETED
+  - [x] Update `graph.controller.ts::exportPDF` (complete implementation, 173 lines)
+  - [x] Reuse PNG generation logic (renderGraph with pngBuffer)
+  - [x] Create PDF document with PDFKit (dynamic import)
+  - [x] Embed PNG into PDF page (auto-scaling, maintains aspect ratio, centered)
+  - [x] Set PDF metadata (title, author, subject, keywords, creator, producer)
+  - [x] Set page size (A4/A3/Letter/Legal support)
+  - [x] Convert to buffer (Promise-based stream handling)
+  - [x] Save to storage with storageService
+  - [x] Add footer with generation timestamp and test number
+  - [x] Performance metrics (X-Generation-Time-Ms, X-File-Size headers)
+  - [x] Comprehensive logging (start, complete, errors)
+  - [ ] Save to database - DEFERRED (optional)
+  - [ ] Write integration tests - DEFERRED
+  - Commit: e9cdf8c
 
-- [ ] **US-011: Add PDF Metadata Support** (1h)
-  - [ ] Accept metadata in request body
-  - [ ] Add title, author, subject, keywords
-  - [ ] Add creation date
-  - [ ] Add test number in metadata
-  - [ ] Add company/project name support
+- [x] **US-011: Add PDF Metadata Support** (1h) ✅ COMPLETED
+  - [x] Accept metadata in request body (metadata object)
+  - [x] Add title (default: "Pressure Test Graph - {testNumber}")
+  - [x] Add author (default: "Pressograph")
+  - [x] Add subject (default: "Pressure Test {testNumber} - {graphTitle}")
+  - [x] Add keywords (default: "pressure test, {testNumber}, graph")
+  - [x] Add creation date (automatic)
+  - [x] Add test number in metadata and footer
+  - [x] Creator/Producer information (Pressograph branding)
+  - [ ] Company/project name support - DEFERRED (future enhancement)
+  - Commit: e9cdf8c
 
-### Sprint 4: Help Page (Week 2) 🟡
+**Sprint 4 Results:**
+- Estimated: 6 hours
+- Actual: 6 hours
+- All core functionality implemented
+- Deferred: Database persistence, integration tests, custom company branding
+
+**API Endpoint:**
+```
+POST /api/v1/graph/export/pdf
+
+Request Body:
+{
+  "settings": { /* TestSettings */ },
+  "theme": "light" | "dark",
+  "scale": 1-4,
+  "width": 400-4000,
+  "height": 300-3000,
+  "pageSize": "A4" | "A3" | "Letter" | "Legal",
+  "metadata": {
+    "title": "Custom Title",
+    "author": "Author Name",
+    "subject": "Subject",
+    "keywords": "keyword1, keyword2"
+  }
+}
+
+Response: PDF file download
+```
+
+### Sprint 5: Help Page (Week 2) 🟡
 
 **Epic: User Documentation Interface**
 - [ ] **US-015: Setup Help Page Structure** (2h)
@@ -318,7 +358,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Add "Back to Top" button
   - [ ] Add breadcrumbs
 
-### Sprint 5: History Page (Week 3) 🟡
+### Sprint 6: History Page (Week 3) 🟡
 
 **Epic: Graph History Management**
 - [ ] **US-015: Create History Page UI** (4h)
@@ -343,7 +383,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Show generation time stats
   - [ ] Add charts (HeroUI + recharts)
 
-### Sprint 6: Frontend Improvements (Week 3-4) 🟡
+### Sprint 7: Frontend Improvements (Week 3-4) 🟡
 
 **Epic: UI/UX Enhancements**
 - [ ] **US-018: Add Error Boundaries** (2h)
@@ -392,7 +432,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 
 ## Phase 3: User Management & Admin Dashboard 🟡
 
-### Sprint 7: Admin Dashboard Backend (Week 4) 🟡
+### Sprint 8: Admin Dashboard Backend (Week 4) 🟡
 
 **Epic: Admin API Endpoints**
 - [ ] **US-023: Implement Dashboard Statistics Endpoint** (3h)
@@ -440,7 +480,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Add pagination
   - [ ] Write integration tests
 
-### Sprint 8: Admin Dashboard Frontend (Week 5) 🟡
+### Sprint 9: Admin Dashboard Frontend (Week 5) 🟡
 
 **Epic: Admin UI**
 - [ ] **US-028: Create Admin Dashboard Layout** (3h)
@@ -491,7 +531,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Add log search
   - [ ] Add system actions (clear cache, etc.)
 
-### Sprint 9: User Profile (Week 5) 🟡
+### Sprint 10: User Profile (Week 5) 🟡
 
 **Epic: User Profile Management**
 - [ ] **US-034: Create Profile Backend Endpoints** (3h)
@@ -781,5 +821,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 - Keep bundle size optimized
 
 ## Last Updated
+
+2025-10-29 - Sprint 4 (Backend PDF Export) completed
 
 2025-10-29 - Sprint 3 (Frontend Backend Integration) completed
