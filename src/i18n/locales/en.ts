@@ -332,6 +332,31 @@ export const en = {
     formHasErrors: 'Please fix validation errors before submitting',
     mustBeGreaterThanWorking: 'Max pressure must be greater than working pressure',
   },
+
+  // Accessibility
+  accessibility: {
+    skipToContent: 'Skip to main content',
+    mainNavigation: 'Main navigation',
+    applicationLogo: 'Pressograph application logo',
+    searchPlaceholder: 'Search history',
+    toggleTheme: 'Toggle dark/light theme',
+    historyPage: 'Test history page',
+    historyTable: 'Test history table',
+    searchHistory: 'Search test history',
+    testRow: 'Test result row',
+    previewGraph: 'Preview graph for test #{{number}}',
+    downloadGraph: 'Download graph for test #{{number}}',
+    deleteGraph: 'Delete graph for test #{{number}}',
+    shareGraph: 'Share graph for test #{{number}}',
+    helpPage: 'Help and documentation page',
+    helpNavigation: 'Help sections navigation',
+    searchHelp: 'Search help documentation',
+    keyboardShortcuts: 'Keyboard shortcuts',
+    ctrlKSearch: 'Press Ctrl+K to search',
+    ctrlHHelp: 'Press Ctrl+H for help',
+    escClose: 'Press Esc to close',
+    backToTop: 'Back to top',
+  },
 };
 
 export type TranslationKeys = typeof en;

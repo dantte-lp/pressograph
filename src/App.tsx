@@ -12,6 +12,7 @@ import { useLanguage } from "./i18n";
 import { NavBar } from "./components/layout/NavBar";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ErrorBoundary } from "./components/errors";
+import { SkipToContent } from "./components/accessibility";
 import { HomePage } from "./pages/Home";
 import { LoginPage } from "./pages/Login";
 import { SetupPage } from "./pages/Setup";
@@ -92,6 +93,7 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <InitializationGuard>
+          <SkipToContent />
           <div className="min-h-screen bg-background">
             <Toaster position="top-right" toastOptions={toastOptions} />
 
@@ -127,7 +129,8 @@ function App() {
                   <ProtectedRoute>
                     <NavBar />
 
-                    <Routes>
+                    <main id="main-content" tabIndex={-1} className="outline-none">
+                      <Routes>
                       <Route
                         path="/"
                         element={
@@ -169,6 +172,7 @@ function App() {
                         }
                       />
                     </Routes>
+                    </main>
 
                     <footer className="backdrop-blur-sm bg-content1 border-t border-divider mt-16">
                       <div className="container mx-auto px-4 py-8 text-center">

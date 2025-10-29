@@ -2,7 +2,7 @@
 // Help Page - Comprehensive Documentation and Support
 // ═══════════════════════════════════════════════════════════════════
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Card,
   CardBody,
@@ -16,6 +16,7 @@ import {
 import { useLanguage } from '../i18n';
 import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from '../store/useThemeStore';
+import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 import toast from 'react-hot-toast';
 
 interface Section {
@@ -30,11 +31,56 @@ export const Help: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState<string>('getting-started');
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set(['getting-started']));
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   // Handle search input change
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value.toLowerCase());
   }, []);
+
+  // Navigation items for keyboard shortcuts
+  const navigationOrder = useMemo(() => [
+    'getting-started',
+    'test-configuration',
+    'graph-customization',
+    'history-management',
+    'export-options',
+    'faq',
+    'keyboard-shortcuts',
+  ], []);
+
+  // Navigate to next section
+  const navigateToNextSection = useCallback(() => {
+    const currentIndex = navigationOrder.indexOf(activeSection);
+    if (currentIndex < navigationOrder.length - 1) {
+      const nextSection = navigationOrder[currentIndex + 1];
+      setActiveSection(nextSection);
+      sectionRefs.current[nextSection]?.focus();
+    }
+  }, [activeSection, navigationOrder]);
+
+  // Navigate to previous section
+  const navigateToPreviousSection = useCallback(() => {
+    const currentIndex = navigationOrder.indexOf(activeSection);
+    if (currentIndex > 0) {
+      const prevSection = navigationOrder[currentIndex - 1];
+      setActiveSection(prevSection);
+      sectionRefs.current[prevSection]?.focus();
+    }
+  }, [activeSection, navigationOrder]);
+
+  // Keyboard shortcuts for section navigation
+  useKeyboardShortcut({
+    key: 'ArrowDown',
+    ctrl: true,
+    callback: navigateToNextSection,
+  });
+
+  useKeyboardShortcut({
+    key: 'ArrowUp',
+    ctrl: true,
+    callback: navigateToPreviousSection,
+  });
 
   // Copy to clipboard function
   const copyToClipboard = useCallback((text: string) => {
@@ -453,7 +499,7 @@ export const Help: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8" role="main" aria-label={t.accessibility?.helpPage || 'Help and documentation page'}>
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -473,6 +519,7 @@ export const Help: React.FC = () => {
               input: 'text-base',
               inputWrapper: 'shadow-sm',
             }}
+            aria-label={t.accessibility?.searchHelp || 'Search help documentation'}
           />
         </div>
 
@@ -484,7 +531,7 @@ export const Help: React.FC = () => {
                 <h2 className="text-lg font-semibold">{t.helpSections}</h2>
               </CardHeader>
               <CardBody className="p-2">
-                <nav className="space-y-1">
+                <nav className="space-y-1" aria-label={t.accessibility?.helpNavigation || 'Help sections navigation'}>
                   {navigationItems.map((item) => {
                     const title = t[item.titleKey as keyof typeof t];
                     return (
@@ -494,8 +541,9 @@ export const Help: React.FC = () => {
                         color={activeSection === item.id ? 'primary' : 'default'}
                         className="w-full justify-start"
                         onPress={() => setActiveSection(item.id)}
+                        aria-current={activeSection === item.id ? 'page' : undefined}
                       >
-                        <span className="mr-2">{item.icon}</span>
+                        <span className="mr-2" aria-hidden="true">{item.icon}</span>
                         {typeof title === 'string' ? title : ''}
                       </Button>
                     );
@@ -512,16 +560,27 @@ export const Help: React.FC = () => {
                 {filteredSections.map((section) => {
                   const title = t[section.titleKey as keyof typeof t];
                   return (
-                    <Card key={section.id} id={`section-${section.id}`} className="shadow-lg">
-                      <CardHeader>
-                        <h2 className="text-2xl font-bold">
-                          {typeof title === 'string' ? title : ''}
-                        </h2>
-                      </CardHeader>
-                      <CardBody>
-                        {section.content}
-                      </CardBody>
-                    </Card>
+                    <section
+                      key={section.id}
+                      id={section.id}
+                      ref={(el) => {
+                        sectionRefs.current[section.id] = el;
+                      }}
+                      aria-labelledby={`heading-${section.id}`}
+                      tabIndex={-1}
+                      className="outline-none"
+                    >
+                      <Card className="shadow-lg">
+                        <CardHeader>
+                          <h2 id={`heading-${section.id}`} className="text-2xl font-bold">
+                            {typeof title === 'string' ? title : ''}
+                          </h2>
+                        </CardHeader>
+                        <CardBody>
+                          {section.content}
+                        </CardBody>
+                      </Card>
+                    </section>
                   );
                 })}
               </div>
@@ -543,6 +602,7 @@ export const Help: React.FC = () => {
           color="primary"
           isIconOnly
           onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={t.accessibility?.backToTop || 'Back to top'}
         >
           ↑
         </Button>

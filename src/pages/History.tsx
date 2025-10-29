@@ -30,6 +30,7 @@ import {
 import { TableSkeleton } from "../components/skeletons";
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n';
+import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 import {
   getHistory,
   deleteGraph,
@@ -73,6 +74,23 @@ export const History: React.FC = () => {
   // Loading states for async actions
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [sharingId, setSharingId] = useState<number | null>(null);
+
+  // Keyboard shortcuts
+  // Esc to close modals
+  useKeyboardShortcut({
+    key: 'Escape',
+    callback: () => {
+      if (deleteModalOpen && !isDeleting) {
+        setDeleteModalOpen(false);
+        setGraphToDelete(null);
+      }
+      if (previewModalOpen) {
+        setPreviewModalOpen(false);
+        setPreviewGraph(null);
+      }
+    },
+    enabled: deleteModalOpen || previewModalOpen,
+  });
 
   /**
    * Fetch history data from backend
@@ -302,7 +320,7 @@ export const History: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8" role="main" aria-label={t.accessibility?.historyPage || 'Test history page'}>
       <div className="container mx-auto px-4 max-w-7xl">
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col gap-4 pb-4">
@@ -324,6 +342,7 @@ export const History: React.FC = () => {
                 onValueChange={setSearch}
                 className="flex-1"
                 isClearable
+                aria-label={t.accessibility?.searchHistory || 'Search test history'}
               />
 
               {/* Format Filter */}
@@ -401,7 +420,7 @@ export const History: React.FC = () => {
               <>
                 {/* Table */}
                 <Table
-                  aria-label={t.historyTitle}
+                  aria-label={t.accessibility?.historyTable || 'Test history table'}
                   className="mb-4"
                 >
                   <TableHeader>
@@ -415,7 +434,7 @@ export const History: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {graphs.map((graph) => (
-                      <TableRow key={graph.id}>
+                      <TableRow key={graph.id} aria-label={`${t.accessibility?.testRow || 'Test result row'} ${graph.test_number}`}>
                         <TableCell>
                           <span className="font-mono font-semibold">
                             {graph.test_number}
@@ -449,6 +468,7 @@ export const History: React.FC = () => {
                               color="primary"
                               variant="light"
                               onPress={() => handleView(graph)}
+                              aria-label={t.accessibility?.previewGraph?.replace('{{number}}', graph.test_number) || `Preview graph for test ${graph.test_number}`}
                             >
                               {t.historyActions.view}
                             </Button>
@@ -459,6 +479,7 @@ export const History: React.FC = () => {
                               onPress={() => handleDownload(graph.id)}
                               isDisabled={!graph.file_path}
                               isLoading={downloadingId === graph.id}
+                              aria-label={t.accessibility?.downloadGraph?.replace('{{number}}', graph.test_number) || `Download graph for test ${graph.test_number}`}
                             >
                               {t.historyActions.download}
                             </Button>
@@ -468,6 +489,7 @@ export const History: React.FC = () => {
                               variant="light"
                               onPress={() => handleShare(graph.id)}
                               isLoading={sharingId === graph.id}
+                              aria-label={t.accessibility?.shareGraph?.replace('{{number}}', graph.test_number) || `Share graph for test ${graph.test_number}`}
                             >
                               {t.historyActions.share}
                             </Button>
@@ -476,6 +498,7 @@ export const History: React.FC = () => {
                               color="danger"
                               variant="light"
                               onPress={() => handleDeleteClick(graph.id)}
+                              aria-label={t.accessibility?.deleteGraph?.replace('{{number}}', graph.test_number) || `Delete graph for test ${graph.test_number}`}
                             >
                               {t.historyActions.delete}
                             </Button>
@@ -513,9 +536,10 @@ export const History: React.FC = () => {
             setGraphToDelete(null);
           }
         }}
+        aria-labelledby="delete-modal-title"
       >
         <ModalContent>
-          <ModalHeader>{t.historyDeleteModal.title}</ModalHeader>
+          <ModalHeader id="delete-modal-title">{t.historyDeleteModal.title}</ModalHeader>
           <ModalBody>
             <p>{t.historyDeleteModal.message}</p>
           </ModalBody>
@@ -550,9 +574,10 @@ export const History: React.FC = () => {
           setPreviewGraph(null);
         }}
         size="2xl"
+        aria-labelledby="preview-modal-title"
       >
         <ModalContent>
-          <ModalHeader>
+          <ModalHeader id="preview-modal-title">
             {t.historyActions.view}: {previewGraph?.test_number}
           </ModalHeader>
           <ModalBody>
