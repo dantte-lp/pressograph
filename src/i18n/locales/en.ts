@@ -250,6 +250,65 @@ export const en = {
   helpKeyboardToggleTheme: 'Toggle dark/light theme',
   helpKeyboardHelp: 'Open help page',
   helpKeyboardNote: 'Note: On macOS, use Cmd instead of Ctrl for shortcuts.',
+
+  // History Page
+  historyTitle: 'Graph History',
+  historySubtitle: 'View and manage your pressure test graphs',
+  historySearchPlaceholder: 'Search by test number...',
+  historyFilters: {
+    dateRange: 'Date Range',
+    from: 'From',
+    to: 'To',
+    format: 'Export Format',
+    allFormats: 'All Formats',
+    sortBy: 'Sort By',
+    newestFirst: 'Newest First',
+    oldestFirst: 'Oldest First',
+    byTestNumber: 'By Test Number',
+  },
+  historyTable: {
+    testNumber: 'Test Number',
+    title: 'Graph Title',
+    format: 'Format',
+    fileSize: 'File Size',
+    generationTime: 'Generation Time',
+    createdAt: 'Created',
+    status: 'Status',
+    actions: 'Actions',
+  },
+  historyActions: {
+    view: 'View',
+    download: 'Download',
+    share: 'Share',
+    delete: 'Delete',
+  },
+  historyEmpty: {
+    title: 'No history yet',
+    description: 'Generate your first graph to see it here',
+    button: 'Create Graph',
+  },
+  historyDeleteModal: {
+    title: 'Delete Graph',
+    message: 'Are you sure you want to delete this graph? This action cannot be undone.',
+    cancel: 'Cancel',
+    confirm: 'Delete',
+  },
+  historyToast: {
+    deleteSuccess: 'Graph deleted successfully',
+    deleteError: 'Failed to delete graph',
+    downloadError: 'Failed to download graph',
+    shareSuccess: 'Share link copied to clipboard!',
+    shareError: 'Failed to create share link',
+  },
+  historyStatus: {
+    success: 'Success',
+    failed: 'Failed',
+    pending: 'Pending',
+  },
+  historyJustNow: 'just now',
+  historyLoading: 'Loading history...',
+  historyNoResults: 'No graphs found matching your filters',
+  historyShowingResults: 'Showing {{from}} to {{to}} of {{total}} graphs',
 };
 
 export type TranslationKeys = typeof en;

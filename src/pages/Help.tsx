@@ -424,8 +424,11 @@ export const Help: React.FC = () => {
     if (!searchQuery) return sections;
 
     return sections.filter(section => {
-      const title = t[section.titleKey as keyof typeof t] || '';
-      return title.toLowerCase().includes(searchQuery);
+      const title = t[section.titleKey as keyof typeof t];
+      if (typeof title === 'string') {
+        return title.toLowerCase().includes(searchQuery);
+      }
+      return false;
     });
   }, [sections, searchQuery, t]);
 
@@ -482,18 +485,21 @@ export const Help: React.FC = () => {
               </CardHeader>
               <CardBody className="p-2">
                 <nav className="space-y-1">
-                  {navigationItems.map((item) => (
-                    <Button
-                      key={item.id}
-                      variant={activeSection === item.id ? 'flat' : 'light'}
-                      color={activeSection === item.id ? 'primary' : 'default'}
-                      className="w-full justify-start"
-                      onPress={() => setActiveSection(item.id)}
-                    >
-                      <span className="mr-2">{item.icon}</span>
-                      {t[item.titleKey as keyof typeof t]}
-                    </Button>
-                  ))}
+                  {navigationItems.map((item) => {
+                    const title = t[item.titleKey as keyof typeof t];
+                    return (
+                      <Button
+                        key={item.id}
+                        variant={activeSection === item.id ? 'flat' : 'light'}
+                        color={activeSection === item.id ? 'primary' : 'default'}
+                        className="w-full justify-start"
+                        onPress={() => setActiveSection(item.id)}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {typeof title === 'string' ? title : ''}
+                      </Button>
+                    );
+                  })}
                 </nav>
               </CardBody>
             </Card>
@@ -503,18 +509,21 @@ export const Help: React.FC = () => {
           <main className="lg:col-span-9">
             {filteredSections.length > 0 ? (
               <div className="space-y-6">
-                {filteredSections.map((section) => (
-                  <Card key={section.id} id={`section-${section.id}`} className="shadow-lg">
-                    <CardHeader>
-                      <h2 className="text-2xl font-bold">
-                        {t[section.titleKey as keyof typeof t]}
-                      </h2>
-                    </CardHeader>
-                    <CardBody>
-                      {section.content}
-                    </CardBody>
-                  </Card>
-                ))}
+                {filteredSections.map((section) => {
+                  const title = t[section.titleKey as keyof typeof t];
+                  return (
+                    <Card key={section.id} id={`section-${section.id}`} className="shadow-lg">
+                      <CardHeader>
+                        <h2 className="text-2xl font-bold">
+                          {typeof title === 'string' ? title : ''}
+                        </h2>
+                      </CardHeader>
+                      <CardBody>
+                        {section.content}
+                      </CardBody>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <Card className="shadow-lg">
