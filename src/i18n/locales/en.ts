@@ -318,6 +318,20 @@ export const en = {
   errorBoundaryReset: "Try Again",
   errorBoundaryGoBack: "Go Back",
   errorBoundaryReportIssue: "Report Issue",
+
+  // Validation
+  validation: {
+    required: 'This field is required',
+    durationRange: 'Duration must be between 0.01 and 1000 hours',
+    workingPressureRange: 'Working pressure must be between 0.01 and 100 MPa',
+    maxPressureRange: 'Max pressure must be between 0.01 and 100 MPa',
+    pressureDurationRange: 'Duration must be between 1 and 10000 minutes',
+    temperatureRange: 'Temperature must be between -273 and 1000 °C',
+    titleMaxLength: 'Title cannot exceed 100 characters',
+    invalidNumber: 'Please enter a valid number',
+    formHasErrors: 'Please fix validation errors before submitting',
+    mustBeGreaterThanWorking: 'Max pressure must be greater than working pressure',
+  },
 };
 
 export type TranslationKeys = typeof en;

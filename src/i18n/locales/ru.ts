@@ -320,4 +320,18 @@ export const ru: TranslationKeys = {
   errorBoundaryReset: "Попробовать снова",
   errorBoundaryGoBack: "Назад",
   errorBoundaryReportIssue: "Сообщить о проблеме",
+
+  // Validation
+  validation: {
+    required: 'Это поле обязательно',
+    durationRange: 'Длительность должна быть от 0.01 до 1000 часов',
+    workingPressureRange: 'Рабочее давление должно быть от 0.01 до 100 МПа',
+    maxPressureRange: 'Макс. давление должно быть от 0.01 до 100 МПа',
+    pressureDurationRange: 'Длительность должна быть от 1 до 10000 минут',
+    temperatureRange: 'Температура должна быть от -273 до 1000 °C',
+    titleMaxLength: 'Название не может превышать 100 символов',
+    invalidNumber: 'Пожалуйста, введите корректное число',
+    formHasErrors: 'Исправьте ошибки перед отправкой формы',
+    mustBeGreaterThanWorking: 'Макс. давление должно быть больше рабочего',
+  },
 };
