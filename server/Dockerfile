@@ -7,10 +7,23 @@ FROM node:22-trixie-slim AS builder
 
 WORKDIR /app
 
+# Install canvas build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        libcairo2-dev \
+        libpango1.0-dev \
+        libjpeg-dev \
+        libgif-dev \
+        librsvg2-dev \
+        pkg-config \
+        python3 && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies (including canvas native modules)
 RUN npm ci --only=production && \
     npm cache clean --force
 
@@ -25,9 +38,16 @@ FROM node:22-trixie-slim
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
+# Install runtime dependencies for canvas and dumb-init
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends dumb-init && \
+    apt-get install -y --no-install-recommends \
+        dumb-init \
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libjpeg62-turbo \
+        libgif7 \
+        librsvg2-2 && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
