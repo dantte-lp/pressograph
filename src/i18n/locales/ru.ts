@@ -311,4 +311,13 @@ export const ru: TranslationKeys = {
   historyLoading: 'Загрузка истории...',
   historyNoResults: 'Графики не найдены по вашим фильтрам',
   historyShowingResults: 'Показано {{from}} до {{to}} из {{total}} графиков',
+
+  // Error Boundary
+  errorBoundaryTitle: "Что-то пошло не так",
+  errorBoundaryDescription: "Произошла непредвиденная ошибка. Приносим извинения за неудобства.",
+  errorBoundaryUnknownError: "Произошла неизвестная ошибка",
+  errorBoundaryHelpText: "Если проблема сохраняется, попробуйте обновить страницу или обратитесь в службу поддержки.",
+  errorBoundaryReset: "Попробовать снова",
+  errorBoundaryGoBack: "Назад",
+  errorBoundaryReportIssue: "Сообщить о проблеме",
 };

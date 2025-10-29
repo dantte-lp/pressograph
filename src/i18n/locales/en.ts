@@ -309,6 +309,15 @@ export const en = {
   historyLoading: 'Loading history...',
   historyNoResults: 'No graphs found matching your filters',
   historyShowingResults: 'Showing {{from}} to {{to}} of {{total}} graphs',
+
+  // Error Boundary
+  errorBoundaryTitle: "Something Went Wrong",
+  errorBoundaryDescription: "An unexpected error occurred. We apologize for the inconvenience.",
+  errorBoundaryUnknownError: "Unknown error occurred",
+  errorBoundaryHelpText: "If this problem persists, please try refreshing the page or contact support.",
+  errorBoundaryReset: "Try Again",
+  errorBoundaryGoBack: "Go Back",
+  errorBoundaryReportIssue: "Report Issue",
 };
 
 export type TranslationKeys = typeof en;

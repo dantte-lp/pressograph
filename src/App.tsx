@@ -2,22 +2,23 @@
 // Main Application Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { useShallow } from 'zustand/react/shallow';
-import { useThemeStore } from './store/useThemeStore';
-import { useInitializationStore } from './store/useInitializationStore';
-import { useLanguage } from './i18n';
-import { NavBar } from './components/layout/NavBar';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { HomePage } from './pages/Home';
-import { LoginPage } from './pages/Login';
-import { SetupPage } from './pages/Setup';
-import { History } from './pages/History';
-import { Admin } from './pages/Admin';
-import { Help } from './pages/Help';
-import { Profile } from './pages/Profile';
+import { useEffect, useMemo } from "react";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { useShallow } from "zustand/react/shallow";
+import { useThemeStore } from "./store/useThemeStore";
+import { useInitializationStore } from "./store/useInitializationStore";
+import { useLanguage } from "./i18n";
+import { NavBar } from "./components/layout/NavBar";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ErrorBoundary } from "./components/errors";
+import { HomePage } from "./pages/Home";
+import { LoginPage } from "./pages/Login";
+import { SetupPage } from "./pages/Setup";
+import { History } from "./pages/History";
+import { Admin } from "./pages/Admin";
+import { Help } from "./pages/Help";
+import { Profile } from "./pages/Profile";
 
 // Initialization Guard Component
 function InitializationGuard({ children }: { children: React.ReactNode }) {
@@ -26,18 +27,15 @@ function InitializationGuard({ children }: { children: React.ReactNode }) {
   const { isInitialized, checkInitialization } = useInitializationStore();
 
   useEffect(() => {
-    // Check initialization status on mount
     checkInitialization();
   }, [checkInitialization]);
 
   useEffect(() => {
-    // Redirect to setup if not initialized (except if already on setup or share page)
-    if (isInitialized === false && !location.pathname.startsWith('/setup') && !location.pathname.startsWith('/share/')) {
-      navigate('/setup', { replace: true });
+    if (isInitialized === false && !location.pathname.startsWith("/setup") && !location.pathname.startsWith("/share/")) {
+      navigate("/setup", { replace: true });
     }
   }, [isInitialized, navigate, location.pathname]);
 
-  // Show loading state while checking
   if (isInitialized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -53,42 +51,37 @@ function InitializationGuard({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
-  // Only re-render when theme value actually changes
   const theme = useThemeStore(useShallow((state) => state.theme));
   const { t } = useLanguage();
 
-  // Apply theme to document
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      root.classList.remove('dark');
+      root.classList.remove("dark");
     }
   }, [theme]);
 
-  // PERFORMANCE FIX: Memoize Toaster options to prevent recreation on every render
-  // Only recreate when theme changes
   const toastOptions = useMemo(
     () => ({
       duration: 4000,
       style: {
-        background: theme === 'dark' ? '#1f2937' : '#fff',
-        color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
-        border: `2px solid ${theme === 'dark' ? '#374151' : '#d1d5db'}`,
-        boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+        background: theme === "dark" ? "#1f2937" : "#fff",
+        color: theme === "dark" ? "#f3f4f6" : "#1f2937",
+        border: `2px solid ${theme === "dark" ? "#374151" : "#d1d5db"}`,
+        boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
       },
       success: {
         iconTheme: {
-          primary: '#065f46',
-          secondary: '#fff',
+          primary: "#065f46",
+          secondary: "#fff",
         },
       },
       error: {
         iconTheme: {
-          primary: '#991b1b',
-          secondary: '#fff',
+          primary: "#991b1b",
+          secondary: "#fff",
         },
       },
     }),
@@ -96,47 +89,100 @@ function App() {
   );
 
   return (
-    <BrowserRouter>
-      <InitializationGuard>
-        <div className="min-h-screen bg-background">
-          {/* Toast Notifications */}
-          <Toaster position="top-right" toastOptions={toastOptions} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <InitializationGuard>
+          <div className="min-h-screen bg-background">
+            <Toaster position="top-right" toastOptions={toastOptions} />
 
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/setup" element={<SetupPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/share/:token" element={<div>Public Share Link (TODO)</div>} />
+            <Routes>
+              <Route
+                path="/setup"
+                element={
+                  <ErrorBoundary>
+                    <SetupPage />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/login"
+                element={
+                  <ErrorBoundary>
+                    <LoginPage />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/share/:token"
+                element={
+                  <ErrorBoundary>
+                    <div>Public Share Link (TODO)</div>
+                  </ErrorBoundary>
+                }
+              />
 
-            {/* Protected Routes */}
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  {/* Navigation Bar */}
-                  <NavBar />
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <NavBar />
 
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/history" element={<History />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/help" element={<Help />} />
-                    <Route path="/profile" element={<Profile />} />
-                  </Routes>
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={
+                          <ErrorBoundary>
+                            <HomePage />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="/history"
+                        element={
+                          <ErrorBoundary>
+                            <History />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="/admin"
+                        element={
+                          <ErrorBoundary>
+                            <Admin />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="/help"
+                        element={
+                          <ErrorBoundary>
+                            <Help />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="/profile"
+                        element={
+                          <ErrorBoundary>
+                            <Profile />
+                          </ErrorBoundary>
+                        }
+                      />
+                    </Routes>
 
-                  {/* Footer */}
-                  <footer className="backdrop-blur-sm bg-content1 border-t border-divider mt-16">
-                    <div className="container mx-auto px-4 py-8 text-center">
-                      <p className="text-sm font-medium text-default-500">{t.footerText}</p>
-                    </div>
-                  </footer>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
-      </InitializationGuard>
-    </BrowserRouter>
+                    <footer className="backdrop-blur-sm bg-content1 border-t border-divider mt-16">
+                      <div className="container mx-auto px-4 py-8 text-center">
+                        <p className="text-sm font-medium text-default-500">{t.footerText}</p>
+                      </div>
+                    </footer>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </div>
+        </InitializationGuard>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
