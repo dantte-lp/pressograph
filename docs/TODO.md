@@ -358,7 +358,7 @@ Response: PDF file download
   - [ ] Add "Back to Top" button
   - [ ] Add breadcrumbs
 
-### Sprint 6: History Page (Week 3) 🟡
+### Sprint 6: History Page (Week 3) ✅ COMPLETED (2025-10-29)
 
 **Epic: Graph History Management**
 - [ ] **US-015: Create History Page UI** (4h)
@@ -383,7 +383,7 @@ Response: PDF file download
   - [ ] Show generation time stats
   - [ ] Add charts (HeroUI + recharts)
 
-### Sprint 7: Frontend Improvements (Week 3-4) 🟡
+### Sprint 7: Frontend Improvements (Week 3-4) 🔵 NEXT
 
 **Epic: UI/UX Enhancements**
 - [ ] **US-018: Add Error Boundaries** (2h)

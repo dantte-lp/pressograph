@@ -106,8 +106,16 @@ Minor release adding authentication system and UI enhancements.
   - 100+ translation keys (English + Russian)
   - Theme-aware design with performance optimization
   - Getting Started, Test Configuration, Graph Interpretation, Export Options, FAQ, Keyboard Shortcuts
-- Sprint 6 (Next) - History page with graph management (9 hours)
-- Sprint 7 - Frontend improvements (error boundaries, loading states) (10 hours)
+- ✅ **Sprint 6 COMPLETED (2025-10-29)** - History Page Implementation
+  - Backend API endpoints: getHistory (search, filter, sort), deleteGraph, downloadGraph
+  - Complete History page with table, search, and pagination (665 lines)
+  - Interactive modals: preview graph details, delete confirmation, share link generation
+  - Download functionality for PNG, PDF, JSON formats
+  - Debounced search (300ms), format filtering, sorting options
+  - 100+ translation keys (English + Russian)
+  - Type-safe API integration with comprehensive error handling
+  - Toast notifications for all user actions
+- Sprint 7 (Next) - Frontend improvements (error boundaries, loading states) (10 hours)
 
 ### Version 1.3.0 (Planned)
 
@@ -153,4 +161,4 @@ For guidelines on reporting issues and suggesting features, see our [GitHub Issu
 
 ---
 
-**Last Updated:** 2025-10-29 - Sprint 5 (Help Page Implementation) completed
+**Last Updated:** 2025-10-29 - Sprint 6 (History Page Implementation) completed
