@@ -147,11 +147,176 @@ export const exportPNG = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+/**
+ * Export pressure test graph as PDF document
+ * POST /api/graph/export/pdf
+ *
+ * Generates a PDF document with embedded PNG image of the graph.
+ * Supports custom metadata and page sizing.
+ *
+ * @param req.body.settings - TestSettings object
+ * @param req.body.theme - Theme ('light' or 'dark', default: 'light')
+ * @param req.body.scale - Rendering scale (1-4, default: 2)
+ * @param req.body.width - Canvas width in pixels (default: 1200)
+ * @param req.body.height - Canvas height in pixels (default: 800)
+ * @param req.body.pageSize - PDF page size ('A4', 'A3', 'Letter', default: 'A4')
+ * @param req.body.metadata - PDF metadata (title, author, subject, keywords)
+ * @returns PDF file download
+ * @throws AppError 400 if validation fails
+ * @throws AppError 500 for rendering or storage errors
+ */
 export const exportPDF = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement PDF export using PDFKit
-    throw new AppError('PDF export not yet implemented', 501);
+    const startTime = Date.now();
+    const {
+      settings,
+      theme = 'light',
+      scale = 2,
+      width = 1200,
+      height = 800,
+      pageSize = 'A4',
+      metadata = {}
+    } = req.body;
+
+    // Validate settings
+    const validation = validateTestSettings(settings);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        errors: validation.errors,
+      });
+    }
+
+    // Validate export parameters
+    if (scale < 1 || scale > 4) {
+      throw new AppError('Scale must be between 1 and 4', 400);
+    }
+    if (width < 400 || width > 4000) {
+      throw new AppError('Width must be between 400 and 4000 pixels', 400);
+    }
+    if (height < 300 || height > 3000) {
+      throw new AppError('Height must be between 300 and 3000 pixels', 400);
+    }
+
+    const validPageSizes = ['A4', 'A3', 'Letter', 'Legal'];
+    if (!validPageSizes.includes(pageSize)) {
+      throw new AppError(`Invalid page size. Must be one of: ${validPageSizes.join(', ')}`, 400);
+    }
+
+    logger.info('PDF export started', {
+      testNumber: settings.testNumber,
+      theme,
+      scale,
+      dimensions: `${width}x${height}`,
+      pageSize,
+    });
+
+    // Generate graph data
+    const graphData = generatePressureData(settings);
+
+    // Render graph to PNG buffer
+    const { renderGraph } = await import('../utils/canvasRenderer');
+    const pngBuffer = renderGraph(graphData, settings, {
+      width,
+      height,
+      scale,
+      theme: theme as 'light' | 'dark',
+    });
+
+    // Create PDF document
+    const PDFDocument = (await import('pdfkit')).default;
+    const doc = new PDFDocument({
+      size: pageSize,
+      margin: 50,
+      info: {
+        Title: metadata.title || `Pressure Test Graph - ${settings.testNumber}`,
+        Author: metadata.author || 'Pressograph',
+        Subject: metadata.subject || `Pressure Test ${settings.testNumber} - ${settings.graphTitle}`,
+        Keywords: metadata.keywords || `pressure test, ${settings.testNumber}, graph`,
+        Creator: 'Pressograph - Pressure Test Visualizer',
+        Producer: 'Pressograph PDF Export',
+        CreationDate: new Date(),
+      },
+    });
+
+    // Collect PDF buffer
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+
+    const pdfPromise = new Promise<Buffer>((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+    });
+
+    // Get page dimensions
+    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const pageHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom;
+
+    // Calculate image dimensions to fit page while maintaining aspect ratio
+    const imageAspectRatio = width / height;
+    let imageWidth = pageWidth;
+    let imageHeight = pageWidth / imageAspectRatio;
+
+    if (imageHeight > pageHeight) {
+      imageHeight = pageHeight;
+      imageWidth = pageHeight * imageAspectRatio;
+    }
+
+    // Center image on page
+    const x = doc.page.margins.left + (pageWidth - imageWidth) / 2;
+    const y = doc.page.margins.top + (pageHeight - imageHeight) / 2;
+
+    // Embed PNG image
+    doc.image(pngBuffer, x, y, {
+      width: imageWidth,
+      height: imageHeight,
+    });
+
+    // Add footer with metadata
+    doc.fontSize(8).fillColor('#666666');
+    const footerY = doc.page.height - 30;
+    doc.text(
+      `Generated: ${new Date().toLocaleString('ru-RU')} | Test: ${settings.testNumber}`,
+      doc.page.margins.left,
+      footerY,
+      { align: 'center', width: pageWidth }
+    );
+
+    // Finalize PDF
+    doc.end();
+
+    // Wait for PDF generation to complete
+    const pdfBuffer = await pdfPromise;
+
+    // Save to storage
+    const { storageService } = await import('../services/storage.service');
+    const filename = await storageService.saveFile(
+      pdfBuffer,
+      'pdf',
+      `graph-${settings.testNumber}`
+    );
+
+    const generationTime = Date.now() - startTime;
+
+    logger.info('PDF export completed', {
+      testNumber: settings.testNumber,
+      filename,
+      fileSize: pdfBuffer.length,
+      generationTimeMs: generationTime,
+      pageSize,
+    });
+
+    // Return download response
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length.toString());
+    res.setHeader('X-Generation-Time-Ms', generationTime.toString());
+    res.setHeader('X-File-Size', pdfBuffer.length.toString());
+
+    res.send(pdfBuffer);
   } catch (error) {
+    logger.error('PDF export failed', { error });
     next(error);
   }
 };
