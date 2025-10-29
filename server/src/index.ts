@@ -131,7 +131,7 @@ app.use(errorHandler);
 
 const server = createServer(app);
 
-// Initialize database connection before starting server
+// Initialize database connection and storage before starting server
 (async () => {
   try {
     logger.info('🔌 Testing database connection...');
@@ -143,6 +143,12 @@ const server = createServer(app);
     } else {
       logger.info('✅ Database connection successful');
     }
+
+    // Initialize storage service
+    logger.info('📁 Initializing file storage...');
+    const { storageService } = await import('./services/storage.service');
+    await storageService.initialize();
+    logger.info('✅ File storage initialized');
 
     server.listen(PORT, () => {
       logger.info(`🚀 Server running at http://${HOST}:${PORT}`);

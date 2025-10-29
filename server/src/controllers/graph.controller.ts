@@ -7,6 +7,7 @@ import { AppError } from '../middleware/errorHandler';
 import { query } from '../config/database';
 import { validateTestSettings } from '../services/validation.service';
 import { generatePressureData } from '../utils/graphGenerator';
+import { logger } from '../utils/logger';
 import type { TestSettings } from '../types';
 
 /**
@@ -54,11 +55,94 @@ export const generateGraph = async (req: Request, res: Response, next: NextFunct
   }
 };
 
+/**
+ * Export pressure test graph as PNG image
+ * POST /api/graph/export/png
+ *
+ * Generates a PNG image of the pressure test graph with specified settings.
+ * Uses server-side canvas rendering for high-quality exports.
+ *
+ * @param req.body.settings - TestSettings object
+ * @param req.body.theme - Theme ('light' or 'dark', default: 'light')
+ * @param req.body.scale - Rendering scale (1-4, default: 2 for high quality)
+ * @param req.body.width - Canvas width in pixels (default: 1200)
+ * @param req.body.height - Canvas height in pixels (default: 800)
+ * @returns PNG file download or filename for later retrieval
+ * @throws AppError 400 if validation fails
+ * @throws AppError 500 for rendering or storage errors
+ */
 export const exportPNG = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement PNG export using node-canvas
-    throw new AppError('PNG export not yet implemented', 501);
+    const startTime = Date.now();
+    const { settings, theme = 'light', scale = 2, width = 1200, height = 800 } = req.body;
+
+    // Validate settings
+    const validation = validateTestSettings(settings);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        errors: validation.errors,
+      });
+    }
+
+    // Validate export parameters
+    if (scale < 1 || scale > 4) {
+      throw new AppError('Scale must be between 1 and 4', 400);
+    }
+    if (width < 400 || width > 4000) {
+      throw new AppError('Width must be between 400 and 4000 pixels', 400);
+    }
+    if (height < 300 || height > 3000) {
+      throw new AppError('Height must be between 300 and 3000 pixels', 400);
+    }
+
+    logger.info('PNG export started', {
+      testNumber: settings.testNumber,
+      theme,
+      scale,
+      dimensions: `${width}x${height}`,
+    });
+
+    // Generate graph data
+    const graphData = generatePressureData(settings);
+
+    // Render graph to PNG buffer
+    const { renderGraph } = await import('../utils/canvasRenderer');
+    const pngBuffer = renderGraph(graphData, settings, {
+      width,
+      height,
+      scale,
+      theme: theme as 'light' | 'dark',
+    });
+
+    // Save to storage
+    const { storageService } = await import('../services/storage.service');
+    const filename = await storageService.saveFile(
+      pngBuffer,
+      'png',
+      `graph-${settings.testNumber}`
+    );
+
+    const generationTime = Date.now() - startTime;
+
+    logger.info('PNG export completed', {
+      testNumber: settings.testNumber,
+      filename,
+      fileSize: pngBuffer.length,
+      generationTimeMs: generationTime,
+    });
+
+    // Return download response
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pngBuffer.length.toString());
+    res.setHeader('X-Generation-Time-Ms', generationTime.toString());
+    res.setHeader('X-File-Size', pngBuffer.length.toString());
+
+    res.send(pngBuffer);
   } catch (error) {
+    logger.error('PNG export failed', { error });
     next(error);
   }
 };
