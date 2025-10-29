@@ -46,6 +46,16 @@ router.get('/history',
   graphController.getHistory
 );
 
+// DELETE /api/v1/graph/history/:id
+router.delete('/history/:id',
+  graphController.deleteGraph
+);
+
+// GET /api/v1/graph/history/:id/download
+router.get('/history/:id/download',
+  graphController.downloadGraph
+);
+
 // POST /api/v1/graph/share
 router.post('/share',
   [

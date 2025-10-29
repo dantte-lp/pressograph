@@ -352,19 +352,51 @@ export const getHistory = async (req: Request, res: Response, next: NextFunction
     const user = req.user!;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
+    const search = req.query.search as string || '';
+    const format = req.query.format as string || '';
+    const sortBy = req.query.sortBy as string || 'created_at';
+    const sortOrder = req.query.sortOrder as string || 'desc';
 
+    // Build WHERE clause with filters
+    const conditions: string[] = ['user_id = $1'];
+    const params: any[] = [user.id];
+    let paramIndex = 2;
+
+    // Search filter (by test_number)
+    if (search) {
+      conditions.push(`test_number ILIKE $${paramIndex}`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    // Format filter
+    if (format && format !== 'all') {
+      conditions.push(`export_format = $${paramIndex}`);
+      params.push(format);
+      paramIndex++;
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // Validate sort column
+    const validSortColumns = ['created_at', 'test_number', 'export_format', 'file_size'];
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const sortDirection = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    // Query with filters and sorting
     const result = await query(
-      `SELECT id, test_number, export_format, file_size, generation_time_ms, status, created_at
+      `SELECT id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, created_at
        FROM graph_history
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [user.id, limit, offset]
+       WHERE ${whereClause}
+       ORDER BY ${sortColumn} ${sortDirection}
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...params, limit, offset]
     );
 
+    // Count with same filters
     const countResult = await query(
-      'SELECT COUNT(*) FROM graph_history WHERE user_id = $1',
-      [user.id]
+      `SELECT COUNT(*) FROM graph_history WHERE ${whereClause}`,
+      params
     );
 
     res.json({
@@ -435,6 +467,134 @@ export const createShareLink = async (req: Request, res: Response, next: NextFun
         createdAt: shareLink.created_at,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete a graph from history
+ * DELETE /api/v1/graph/history/:id
+ *
+ * Deletes the graph record and associated file from storage.
+ * Verifies ownership before deletion.
+ *
+ * @param req.params.id - Graph ID to delete
+ * @throws AppError 404 if graph not found or not owned by user
+ * @throws AppError 500 for unexpected errors
+ */
+export const deleteGraph = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const graphId = parseInt(req.params.id);
+
+    if (isNaN(graphId)) {
+      throw new AppError('Invalid graph ID', 400);
+    }
+
+    // Verify graph belongs to user and get file path
+    const graphResult = await query(
+      'SELECT id, file_path, test_number FROM graph_history WHERE id = $1 AND user_id = $2',
+      [graphId, user.id]
+    );
+
+    if (graphResult.rows.length === 0) {
+      throw new AppError('Graph not found', 404);
+    }
+
+    const graph = graphResult.rows[0];
+
+    // Delete file from storage if it exists
+    if (graph.file_path) {
+      try {
+        const { storageService } = await import('../services/storage.service');
+        await storageService.deleteFile(graph.file_path);
+        logger.info(`Deleted file: ${graph.file_path}`);
+      } catch (error) {
+        logger.warn(`Failed to delete file: ${graph.file_path}`, error);
+        // Continue with database deletion even if file deletion fails
+      }
+    }
+
+    // Delete from database
+    await query('DELETE FROM graph_history WHERE id = $1', [graphId]);
+
+    // Log deletion
+    await query(
+      'INSERT INTO audit_log (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)',
+      [user.id, 'graph_deleted', JSON.stringify({ graphId, testNumber: graph.test_number }), req.ip]
+    );
+
+    logger.info(`Graph deleted`, { graphId, testNumber: graph.test_number, userId: user.id });
+
+    res.json({
+      success: true,
+      message: 'Graph deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Download a graph file from history
+ * GET /api/v1/graph/history/:id/download
+ *
+ * Serves the graph file for download. Verifies ownership and logs the action.
+ *
+ * @param req.params.id - Graph ID to download
+ * @throws AppError 404 if graph not found or not owned by user
+ * @throws AppError 404 if file not found in storage
+ * @throws AppError 500 for unexpected errors
+ */
+export const downloadGraph = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const graphId = parseInt(req.params.id);
+
+    if (isNaN(graphId)) {
+      throw new AppError('Invalid graph ID', 400);
+    }
+
+    // Verify graph belongs to user
+    const graphResult = await query(
+      `SELECT id, file_path, export_format, test_number, file_size
+       FROM graph_history
+       WHERE id = $1 AND user_id = $2`,
+      [graphId, user.id]
+    );
+
+    if (graphResult.rows.length === 0) {
+      throw new AppError('Graph not found', 404);
+    }
+
+    const graph = graphResult.rows[0];
+
+    if (!graph.file_path) {
+      throw new AppError('File not available for this graph', 404);
+    }
+
+    // Read file from storage
+    const { storageService } = await import('../services/storage.service');
+    const fileBuffer = await storageService.readFile(graph.file_path);
+
+    // Log download
+    await query(
+      'INSERT INTO audit_log (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)',
+      [user.id, 'graph_downloaded', JSON.stringify({ graphId, testNumber: graph.test_number }), req.ip]
+    );
+
+    logger.info(`Graph downloaded`, { graphId, testNumber: graph.test_number, userId: user.id });
+
+    // Set appropriate content type
+    const contentType = graph.export_format === 'png' ? 'image/png' : 'application/pdf';
+
+    // Send file
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${graph.file_path}"`);
+    res.setHeader('Content-Length', fileBuffer.length.toString());
+
+    res.send(fileBuffer);
   } catch (error) {
     next(error);
   }
