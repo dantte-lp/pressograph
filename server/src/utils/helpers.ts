@@ -34,6 +34,16 @@ export const generateId = (): string => {
 };
 
 /**
+ * Format date and time for graph display
+ * @param date - Date object to format
+ * @returns Formatted string "HH:00:00 DD.MM.YYYY"
+ */
+export const formatDateTime = (date: Date): string => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(date.getHours())}:00:00 ${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+};
+
+/**
  * Format filename-safe date string
  * @returns ISO date string (YYYY-MM-DD)
  */
