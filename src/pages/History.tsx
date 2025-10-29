@@ -25,8 +25,9 @@ import {
   ModalBody,
   ModalFooter,
   Pagination,
-  Spinner,
+
 } from '@heroui/react';
+import { TableSkeleton } from "../components/skeletons";
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n';
 import {
@@ -68,6 +69,10 @@ export const History: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewGraph, setPreviewGraph] = useState<GraphHistoryItem | null>(null);
+
+  // Loading states for async actions
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [sharingId, setSharingId] = useState<number | null>(null);
 
   /**
    * Fetch history data from backend
@@ -149,6 +154,7 @@ export const History: React.FC = () => {
    */
   const handleDownload = useCallback(async (graphId: number) => {
     try {
+      setDownloadingId(graphId);
       const { blob, filename } = await downloadGraph(graphId);
 
       // Create download link
@@ -163,6 +169,8 @@ export const History: React.FC = () => {
     } catch (error) {
       console.error('Download failed:', error);
       toast.error(t.historyToast.downloadError);
+    } finally {
+      setDownloadingId(null);
     }
   }, [t]);
 
@@ -171,6 +179,7 @@ export const History: React.FC = () => {
    */
   const handleShare = useCallback(async (graphId: number) => {
     try {
+      setSharingId(graphId);
       const response = await createShareLink({
         graphId,
         allowDownload: true,
@@ -182,6 +191,8 @@ export const History: React.FC = () => {
     } catch (error) {
       console.error('Share failed:', error);
       toast.error(t.historyToast.shareError);
+    } finally {
+      setSharingId(null);
     }
   }, [t]);
 
@@ -367,9 +378,7 @@ export const History: React.FC = () => {
 
           <CardBody>
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Spinner size="lg" label={t.historyLoading} />
-              </div>
+              <TableSkeleton rows={5} columns={7} showCard={false} />
             ) : graphs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="text-5xl mb-4">🔍</div>
@@ -449,6 +458,7 @@ export const History: React.FC = () => {
                               variant="light"
                               onPress={() => handleDownload(graph.id)}
                               isDisabled={!graph.file_path}
+                              isLoading={downloadingId === graph.id}
                             >
                               {t.historyActions.download}
                             </Button>
@@ -457,6 +467,7 @@ export const History: React.FC = () => {
                               color="secondary"
                               variant="light"
                               onPress={() => handleShare(graph.id)}
+                              isLoading={sharingId === graph.id}
                             >
                               {t.historyActions.share}
                             </Button>
