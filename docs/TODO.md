@@ -218,7 +218,55 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 - All core functionality implemented
 - Deferred: Unit tests, integration tests, font customization, graph_history persistence
 
-### Sprint 3: Backend PDF Export (Week 2) 🔴
+### Sprint 3: Frontend Backend Integration ✅ COMPLETED (2025-10-29)
+
+**Epic: Frontend Integration with Backend PNG Export**
+- [x] **US-009: Create API Service Module** (2h) ✅ COMPLETED
+  - [x] Create `src/services/api.service.ts`
+  - [x] Implement exportPNG API client function
+  - [x] Add PNGExportConfig interface
+  - [x] Add ExportMetadata interface
+  - [x] Implement filename extraction from Content-Disposition header
+  - [x] Add formatFileSize helper
+  - [x] Add formatGenerationTime helper
+  - [x] Comprehensive error handling with APIError type
+  - [x] Extract metadata from response headers (X-File-Size, X-Generation-Time-Ms)
+  - Files: src/services/api.service.ts
+
+- [x] **US-010: Update ExportButtons Component** (3h) ✅ COMPLETED
+  - [x] Import exportPNG from api.service
+  - [x] Add loading state with useState (isExportingPNG)
+  - [x] Rename client export to exportToPNGClient
+  - [x] Implement handleExportPNG with async/await
+  - [x] Add backend export with fallback to client-side
+  - [x] Add HeroUI Spinner component during export
+  - [x] Add toast.loading indicator
+  - [x] Display file size and generation time in success toast
+  - [x] Error handling with console.warn and fallback
+  - [x] Use useCallback for performance optimization
+  - [x] Pass current theme from store to backend
+  - [x] Configure export: scale=4, width=1200, height=800
+  - Files: src/components/graph/ExportButtons.tsx
+
+- [x] **US-011: Add Download Helper Utility** (1h) ✅ COMPLETED
+  - [x] Add downloadFile function to helpers.ts
+  - [x] Implement blob download with URL.createObjectURL
+  - [x] Proper cleanup with URL.revokeObjectURL
+  - Files: src/utils/helpers.ts
+
+**Sprint 3 Results:**
+- Estimated: 6 hours
+- Actual: Implementation already completed during Sprint 2
+- Integration seamless with backend API
+- Features:
+  - Server-side PNG export with high quality (scale 4x)
+  - Fallback to client-side export if backend unavailable
+  - Loading states with spinner
+  - Performance metrics display (file size, generation time)
+  - Error handling with graceful degradation
+  - Theme-aware rendering (uses current theme from store)
+
+### Sprint 4: Backend PDF Export (Week 2) 🔴
 
 **Epic: Server-Side PDF Generation**
 - [ ] **US-009: Setup PDFKit Environment** (1h)
@@ -248,14 +296,14 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 ### Sprint 4: Help Page (Week 2) 🟡
 
 **Epic: User Documentation Interface**
-- [ ] **US-012: Setup Help Page Structure** (2h)
+- [ ] **US-015: Setup Help Page Structure** (2h)
   - [ ] Create Help.tsx component (replace placeholder)
   - [ ] Add route in App.tsx
   - [ ] Create sections: Intro, Features, Quick Start, FAQ
   - [ ] Add navigation menu (sticky sidebar)
   - [ ] Add responsive layout
 
-- [ ] **US-013: Add Help Content** (3h)
+- [ ] **US-016: Add Help Content** (3h)
   - [ ] Write "Getting Started" section (ru/en)
   - [ ] Write "Features" section (ru/en)
   - [ ] Write "FAQ" section (ru/en)
@@ -263,7 +311,7 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Add API examples
   - [ ] Add translation keys to i18n
 
-- [ ] **US-014: Add Help Page Features** (2h)
+- [ ] **US-017: Add Help Page Features** (2h)
   - [ ] Implement search functionality (filter sections)
   - [ ] Add table of contents with scroll spy
   - [ ] Add copy-to-clipboard for code examples
@@ -281,14 +329,14 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Add search by test number
   - [ ] Add sort by date/test number
 
-- [ ] **US-016: Implement History Actions** (3h)
+- [ ] **US-019: Implement History Actions** (3h)
   - [ ] Add "View" button (show graph preview modal)
   - [ ] Add "Download" button (trigger file download)
   - [ ] Add "Share" button (create share link)
   - [ ] Add "Delete" button (with confirmation)
   - [ ] Add "Regenerate" button (re-create graph)
 
-- [ ] **US-017: Add History Analytics** (2h)
+- [ ] **US-020: Add History Analytics** (2h)
   - [ ] Show total graphs generated
   - [ ] Show storage used
   - [ ] Show most used export format
@@ -305,28 +353,28 @@ This document tracks planned features, improvements, and tasks for Pressograph.
   - [ ] Wrap routes with ErrorBoundary
   - [ ] Add reset button
 
-- [ ] **US-019: Add Toast Notifications** (1h)
+- [ ] **US-022: Add Toast Notifications** (1h)
   - [ ] Already using react-hot-toast ✅
   - [ ] Standardize toast messages
   - [ ] Add success/error/info toast helpers
   - [ ] Add toast icons
   - [ ] Configure toast position/duration
 
-- [ ] **US-020: Add Loading Skeletons** (2h)
+- [ ] **US-023: Add Loading Skeletons** (2h)
   - [ ] Create Skeleton component
   - [ ] Add to History page table
   - [ ] Add to Admin dashboard
   - [ ] Add to Profile page
   - [ ] Use HeroUI Skeleton component
 
-- [ ] **US-021: Add Confirmation Dialogs** (2h)
+- [ ] **US-024: Add Confirmation Dialogs** (2h)
   - [ ] Create ConfirmDialog component (HeroUI Modal)
   - [ ] Use for delete operations
   - [ ] Use for logout
   - [ ] Add custom messages and buttons
   - [ ] Add danger variant for destructive actions
 
-- [ ] **US-022: Improve Accessibility** (3h)
+- [ ] **US-025: Improve Accessibility** (3h)
   - [ ] Add ARIA labels to all interactive elements
   - [ ] Add keyboard navigation support
   - [ ] Add focus indicators
@@ -734,4 +782,4 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 
 ## Last Updated
 
-2025-10-28 - Version 1.0.2 with Agile task breakdown
+2025-10-29 - Sprint 3 (Frontend Backend Integration) completed

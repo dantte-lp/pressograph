@@ -81,10 +81,17 @@ Minor release adding authentication system and UI enhancements.
   - File storage service with automatic cleanup
   - Configurable dimensions, scale, and themes
   - Performance metrics and comprehensive logging
-- Sprint 3 (Next) - Backend PDF Export (6 hours)
-- Sprint 4 - Help page with comprehensive documentation (7 hours)
-- Sprint 5 - History page with graph management (9 hours)
-- Sprint 6 - Frontend improvements (error boundaries, loading states) (10 hours)
+- ✅ **Sprint 3 COMPLETED (2025-10-29)** - Frontend Backend Integration
+  - API service module with exportPNG client
+  - ExportButtons updated with server-side export
+  - Automatic fallback to client-side export if backend unavailable
+  - Loading states with spinner and toast notifications
+  - Performance metrics display (file size, generation time)
+  - Theme-aware rendering from store
+- Sprint 4 (Next) - Backend PDF Export (6 hours)
+- Sprint 5 - Help page with comprehensive documentation (7 hours)
+- Sprint 6 - History page with graph management (9 hours)
+- Sprint 7 - Frontend improvements (error boundaries, loading states) (10 hours)
 
 ### Version 1.3.0 (Planned)
 
