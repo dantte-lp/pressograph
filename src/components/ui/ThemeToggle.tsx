@@ -2,11 +2,16 @@
 // Theme Toggle Button Component
 // ═══════════════════════════════════════════════════════════════════
 
+import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from '../../store/useThemeStore';
 import { Switch } from '@heroui/react';
 
 export const ThemeToggle = () => {
-  const { theme, toggleTheme } = useThemeStore();
+  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
+  // Only re-render when theme or toggleTheme actually changes
+  const { theme, toggleTheme } = useThemeStore(
+    useShallow((state) => ({ theme: state.theme, toggleTheme: state.toggleTheme }))
+  );
 
   return (
     <Switch

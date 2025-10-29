@@ -2,9 +2,10 @@
 // Main Application Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from './store/useThemeStore';
 import { useInitializationStore } from './store/useInitializationStore';
 import { useLanguage } from './i18n';
@@ -52,7 +53,9 @@ function InitializationGuard({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const theme = useThemeStore((state) => state.theme);
+  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
+  // Only re-render when theme value actually changes
+  const theme = useThemeStore(useShallow((state) => state.theme));
   const { t } = useLanguage();
 
   // Apply theme to document
@@ -65,35 +68,39 @@ function App() {
     }
   }, [theme]);
 
+  // PERFORMANCE FIX: Memoize Toaster options to prevent recreation on every render
+  // Only recreate when theme changes
+  const toastOptions = useMemo(
+    () => ({
+      duration: 4000,
+      style: {
+        background: theme === 'dark' ? '#1f2937' : '#fff',
+        color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
+        border: `2px solid ${theme === 'dark' ? '#374151' : '#d1d5db'}`,
+        boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+      },
+      success: {
+        iconTheme: {
+          primary: '#065f46',
+          secondary: '#fff',
+        },
+      },
+      error: {
+        iconTheme: {
+          primary: '#991b1b',
+          secondary: '#fff',
+        },
+      },
+    }),
+    [theme]
+  );
+
   return (
     <BrowserRouter>
       <InitializationGuard>
         <div className="min-h-screen bg-background">
           {/* Toast Notifications */}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: theme === 'dark' ? '#1f2937' : '#fff',
-                color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
-                border: `2px solid ${theme === 'dark' ? '#374151' : '#d1d5db'}`,
-                boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#065f46',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#991b1b',
-                  secondary: '#fff',
-                },
-              },
-            }}
-          />
+          <Toaster position="top-right" toastOptions={toastOptions} />
 
           <Routes>
             {/* Public Routes */}

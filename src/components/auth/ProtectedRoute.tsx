@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { Navigate } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../../store/useAuthStore';
 
 interface ProtectedRouteProps {
@@ -11,7 +12,10 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { isAuthenticated, user } = useAuthStore();
+  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
+  const { isAuthenticated, user } = useAuthStore(
+    useShallow((state) => ({ isAuthenticated: state.isAuthenticated, user: state.user }))
+  );
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

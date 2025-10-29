@@ -34,7 +34,8 @@ export const ExportButtons = () => {
     }))
   );
   const importSettingsFn = useTestStore((state) => state.importSettings);
-  const theme = useThemeStore((state) => state.theme);
+  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
+  const theme = useThemeStore(useShallow((state) => state.theme));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportPNG = () => {

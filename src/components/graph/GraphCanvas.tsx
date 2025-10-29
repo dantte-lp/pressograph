@@ -36,7 +36,8 @@ export const GraphCanvas = () => {
       pressureTests: state.pressureTests,
     }))
   );
-  const theme = useThemeStore((state) => state.theme);
+  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
+  const theme = useThemeStore(useShallow((state) => state.theme));
 
   useEffect(() => {
     const canvas = canvasRef.current;

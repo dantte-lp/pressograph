@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, User } from '@heroui/react';
+import { useShallow } from 'zustand/react/shallow';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LanguageToggle } from '../ui/LanguageToggle';
 import { useLanguage } from '../../i18n';
@@ -10,7 +11,14 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 export const NavBar = () => {
   const { t } = useLanguage();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
+  const { isAuthenticated, user, logout } = useAuthStore(
+    useShallow((state) => ({
+      isAuthenticated: state.isAuthenticated,
+      user: state.user,
+      logout: state.logout
+    }))
+  );
 
   return (
     <Navbar isBordered maxWidth="full" className="shadow-sm">
