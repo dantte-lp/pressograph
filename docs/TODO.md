@@ -383,7 +383,7 @@ Response: PDF file download
   - [ ] Show generation time stats
   - [ ] Add charts (HeroUI + recharts)
 
-### Sprint 7: Frontend Improvements (Week 3-4) 🔵 NEXT
+### Sprint 7: Frontend Improvements (Week 3-4) 🟡 IN PROGRESS (50% - US-021, US-022 done)
 
 **Epic: UI/UX Enhancements**
 - [ ] **US-018: Add Error Boundaries** (2h)
