@@ -76,10 +76,15 @@ Minor release adding authentication system and UI enhancements.
 ### Version 1.2.0 (In Progress)
 
 **Phase 2: Export & Advanced Features**
-- Backend PNG/PDF export implementation (Sprint 2-3)
-- Help page with comprehensive documentation (Sprint 4)
-- History page with graph management (Sprint 5)
-- Frontend improvements (error boundaries, loading states) (Sprint 6)
+- ✅ **Sprint 2 COMPLETED (2025-10-29)** - Backend PNG Export
+  - Server-side PNG generation with node-canvas
+  - File storage service with automatic cleanup
+  - Configurable dimensions, scale, and themes
+  - Performance metrics and comprehensive logging
+- Sprint 3 (Next) - Backend PDF Export (6 hours)
+- Sprint 4 - Help page with comprehensive documentation (7 hours)
+- Sprint 5 - History page with graph management (9 hours)
+- Sprint 6 - Frontend improvements (error boundaries, loading states) (10 hours)
 
 ### Version 1.3.0 (Planned)
 
