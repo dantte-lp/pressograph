@@ -4,24 +4,39 @@ This document provides an overview of all Pressograph releases. For detailed rel
 
 ## Latest Release
 
-### [v1.0.0 - Initial Production Release](releases/v1.0.0.md) (2025-10-28)
+### [v1.1.0 - Infrastructure Modernization & Observability](releases/v1.1.0-2025-10-29.md) (2025-10-29)
 
-First production release of Pressograph with full-stack implementation.
+Major infrastructure update with comprehensive observability stack and modern container orchestration.
 
 **Highlights:**
-- ⚡ Modern Stack: React 19, TypeScript 5.7, Node.js 22, PostgreSQL 18
-- 🎨 Dark/Light Theme with persistent settings
-- 📊 Canvas-based high-resolution graph rendering
-- 📤 Export to PNG (4K), PDF (A4), JSON
-- 🔐 JWT authentication with role-based access control
-- 🐳 Podman pod deployment infrastructure
-- 🌐 Multi-language support (Russian/English)
+- 📊 Full Observability Stack: VictoriaMetrics, VictoriaLogs, Grafana, Tempo
+- 🔐 Auto-generated secrets with environment initialization commands
+- 🐳 Compose Specification 2025 compliance
+- 🛡️ Security hardening (resource limits, SELinux, capabilities)
+- 🔧 Fixed healthcheck IPv6 issues (all containers healthy)
+- 🔄 Fixed Vite HMR over HTTPS/WSS
+- 🌐 Fixed i18n system (4 pages corrected)
+- ✅ Development environment: https://dev-pressograph.infra4.dev
 
-[View Full Release Notes →](releases/v1.0.0.md)
+[View Full Release Notes →](releases/v1.1.0-2025-10-29.md)
 
 ---
 
 ## Previous Releases
+
+### [v1.0.0 - Initial Production Release](releases/v1.0.0.md) (2025-10-28)
+
+First production release of Pressograph with full-stack implementation.
+
+**Key Changes:**
+- Modern Stack: React 19, TypeScript 5.9, Node.js 22, PostgreSQL 18
+- Dark/Light Theme with persistent settings
+- Canvas-based high-resolution graph rendering
+- Export to PNG (4K), PDF (A4), JSON
+- JWT authentication with role-based access control
+- Multi-language support (Russian/English)
+
+[View Full Release Notes →](releases/v1.0.0.md)
 
 ### [v1.0.2 - Setup Improvements & Build Optimization](releases/v1.0.2.md) (2025-10-28)
 
@@ -58,25 +73,30 @@ Minor release adding authentication system and UI enhancements.
 
 ## Upcoming Releases
 
-### Version 1.1.0 (Planned)
+### Version 1.2.0 (In Progress)
 
-**Planned Features:**
-- Backend PNG/PDF export implementation
-- Webhook support
-- Real-time graph updates (WebSocket)
-- Batch graph generation API
-- Advanced analytics dashboard
-- Email notifications for share links
-- GraphQL API (experimental)
+**Phase 2: Export & Advanced Features**
+- Backend PNG/PDF export implementation (Sprint 2-3)
+- Help page with comprehensive documentation (Sprint 4)
+- History page with graph management (Sprint 5)
+- Frontend improvements (error boundaries, loading states) (Sprint 6)
 
-### Version 1.2.0 (Planned)
+### Version 1.3.0 (Planned)
 
-**Planned Features:**
+**Phase 3: Admin & User Management**
+- Admin dashboard with analytics
+- User profile management
+- System monitoring and health checks
+- Advanced reporting features
+
+### Version 2.0.0 (Future)
+
+**Enterprise Features:**
 - Multi-tenant support
-- Custom branding
-- Advanced reporting
-- Data export (CSV, Excel)
-- Integration with external systems
+- Custom branding and templates
+- Webhooks and API integrations
+- Batch operations and queue system
+- GraphQL API
 - Mobile app (React Native)
 
 ---
@@ -85,9 +105,10 @@ Minor release adding authentication system and UI enhancements.
 
 | Version | Release Date | Type | Status |
 |---------|--------------|------|--------|
-| [v1.0.0](releases/v1.0.0.md) | 2025-10-28 | MAJOR | ✅ Production |
-| [v1.0.1](releases/v1.0.1.md) | 2025-10-28 | MINOR | ✅ Production |
+| [v1.1.0](releases/v1.1.0-2025-10-29.md) | 2025-10-29 | MINOR | ✅ Production |
 | [v1.0.2](releases/v1.0.2.md) | 2025-10-28 | PATCH | ✅ Production |
+| [v1.0.1](releases/v1.0.1.md) | 2025-10-28 | MINOR | ✅ Production |
+| [v1.0.0](releases/v1.0.0.md) | 2025-10-28 | MAJOR | ✅ Production |
 
 ---
 
@@ -104,4 +125,4 @@ For guidelines on reporting issues and suggesting features, see our [GitHub Issu
 
 ---
 
-**Last Updated:** 2025-10-28
+**Last Updated:** 2025-10-29 - Added v1.1.0 infrastructure modernization release
