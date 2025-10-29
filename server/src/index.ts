@@ -13,6 +13,7 @@ import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { swaggerSpec } from './config/swagger';
+import { testConnection, pool } from './config/database';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -130,27 +131,56 @@ app.use(errorHandler);
 
 const server = createServer(app);
 
-server.listen(PORT, () => {
-  logger.info(`🚀 Server running at http://${HOST}:${PORT}`);
-  logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
-});
+// Initialize database connection before starting server
+(async () => {
+  try {
+    logger.info('🔌 Testing database connection...');
+    const dbConnected = await testConnection();
+
+    if (!dbConnected) {
+      logger.error('❌ Failed to connect to database. Please check your configuration.');
+      logger.warn('⚠️  Server will start but database operations will fail!');
+    } else {
+      logger.info('✅ Database connection successful');
+    }
+
+    server.listen(PORT, () => {
+      logger.info(`🚀 Server running at http://${HOST}:${PORT}`);
+      logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
+    });
+  } catch (error) {
+    logger.error('💥 Failed to start server:', error);
+    process.exit(1);
+  }
+})();
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    logger.info('HTTP server closed');
-    process.exit(0);
-  });
-});
+const shutdown = async (signal: string) => {
+  logger.info(`${signal} signal received: closing HTTP server`);
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  server.close(() => {
+  try {
+    // Close HTTP server first
+    await new Promise<void>((resolve, reject) => {
+      server.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
     logger.info('HTTP server closed');
+
+    // Close database pool
+    await pool.end();
+    logger.info('Database connections closed');
+
     process.exit(0);
-  });
-});
+  } catch (error) {
+    logger.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 export default app;

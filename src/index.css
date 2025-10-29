@@ -2,6 +2,9 @@
    Global Styles and Tailwind CSS Imports
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Import Inter font from Google Fonts (Yandex-style) - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @import "tailwindcss";
 
 @plugin '../hero.ts';
@@ -9,9 +12,6 @@
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 
 @custom-variant dark (&:is(.dark *));
-
-/* Import Inter font from Google Fonts (Yandex-style) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Custom scrollbar styles */
 @layer base {

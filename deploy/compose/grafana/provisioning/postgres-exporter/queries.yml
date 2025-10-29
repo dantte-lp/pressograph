@@ -1,0 +1,276 @@
+# ═══════════════════════════════════════════════════════════════════
+# PostgreSQL Exporter Custom Queries
+# ═══════════════════════════════════════════════════════════════════
+# Дополнительные custom queries для мониторинга PostgreSQL
+# помимо стандартных метрик из postgres_exporter
+#
+# Format: PromQL-compatible metrics
+# ═══════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
+# Database Size Metrics
+# ─────────────────────────────────────────────────────────────────
+pg_database:
+  query: |
+    SELECT
+      datname as database,
+      pg_database_size(datname) as size_bytes
+    FROM pg_database
+    WHERE datname NOT IN ('template0', 'template1')
+  metrics:
+    - database:
+        usage: "LABEL"
+        description: "Database name"
+    - size_bytes:
+        usage: "GAUGE"
+        description: "Database size in bytes"
+
+# ─────────────────────────────────────────────────────────────────
+# Table Size Metrics (топ-10 самых больших таблиц)
+# ─────────────────────────────────────────────────────────────────
+pg_table_size:
+  query: |
+    SELECT
+      schemaname as schema,
+      tablename as table,
+      pg_total_relation_size(schemaname||'.'||tablename) as size_bytes
+    FROM pg_tables
+    WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY size_bytes DESC
+    LIMIT 10
+  metrics:
+    - schema:
+        usage: "LABEL"
+        description: "Schema name"
+    - table:
+        usage: "LABEL"
+        description: "Table name"
+    - size_bytes:
+        usage: "GAUGE"
+        description: "Table size in bytes (including indexes)"
+
+# ─────────────────────────────────────────────────────────────────
+# Connection Stats
+# ─────────────────────────────────────────────────────────────────
+pg_stat_activity:
+  query: |
+    SELECT
+      datname as database,
+      state,
+      COUNT(*) as connections
+    FROM pg_stat_activity
+    WHERE datname IS NOT NULL
+    GROUP BY datname, state
+  metrics:
+    - database:
+        usage: "LABEL"
+        description: "Database name"
+    - state:
+        usage: "LABEL"
+        description: "Connection state (active, idle, idle in transaction)"
+    - connections:
+        usage: "GAUGE"
+        description: "Number of connections in this state"
+
+# ─────────────────────────────────────────────────────────────────
+# Slow Queries (queries running > 5 seconds)
+# ─────────────────────────────────────────────────────────────────
+pg_slow_queries:
+  query: |
+    SELECT
+      datname as database,
+      usename as user,
+      COUNT(*) as slow_queries
+    FROM pg_stat_activity
+    WHERE state = 'active'
+      AND now() - query_start > interval '5 seconds'
+      AND datname IS NOT NULL
+    GROUP BY datname, usename
+  metrics:
+    - database:
+        usage: "LABEL"
+        description: "Database name"
+    - user:
+        usage: "LABEL"
+        description: "User name"
+    - slow_queries:
+        usage: "GAUGE"
+        description: "Number of queries running longer than 5 seconds"
+
+# ─────────────────────────────────────────────────────────────────
+# Lock Metrics
+# ─────────────────────────────────────────────────────────────────
+pg_locks:
+  query: |
+    SELECT
+      datname as database,
+      mode,
+      COUNT(*) as locks
+    FROM pg_locks
+    JOIN pg_database ON pg_locks.database = pg_database.oid
+    WHERE datname IS NOT NULL
+    GROUP BY datname, mode
+  metrics:
+    - database:
+        usage: "LABEL"
+        description: "Database name"
+    - mode:
+        usage: "LABEL"
+        description: "Lock mode"
+    - locks:
+        usage: "GAUGE"
+        description: "Number of locks"
+
+# ─────────────────────────────────────────────────────────────────
+# Replication Lag (для streaming replication)
+# ─────────────────────────────────────────────────────────────────
+pg_replication_lag:
+  query: |
+    SELECT
+      client_addr,
+      application_name,
+      state,
+      EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::int as lag_seconds
+    FROM pg_stat_replication
+  metrics:
+    - client_addr:
+        usage: "LABEL"
+        description: "Client address"
+    - application_name:
+        usage: "LABEL"
+        description: "Application name"
+    - state:
+        usage: "LABEL"
+        description: "Replication state"
+    - lag_seconds:
+        usage: "GAUGE"
+        description: "Replication lag in seconds"
+
+# ─────────────────────────────────────────────────────────────────
+# Cache Hit Ratio (эффективность кэша)
+# ─────────────────────────────────────────────────────────────────
+pg_cache_hit_ratio:
+  query: |
+    SELECT
+      datname as database,
+      blks_hit,
+      blks_read,
+      CASE
+        WHEN blks_hit + blks_read = 0 THEN 100.0
+        ELSE round(100.0 * blks_hit / (blks_hit + blks_read), 2)
+      END as cache_hit_ratio
+    FROM pg_stat_database
+    WHERE datname NOT IN ('template0', 'template1')
+      AND datname IS NOT NULL
+  metrics:
+    - database:
+        usage: "LABEL"
+        description: "Database name"
+    - blks_hit:
+        usage: "COUNTER"
+        description: "Number of blocks hit in cache"
+    - blks_read:
+        usage: "COUNTER"
+        description: "Number of blocks read from disk"
+    - cache_hit_ratio:
+        usage: "GAUGE"
+        description: "Cache hit ratio percentage"
+
+# ─────────────────────────────────────────────────────────────────
+# Transaction Stats
+# ─────────────────────────────────────────────────────────────────
+pg_transactions:
+  query: |
+    SELECT
+      datname as database,
+      xact_commit,
+      xact_rollback,
+      CASE
+        WHEN xact_commit + xact_rollback = 0 THEN 0.0
+        ELSE round(100.0 * xact_rollback / (xact_commit + xact_rollback), 2)
+      END as rollback_ratio
+    FROM pg_stat_database
+    WHERE datname NOT IN ('template0', 'template1')
+      AND datname IS NOT NULL
+  metrics:
+    - database:
+        usage: "LABEL"
+        description: "Database name"
+    - xact_commit:
+        usage: "COUNTER"
+        description: "Number of committed transactions"
+    - xact_rollback:
+        usage: "COUNTER"
+        description: "Number of rolled back transactions"
+    - rollback_ratio:
+        usage: "GAUGE"
+        description: "Transaction rollback ratio percentage"
+
+# ─────────────────────────────────────────────────────────────────
+# Dead Tuples (требуется VACUUM)
+# ─────────────────────────────────────────────────────────────────
+pg_dead_tuples:
+  query: |
+    SELECT
+      schemaname as schema,
+      relname as table,
+      n_dead_tup as dead_tuples,
+      CASE
+        WHEN n_live_tup = 0 THEN 0.0
+        ELSE round(100.0 * n_dead_tup / (n_live_tup + n_dead_tup), 2)
+      END as dead_tuples_ratio
+    FROM pg_stat_user_tables
+    WHERE n_dead_tup > 100
+    ORDER BY n_dead_tup DESC
+    LIMIT 10
+  metrics:
+    - schema:
+        usage: "LABEL"
+        description: "Schema name"
+    - table:
+        usage: "LABEL"
+        description: "Table name"
+    - dead_tuples:
+        usage: "GAUGE"
+        description: "Number of dead tuples"
+    - dead_tuples_ratio:
+        usage: "GAUGE"
+        description: "Dead tuples ratio percentage"
+
+# ═══════════════════════════════════════════════════════════════════
+# NOTES
+# ═══════════════════════════════════════════════════════════════════
+#
+# 1. Эти queries дополняют стандартные метрики postgres_exporter
+#
+# 2. Стандартные метрики (автоматически собираются):
+#    - pg_up: database is up
+#    - pg_stat_database_*: database statistics
+#    - pg_stat_bgwriter_*: background writer stats
+#    - pg_settings_*: configuration settings
+#
+# 3. Cache Hit Ratio:
+#    - > 99%: отличная производительность
+#    - 95-99%: хорошая производительность
+#    - < 95%: увеличьте shared_buffers
+#
+# 4. Dead Tuples:
+#    - > 10%: требуется VACUUM
+#    - > 20%: срочно требуется VACUUM
+#    - Настройте autovacuum для автоматической очистки
+#
+# 5. Slow Queries:
+#    - Порог 5 секунд можно настроить
+#    - Для production рассмотрите pg_stat_statements extension
+#
+# 6. Connection Pooling:
+#    - Если много idle connections, используйте PgBouncer
+#    - Мониторьте max_connections limit
+#
+# 7. Alerting Rules (для VictoriaMetrics):
+#    - cache_hit_ratio < 95%
+#    - slow_queries > 5
+#    - dead_tuples_ratio > 20%
+#    - connections близко к max_connections
+#
+# ═══════════════════════════════════════════════════════════════════

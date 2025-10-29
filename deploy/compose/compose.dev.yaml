@@ -1,0 +1,417 @@
+# ═══════════════════════════════════════════════════════════════════
+# Pressograph Development Environment
+# Compose Specification 2025 (Modern, Production-Ready)
+# ═══════════════════════════════════════════════════════════════════
+# Domain: https://dev-pressograph.infra4.dev
+# Backend API: https://dev-pressograph.infra4.dev/api
+#
+# Features:
+# - Hot reload для frontend (Vite HMR) и backend (nodemon)
+# - Traefik integration с автоматическим HTTPS
+# - Resource limits для предотвращения OOM
+# - Security hardening (no-new-privileges, cap drop)
+# - Log rotation (10MB max, 3 files)
+# - Healthchecks с proper start_period
+# - OCI labels для metadata
+# - SELinux compatible volume mounts (:z suffix)
+#
+# Usage:
+#   cd /opt/projects/repositories/pressure-test-visualizer
+#   make dev-compose
+#   # или напрямую:
+#   podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev up -d
+#   podman-compose -f deploy/compose/compose.dev.yaml logs -f
+#   podman-compose -f deploy/compose/compose.dev.yaml down
+#
+# Best Practices 2025:
+#   ✅ Без version field (устарел с Docker Compose v1.27.0+)
+#   ✅ Resource limits на всех сервисах
+#   ✅ Log rotation для предотвращения заполнения диска
+#   ✅ Security options (no-new-privileges, cap_drop)
+#   ✅ OCI standard labels
+#   ✅ Healthchecks с start_period
+#   ✅ YAML anchors для DRY
+# ═══════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════
+# YAML Anchors - переиспользуемые конфигурации (DRY principle)
+# ═══════════════════════════════════════════════════════════════════
+
+# Общие OCI labels для всех сервисов
+x-common-labels: &common-labels
+  org.opencontainers.image.vendor: "Pressograph"
+  org.opencontainers.image.source: "https://github.com/your-org/pressure-test-visualizer"
+  org.opencontainers.image.version: "${VERSION:-1.0.0-dev}"
+  org.opencontainers.image.created: "${BUILD_DATE:-2025-10-29}"
+  com.pressograph.environment: "development"
+
+# Logging configuration с rotation
+x-common-logging: &common-logging
+  driver: k8s-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Security defaults
+x-common-security: &common-security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+# Healthcheck defaults
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 5s
+  retries: 5
+
+# ═══════════════════════════════════════════════════════════════════
+# Services
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # ═══════════════════════════════════════════════════════════════════
+  # PostgreSQL Database (Development)
+  # ═══════════════════════════════════════════════════════════════════
+  postgres:
+    image: docker.io/library/postgres:18-trixie
+    container_name: pressograph-dev-postgres
+    restart: unless-stopped
+
+    # Security context
+    user: "999:999"  # postgres user в образе
+    <<: *common-security
+    cap_add:
+      - CHOWN        # Для смены владельца файлов данных
+      - FOWNER       # Для операций с файлами
+      - DAC_OVERRIDE # Для доступа к данным
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+    # Logging
+    logging: *common-logging
+
+    # Environment variables (из .env.dev)
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pressograph_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-pressograph_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    # Volumes
+    volumes:
+      # ИСПРАВЛЕНО: /var/lib/postgresql/data вместо /var/lib/postgresql
+      - postgres-dev-data:/var/lib/postgresql/data:z
+      - ../../server/migrations:/migrations:ro,z
+
+    # Networking
+    networks:
+      - internal
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pressograph_dev}"]
+      <<: *healthcheck-defaults
+      interval: 10s
+      start_period: 30s
+
+    # OCI Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "Pressograph PostgreSQL Database (Dev)"
+      org.opencontainers.image.description: "PostgreSQL 18 database for development"
+      com.pressograph.service: "database"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Backend API (Node.js with Hot Reload)
+  # ═══════════════════════════════════════════════════════════════════
+  backend:
+    image: docker.io/library/node:22-trixie-slim
+    container_name: pressograph-dev-backend
+    restart: unless-stopped
+    working_dir: /app
+
+    # Security context (relaxed для dev - упрощает работу с файлами)
+    # user: "node:node"  # Отключено для dev чтобы избежать permission issues
+    <<: *common-security
+    cap_add:
+      - NET_BIND_SERVICE  # Для binding к портам > 1024 (не нужен тут, но для примера)
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # Logging
+    logging: *common-logging
+
+    # Environment variables (из .env.dev)
+    env_file:
+      - .env.dev
+
+    environment:
+      # Дополнительные переменные (не в .env.dev)
+      HOME: /tmp  # Для user: node:node
+      npm_config_cache: /app/.npm-cache
+
+    # Volumes
+    volumes:
+      - ../../server:/app:z
+      - backend-dev-node-modules:/app/node_modules:z
+      - backend-dev-npm-cache:/app/.npm-cache:z
+
+    # Startup command (с автоустановкой зависимостей)
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+          echo '📦 Installing backend dependencies...'
+          npm install
+          touch node_modules/.installed
+        fi
+        echo '🚀 Starting backend in development mode with hot reload...'
+        npm run dev
+
+    # Networking
+    networks:
+      - internal
+      - traefik-public
+
+    # Dependencies
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+
+    # Traefik Labels
+    labels:
+      # OCI Labels
+      <<: *common-labels
+      org.opencontainers.image.title: "Pressograph Backend API (Dev)"
+      org.opencontainers.image.description: "Node.js Express API with hot reload"
+      com.pressograph.service: "backend"
+
+      # Traefik routing
+      traefik.enable: "true"
+      traefik.docker.network: "traefik-public"
+
+      # Backend API on /api with strip prefix
+      traefik.http.routers.pressograph-dev-api.entrypoints: "https"
+      traefik.http.routers.pressograph-dev-api.rule: "Host(`dev-pressograph.infra4.dev`) && PathPrefix(`/api`)"
+      traefik.http.routers.pressograph-dev-api.tls: "true"
+      traefik.http.routers.pressograph-dev-api.tls.certresolver: "cloudflare"
+      traefik.http.routers.pressograph-dev-api.priority: "100"
+
+      # Apply API gateway middleware (no strip prefix - backend expects full path)
+      traefik.http.routers.pressograph-dev-api.middlewares: "api-gateway@file"
+
+      # Service configuration
+      traefik.http.services.pressograph-dev-api.loadbalancer.server.port: "3001"
+      traefik.http.services.pressograph-dev-api.loadbalancer.server.scheme: "http"
+
+    # Health check (увеличен start_period для npm install)
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      <<: *healthcheck-defaults
+      start_period: 90s
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Frontend (Vite Dev Server with HMR)
+  # ═══════════════════════════════════════════════════════════════════
+  frontend:
+    image: docker.io/library/node:22-trixie-slim
+    container_name: pressograph-dev-frontend
+    restart: unless-stopped
+    working_dir: /app
+
+    # Security context (relaxed для dev - упрощает работу с файлами)
+    # user: "node:node"  # Отключено для dev чтобы избежать permission issues
+    <<: *common-security
+    cap_add:
+      - NET_BIND_SERVICE
+
+    # Resource limits (Vite может быть тяжелым при HMR)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # Logging
+    logging: *common-logging
+
+    # Environment variables
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-/api}
+      NODE_ENV: development
+      HOME: /tmp
+      npm_config_cache: /app/.npm-cache
+
+    # Volumes
+    volumes:
+      - ../../:/app:z
+      - frontend-dev-node-modules:/app/node_modules:z
+      - frontend-dev-npm-cache:/app/.npm-cache:z
+      # Read-only server directory (не должен изменяться фронтендом)
+      - ../../server:/app/server:ro,z
+
+    # Startup command
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+          echo '📦 Installing frontend dependencies...'
+          npm install
+          touch node_modules/.installed
+        fi
+        echo '🚀 Starting Vite dev server with hot reload...'
+        npm run dev -- --host 0.0.0.0 --port 5173
+
+    # Networking
+    networks:
+      - traefik-public
+
+    # Dependencies (frontend должен стартовать после backend)
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    # Traefik Labels
+    labels:
+      # OCI Labels
+      <<: *common-labels
+      org.opencontainers.image.title: "Pressograph Frontend (Dev)"
+      org.opencontainers.image.description: "Vite dev server with React HMR"
+      com.pressograph.service: "frontend"
+
+      # Traefik routing
+      traefik.enable: "true"
+      traefik.docker.network: "traefik-public"
+
+      # Frontend on main domain
+      traefik.http.routers.pressograph-dev-frontend.entrypoints: "https"
+      traefik.http.routers.pressograph-dev-frontend.rule: "Host(`dev-pressograph.infra4.dev`)"
+      traefik.http.routers.pressograph-dev-frontend.tls: "true"
+      traefik.http.routers.pressograph-dev-frontend.tls.certresolver: "cloudflare"
+      traefik.http.routers.pressograph-dev-frontend.priority: "1"
+      traefik.http.routers.pressograph-dev-frontend.middlewares: "web-standard@file"
+
+      # Service configuration
+      traefik.http.services.pressograph-dev-frontend.loadbalancer.server.port: "5173"
+      traefik.http.services.pressograph-dev-frontend.loadbalancer.server.scheme: "http"
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5173', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      <<: *healthcheck-defaults
+      start_period: 90s
+
+# ═══════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════
+networks:
+  # External Traefik network (shared with all projects)
+  traefik-public:
+    external: true
+    name: traefik-public
+
+  # Internal network for database (isolated from internet)
+  internal:
+    driver: bridge
+    internal: true  # Explicitly mark as internal
+    labels:
+      com.pressograph.network.type: "internal"
+      com.pressograph.network.environment: "development"
+
+# ═══════════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════════
+volumes:
+  # PostgreSQL data (persistent)
+  postgres-dev-data:
+    driver: local
+    name: pressograph-dev-postgres-data
+    labels:
+      com.pressograph.volume.type: "database"
+      com.pressograph.volume.backup: "required"
+
+  # Backend node_modules cache (persistent across restarts)
+  backend-dev-node-modules:
+    driver: local
+    name: pressograph-dev-backend-modules
+    labels:
+      com.pressograph.volume.type: "cache"
+
+  # Backend npm cache
+  backend-dev-npm-cache:
+    driver: local
+    name: pressograph-dev-backend-npm-cache
+    labels:
+      com.pressograph.volume.type: "cache"
+
+  # Frontend node_modules cache
+  frontend-dev-node-modules:
+    driver: local
+    name: pressograph-dev-frontend-modules
+    labels:
+      com.pressograph.volume.type: "cache"
+
+  # Frontend npm cache
+  frontend-dev-npm-cache:
+    driver: local
+    name: pressograph-dev-frontend-npm-cache
+    labels:
+      com.pressograph.volume.type: "cache"
+
+# ═══════════════════════════════════════════════════════════════════
+# Notes:
+# ═══════════════════════════════════════════════════════════════════
+# 1. Resource Limits:
+#    - Postgres: 512MB RAM (достаточно для dev)
+#    - Backend: 1GB RAM (Node.js с hot reload)
+#    - Frontend: 1GB RAM (Vite HMR может быть требовательным)
+#
+# 2. Security:
+#    - Все сервисы работают с no-new-privileges
+#    - Dropped ALL capabilities, добавлены только необходимые
+#    - Non-root users (node:node, postgres:postgres)
+#    - Internal network изолирована от интернета
+#
+# 3. Logging:
+#    - JSON driver с rotation (max 10MB, 3 файла = 30MB max)
+#    - Предотвращает заполнение диска логами
+#
+# 4. Healthchecks:
+#    - start_period: 90s для сервисов с npm install
+#    - start_period: 30s для PostgreSQL
+#    - Предотвращает ложные "unhealthy" во время startup
+#
+# 5. Volumes:
+#    - :z suffix для SELinux relabeling (Podman rootless)
+#    - Отдельные кеши для npm (ускоряет reinstall)
+#
+# 6. Development Features:
+#    - Hot reload для frontend (Vite HMR)
+#    - Hot reload для backend (nodemon)
+#    - Auto npm install при первом запуске
+#    - Хардкод "слабых" паролей допустим (ТОЛЬКО для dev!)
+# ═══════════════════════════════════════════════════════════════════

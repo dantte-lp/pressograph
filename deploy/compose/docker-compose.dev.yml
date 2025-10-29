@@ -1,34 +1,208 @@
 version: '3.8'
 
+# ═══════════════════════════════════════════════════════════════════
+# Pressograph Development Environment
+# ═══════════════════════════════════════════════════════════════════
+# Domain: https://dev-pressograph.infra4.dev
+# Backend API: https://dev-pressograph.infra4.dev/api
+#
+# Features:
+# - Hot reload for both frontend and backend
+# - Traefik integration with automatic HTTPS
+# - Separate internal network for database
+# - Development secrets (not for production!)
+#
+# Usage:
+#   cd /opt/projects/repositories/pressure-test-visualizer
+#   podman-compose -f deploy/compose/docker-compose.dev.yml up -d
+#   podman-compose -f deploy/compose/docker-compose.dev.yml logs -f
+#   podman-compose -f deploy/compose/docker-compose.dev.yml down
+# ═══════════════════════════════════════════════════════════════════
+
 services:
-  # ═══════════════════════════════════════════════
-  # Development Frontend (Hot Reload with Vite)
-  # ═══════════════════════════════════════════════
-  frontend-dev:
-    image: docker.io/node:current-trixie-slim
-    container_name: pressure-test-visualizer-dev
-    working_dir: /app
-    volumes:
-      - ../../:/app:z
-      - node_modules:/app/node_modules
-    environment:
-      - NODE_ENV=development
-    command: |
-      sh -c '
-        echo "📦 Installing dependencies..."
-        npm install
-        echo "🚀 Starting development server..."
-        npm run dev
-      '
-    ports:
-      - "5173:5173"
-    networks:
-      - visualizer-net
+  # ═══════════════════════════════════════════════════════════════════
+  # PostgreSQL Database (Development)
+  # ═══════════════════════════════════════════════════════════════════
+  postgres:
+    image: docker.io/library/postgres:18-trixie
+    container_name: pressograph-dev-postgres
     restart: unless-stopped
 
+    environment:
+      POSTGRES_DB: pressograph_dev
+      POSTGRES_USER: pressograph_dev
+      POSTGRES_PASSWORD: devpassword123
+
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql
+      - ../../server/migrations:/migrations:ro,z
+
+    networks:
+      - internal
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pressograph_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Backend API (Node.js with Hot Reload)
+  # ═══════════════════════════════════════════════════════════════════
+  backend:
+    image: docker.io/library/node:22-trixie-slim
+    container_name: pressograph-dev-backend
+    restart: unless-stopped
+    working_dir: /app
+
+    environment:
+      # Database
+      DATABASE_URL: postgresql://pressograph_dev:devpassword123@postgres:5432/pressograph_dev
+
+      # Node.js
+      NODE_ENV: development
+      PORT: 3001
+
+      # Logging
+      DEBUG: "pressograph:*"
+      LOG_LEVEL: debug
+
+      # JWT (DEV KEYS - NOT FOR PRODUCTION!)
+      JWT_SECRET: dev_jwt_secret_change_in_production
+      JWT_REFRESH_SECRET: dev_refresh_secret_change_in_production
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+
+      # CORS
+      ALLOWED_ORIGINS: https://dev-pressograph.infra4.dev,http://localhost:5173,http://localhost:5174
+      BASE_URL: https://dev-pressograph.infra4.dev
+      MAX_FILE_SIZE: 10mb
+
+    volumes:
+      - ../../server:/app:z
+      - backend-dev-node-modules:/app/node_modules
+
+    command: >
+      sh -c "
+      if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+        echo '📦 Installing backend dependencies...'
+        npm install
+        touch node_modules/.installed
+      fi
+      echo '🚀 Starting backend in development mode with hot reload...'
+      npm run dev
+      "
+
+    networks:
+      - internal
+      - traefik-public
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+
+      # Backend API on /api with strip prefix
+      - "traefik.http.routers.pressograph-dev-api.entrypoints=https"
+      - "traefik.http.routers.pressograph-dev-api.rule=Host(`dev-pressograph.infra4.dev`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.pressograph-dev-api.tls=true"
+      - "traefik.http.routers.pressograph-dev-api.tls.certresolver=cloudflare"
+      - "traefik.http.routers.pressograph-dev-api.priority=100"
+
+      # Strip /api prefix before forwarding to backend
+      - "traefik.http.middlewares.pressograph-dev-strip-api.stripprefix.prefixes=/api"
+      - "traefik.http.routers.pressograph-dev-api.middlewares=pressograph-dev-strip-api,api-gateway@file"
+
+      # Service configuration
+      - "traefik.http.services.pressograph-dev-api.loadbalancer.server.port=3001"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Frontend (Vite Dev Server with HMR)
+  # ═══════════════════════════════════════════════════════════════════
+  frontend:
+    image: docker.io/library/node:22-trixie-slim
+    container_name: pressograph-dev-frontend
+    restart: unless-stopped
+    working_dir: /app
+
+    environment:
+      VITE_API_URL: /api
+      NODE_ENV: development
+
+    volumes:
+      - ../../:/app:z
+      - frontend-dev-node-modules:/app/node_modules
+      - ../../server:/app/server:ro,z
+
+    command: >
+      sh -c "
+      if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+        echo '📦 Installing frontend dependencies...'
+        npm install
+        touch node_modules/.installed
+      fi
+      echo '🚀 Starting Vite dev server with hot reload...'
+      npm run dev -- --host 0.0.0.0 --port 5173
+      "
+
+    networks:
+      - traefik-public
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+
+      # Frontend on main domain
+      - "traefik.http.routers.pressograph-dev-frontend.entrypoints=https"
+      - "traefik.http.routers.pressograph-dev-frontend.rule=Host(`dev-pressograph.infra4.dev`)"
+      - "traefik.http.routers.pressograph-dev-frontend.tls=true"
+      - "traefik.http.routers.pressograph-dev-frontend.tls.certresolver=cloudflare"
+      - "traefik.http.routers.pressograph-dev-frontend.priority=1"
+      - "traefik.http.routers.pressograph-dev-frontend.middlewares=web-standard@file"
+
+      # Service configuration
+      - "traefik.http.services.pressograph-dev-frontend.loadbalancer.server.port=5173"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5173 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+# ═══════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════
 networks:
-  visualizer-net:
+  # External Traefik network (shared with all projects)
+  traefik-public:
+    external: true
+
+  # Internal network for database (not exposed)
+  internal:
     driver: bridge
 
+# ═══════════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════════
 volumes:
-  node_modules:
+  # PostgreSQL data
+  postgres-dev-data:
+    name: pressograph-dev-postgres-data
+
+  # Node modules caches (persistent across restarts)
+  backend-dev-node-modules:
+    name: pressograph-dev-backend-modules
+
+  frontend-dev-node-modules:
+    name: pressograph-dev-frontend-modules

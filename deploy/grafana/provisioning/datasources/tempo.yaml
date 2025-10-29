@@ -1,0 +1,59 @@
+# ═══════════════════════════════════════════════════════════════════
+# Grafana Datasource: Tempo (Distributed Tracing)
+# ═══════════════════════════════════════════════════════════════════
+# Tempo datasource для query и визуализации distributed traces
+# ═══════════════════════════════════════════════════════════════════
+
+apiVersion: 1
+
+datasources:
+  # Grafana Tempo для distributed tracing
+  - name: Tempo
+    type: tempo
+    uid: tempo  # UID для ссылок из других datasources
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    editable: true
+    jsonData:
+      httpMethod: GET
+      # Trace to logs (переход от трейса к логам)
+      tracesToLogs:
+        datasourceUid: victorialogs
+        tags:
+          - service.name
+          - container.name
+        mappedTags:
+          - key: service.name
+            value: service
+        mapTagNamesEnabled: true
+        spanStartTimeShift: '-1m'
+        spanEndTimeShift: '1m'
+        filterByTraceID: true
+        filterBySpanID: false
+
+      # Trace to metrics (переход от трейса к метрикам)
+      tracesToMetrics:
+        datasourceUid: victoriametrics
+        tags:
+          - key: service.name
+            value: service
+        spanStartTimeShift: '-1m'
+        spanEndTimeShift: '1m'
+
+      # Service graph (визуализация зависимостей сервисов)
+      serviceMap:
+        datasourceUid: victoriametrics
+
+      # Node graph (граф вызовов)
+      nodeGraph:
+        enabled: true
+
+      # Search settings
+      search:
+        hide: false
+
+      # Lokistack для поиска
+      lokiSearch:
+        datasourceUid: victorialogs
+    version: 1

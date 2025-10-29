@@ -14,6 +14,48 @@ This document tracks planned features, improvements, and tasks for Pressograph.
 
 ---
 
+## Infrastructure & Observability ✅ (v1.1.0 - COMPLETED 2025-10-29)
+
+### Secrets Management ✅
+- [x] Auto-generated secrets with `make gen-secrets`
+- [x] Environment initialization commands (`make init-env-dev`, `make init-env-prod`)
+- [x] Security best practices documentation
+- [x] Automatic backup of existing .env files
+
+### Observability Stack ✅
+- [x] VictoriaMetrics for metrics storage
+- [x] VictoriaLogs for log aggregation
+- [x] Grafana for visualization (https://grafana-dev.infra4.dev)
+- [x] Tempo for distributed tracing
+- [x] Promtail for log collection
+- [x] Postgres and Node exporters
+- [x] Complete configuration files and dashboards
+
+### Infrastructure Modernization ✅
+- [x] Compose Specification 2025 compliance
+- [x] Named volumes for rootless Podman compatibility
+- [x] SELinux-compatible volume mounts (`:z` suffix)
+- [x] Resource limits (CPU/memory)
+- [x] Security hardening (no-new-privileges, capability dropping)
+- [x] Log rotation configuration
+- [x] Healthcheck improvements
+
+### Bug Fixes ✅
+- [x] Database connection initialization
+- [x] Graceful shutdown implementation
+- [x] Traefik routing for /api/v1/setup/status
+- [x] Frontend dependencies (i18next, react-i18next)
+- [x] Vite host blocking
+- [x] CSS @import order
+- [x] Container healthcheck commands
+- [x] VictoriaLogs image tag
+- [x] Configuration files (scrape.yml, tempo.yml, etc.)
+- [x] Tempo/vmagent permissions in rootless Podman
+
+**See:** [Release v1.1.0](./releases/v1.1.0-2025-10-29.md)
+
+---
+
 ## Phase 1: Core Functionality ✅ (COMPLETED)
 
 ### Graph Generation ✅

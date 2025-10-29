@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════════
+# Grafana Datasource: VictoriaLogs
+# ═══════════════════════════════════════════════════════════════════
+# VictoriaLogs datasource для query и визуализации логов
+#
+# ВАЖНО: VictoriaLogs использует Loki API, поэтому
+# datasource type: loki (совместимость)
+# ═══════════════════════════════════════════════════════════════════
+
+apiVersion: 1
+
+datasources:
+  # VictoriaLogs для логов (замена Loki)
+  - name: VictoriaLogs
+    type: loki
+    access: proxy
+    url: http://victorialogs:9428
+    isDefault: false
+    editable: true
+    jsonData:
+      httpMethod: POST
+      # VictoriaLogs-specific settings
+      maxLines: 1000
+      # Derived fields для навигации к трейсам
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"trace_id":"(\w+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+    version: 1

@@ -1,0 +1,754 @@
+# ═══════════════════════════════════════════════════════════════════
+# Pressograph Observability Stack (VictoriaMetrics)
+# Full Observability: Metrics + Logs + Traces + Visualization
+# ═══════════════════════════════════════════════════════════════════
+# Domains:
+#   - Development:
+#     - https://grafana-dev.infra4.dev      - Grafana UI
+#     - https://victoria-dev.infra4.dev     - VictoriaMetrics UI
+#     - https://logs-dev.infra4.dev         - VictoriaLogs UI
+#   - Production:
+#     - https://grafana.infra4.dev          - Grafana UI
+#     - https://victoria.infra4.dev         - VictoriaMetrics UI
+#     - https://logs.infra4.dev             - VictoriaLogs UI
+#
+# Features:
+# - VictoriaMetrics Single для метрик (замена Prometheus)
+# - VictoriaLogs для логов (замена Loki)
+# - Tempo для distributed tracing
+# - Grafana с преконфигурированными datasources
+# - vmagent для сбора метрик с service discovery
+# - Promtail для сбора логов из контейнеров
+# - Postgres Exporter для метрик БД
+# - Node Exporter для системных метрик
+# - Traefik integration с HTTPS
+# - Resource limits и security hardening
+# - Profiles для гибкого запуска (monitoring/logging/tracing/full)
+#
+# Usage:
+#   # Full stack (все компоненты)
+#   podman-compose -f compose.observability.yaml --env-file .env.observability --profile full up -d
+#
+#   # Только мониторинг (метрики + Grafana)
+#   podman-compose -f compose.observability.yaml --env-file .env.observability --profile monitoring up -d
+#
+#   # Только логи (VictoriaLogs + Promtail + Grafana)
+#   podman-compose -f compose.observability.yaml --env-file .env.observability --profile logging up -d
+#
+#   # Только трейсы (Tempo + Grafana)
+#   podman-compose -f compose.observability.yaml --env-file .env.observability --profile tracing up -d
+#
+# Best Practices 2025:
+#   ✅ Resource limits на всех сервисах
+#   ✅ Log rotation (10MB max, 3 files)
+#   ✅ Security options (no-new-privileges, cap_drop)
+#   ✅ OCI standard labels
+#   ✅ Healthchecks с start_period
+#   ✅ Profiles для разных сценариев использования
+#   ✅ Retention policies (метрики 30d, логи 14d, трейсы 7d)
+#   ✅ Non-root users где возможно
+# ═══════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════
+# YAML Anchors - переиспользуемые конфигурации (DRY principle)
+# ═══════════════════════════════════════════════════════════════════
+
+# Общие OCI labels
+x-common-labels: &common-labels
+  org.opencontainers.image.vendor: "Pressograph"
+  org.opencontainers.image.source: "https://github.com/your-org/pressure-test-visualizer"
+  org.opencontainers.image.version: "${VERSION:-1.0.0}"
+  com.pressograph.stack: "observability"
+  com.pressograph.environment: "${ENVIRONMENT:-development}"
+
+# Logging configuration с rotation
+x-common-logging: &common-logging
+  driver: k8s-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Security defaults
+x-common-security: &common-security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+# Healthcheck defaults
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+
+# ═══════════════════════════════════════════════════════════════════
+# Services
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # ═══════════════════════════════════════════════════════════════════
+  # VictoriaMetrics Single - Time Series Database для метрик
+  # Замена Prometheus с улучшенной производительностью
+  # ═══════════════════════════════════════════════════════════════════
+  victoriametrics:
+    image: docker.io/victoriametrics/victoria-metrics:latest  # v1.124.0+ (Alpine-based, официальной Debian версии нет)
+    container_name: pressograph-observability-victoriametrics
+    restart: unless-stopped
+    profiles: ["monitoring", "full"]
+
+    # Security context
+    user: "1000:1000"  # Non-root
+    <<: *common-security
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Logging
+    logging: *common-logging
+
+    # Command line arguments
+    command:
+      - '--storageDataPath=/storage'
+      - '--retentionPeriod=${VM_RETENTION_PERIOD:-30d}'
+      - '--httpListenAddr=:8428'
+      - '--promscrape.config=/etc/victoriametrics/scrape.yml'
+      - '--promscrape.maxScrapeSize=16MB'
+      - '--search.maxQueryDuration=5m'
+      - '--search.maxConcurrentRequests=8'
+      - '--memory.allowedPercent=60'
+
+    # Volumes
+    volumes:
+      - victoria-metrics-data:/storage:z
+      - ./grafana/provisioning/victoriametrics/scrape.yml:/etc/victoriametrics/scrape.yml:ro,z
+
+    # Networking
+    networks:
+      - observability
+      - traefik-public
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8428/health || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "VictoriaMetrics Time Series Database"
+      org.opencontainers.image.description: "VictoriaMetrics для хранения метрик (замена Prometheus)"
+      com.pressograph.service: "victoriametrics"
+
+      # Traefik routing
+      traefik.enable: "true"
+      traefik.docker.network: "traefik-public"
+
+      # VictoriaMetrics UI
+      traefik.http.routers.victoriametrics-${ENVIRONMENT:-dev}.entrypoints: "https"
+      traefik.http.routers.victoriametrics-${ENVIRONMENT:-dev}.rule: "Host(`${VM_DOMAIN:-victoria-dev.infra4.dev}`)"
+      traefik.http.routers.victoriametrics-${ENVIRONMENT:-dev}.tls: "true"
+      traefik.http.routers.victoriametrics-${ENVIRONMENT:-dev}.tls.certresolver: "cloudflare"
+      traefik.http.routers.victoriametrics-${ENVIRONMENT:-dev}.middlewares: "admin-secure@file"
+
+      # Service
+      traefik.http.services.victoriametrics-${ENVIRONMENT:-dev}.loadbalancer.server.port: "8428"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # vmagent - Agent для сбора метрик (замена Prometheus Agent)
+  # Поддерживает service discovery для динамического обнаружения
+  # ═══════════════════════════════════════════════════════════════════
+  vmagent:
+    image: docker.io/victoriametrics/vmagent:latest  # v1.124.0+ (Alpine-based)
+    container_name: pressograph-observability-vmagent
+    restart: unless-stopped
+    profiles: ["monitoring", "full"]
+
+    # Security context
+    user: "1000:1000"
+    <<: *common-security
+    cap_add:
+      - NET_ADMIN  # Для service discovery
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Logging
+    logging: *common-logging
+
+    # Command line arguments
+    command:
+      - '--promscrape.config=/etc/vmagent/scrape.yml'
+      - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
+      - '--remoteWrite.maxBlockSize=8MB'
+      - '--memory.allowedPercent=60'
+
+    # Volumes
+    volumes:
+      - ./grafana/provisioning/victoriametrics/scrape.yml:/etc/vmagent/scrape.yml:ro,z
+      - /var/run/podman/podman.sock:/var/run/docker.sock:ro  # Docker API для service discovery
+      - vmagent-data:/vmagent-remotewrite-data:z  # Persistent queue data
+
+    # Networking
+    networks:
+      - observability
+      - traefik-public  # Доступ к метрикам Traefik
+
+    # Dependencies
+    depends_on:
+      victoriametrics:
+        condition: service_healthy
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8429/health || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "VictoriaMetrics Agent"
+      org.opencontainers.image.description: "vmagent для сбора метрик с service discovery"
+      com.pressograph.service: "vmagent"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # VictoriaLogs - Logs Storage (замена Loki)
+  # High-performance log storage с мощным query language
+  # ═══════════════════════════════════════════════════════════════════
+  victorialogs:
+    image: docker.io/victoriametrics/victoria-logs:v0.42.0-victorialogs  # Alpine-based (no Debian version available)
+    container_name: pressograph-observability-victorialogs
+    restart: unless-stopped
+    profiles: ["logging", "full"]
+
+    # Security context
+    user: "1000:1000"
+    <<: *common-security
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # Logging
+    logging: *common-logging
+
+    # Command line arguments
+    command:
+      - '--storageDataPath=/storage'
+      - '--retentionPeriod=${VLOGS_RETENTION_PERIOD:-14d}'
+      - '--httpListenAddr=:9428'
+
+    # Volumes
+    volumes:
+      - victoria-logs-data:/storage:z
+
+    # Networking
+    networks:
+      - observability
+      - traefik-public
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9428/health || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "VictoriaLogs"
+      org.opencontainers.image.description: "VictoriaLogs для хранения логов (замена Loki)"
+      com.pressograph.service: "victorialogs"
+
+      # Traefik routing
+      traefik.enable: "true"
+      traefik.docker.network: "traefik-public"
+
+      # VictoriaLogs UI
+      traefik.http.routers.victorialogs-${ENVIRONMENT:-dev}.entrypoints: "https"
+      traefik.http.routers.victorialogs-${ENVIRONMENT:-dev}.rule: "Host(`${VLOGS_DOMAIN:-logs-dev.infra4.dev}`)"
+      traefik.http.routers.victorialogs-${ENVIRONMENT:-dev}.tls: "true"
+      traefik.http.routers.victorialogs-${ENVIRONMENT:-dev}.tls.certresolver: "cloudflare"
+      traefik.http.routers.victorialogs-${ENVIRONMENT:-dev}.middlewares: "admin-secure@file"
+
+      # Service
+      traefik.http.services.victorialogs-${ENVIRONMENT:-dev}.loadbalancer.server.port: "9428"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Promtail - Log Aggregator для сбора логов из контейнеров
+  # Отправляет логи в VictoriaLogs
+  # ═══════════════════════════════════════════════════════════════════
+  promtail:
+    image: docker.io/grafana/promtail:latest  # Alpine-based (официальная версия)
+    container_name: pressograph-observability-promtail
+    restart: unless-stopped
+    profiles: ["logging", "full"]
+
+    # Security context
+    user: "0:0"  # Root для чтения Docker socket
+    <<: *common-security
+    cap_add:
+      - DAC_READ_SEARCH  # Для чтения логов контейнеров
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+    # Logging
+    logging: *common-logging
+
+    # Command
+    command:
+      - '-config.file=/etc/promtail/config.yml'
+      - '-config.expand-env=true'
+
+    # Environment
+    environment:
+      - VICTORIALOGS_URL=http://victorialogs:9428/insert/jsonline
+
+    # Volumes
+    volumes:
+      - ./grafana/provisioning/promtail/config.yml:/etc/promtail/config.yml:ro,z
+      - /var/run/podman/podman.sock:/var/run/docker.sock:ro
+      - /var/lib/containers:/var/lib/containers:ro
+
+    # Networking
+    networks:
+      - observability
+
+    # Dependencies
+    depends_on:
+      victorialogs:
+        condition: service_healthy
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9080/ready || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "Promtail Log Aggregator"
+      org.opencontainers.image.description: "Promtail для сбора логов из контейнеров"
+      com.pressograph.service: "promtail"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Tempo - Distributed Tracing Backend
+  # Хранение и query для distributed traces
+  # ═══════════════════════════════════════════════════════════════════
+  tempo:
+    image: docker.io/grafana/tempo:latest  # Alpine-based
+    container_name: pressograph-observability-tempo
+    restart: unless-stopped
+    profiles: ["tracing", "full"]
+
+    # Security context
+    user: "10001:10001"  # tempo user
+    <<: *common-security
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # Logging
+    logging: *common-logging
+
+    # Command
+    command:
+      - '-config.file=/etc/tempo/tempo.yml'
+
+    # Volumes
+    volumes:
+      - ./grafana/provisioning/tempo/tempo.yml:/etc/tempo/tempo.yml:ro,z
+      - tempo-data:/tmp/tempo:z
+
+    # Networking
+    networks:
+      - observability
+
+    # Ports (для приема traces)
+    expose:
+      - "3200"   # Tempo HTTP
+      - "4317"   # OTLP gRPC
+      - "4318"   # OTLP HTTP
+      - "9411"   # Zipkin
+      - "14268"  # Jaeger
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "Grafana Tempo"
+      org.opencontainers.image.description: "Tempo для distributed tracing"
+      com.pressograph.service: "tempo"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Postgres Exporter - Метрики PostgreSQL
+  # Экспортирует метрики БД в Prometheus формате
+  # ═══════════════════════════════════════════════════════════════════
+  postgres-exporter:
+    image: docker.io/prometheuscommunity/postgres-exporter:latest  # Alpine-based
+    container_name: pressograph-observability-postgres-exporter
+    restart: unless-stopped
+    profiles: ["monitoring", "full"]
+
+    # Security context
+    user: "1000:1000"
+    <<: *common-security
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+
+    # Logging
+    logging: *common-logging
+
+    # Environment
+    environment:
+      DATA_SOURCE_NAME: "${POSTGRES_EXPORTER_DSN}"
+      PG_EXPORTER_AUTO_DISCOVER_DATABASES: "true"
+      PG_EXPORTER_EXTEND_QUERY_PATH: "/etc/postgres-exporter/queries.yml"
+
+    # Volumes
+    volumes:
+      - ./grafana/provisioning/postgres-exporter/queries.yml:/etc/postgres-exporter/queries.yml:ro,z
+
+    # Networking
+    networks:
+      - observability
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9187/metrics || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "PostgreSQL Exporter"
+      org.opencontainers.image.description: "Экспорт метрик PostgreSQL для мониторинга"
+      com.pressograph.service: "postgres-exporter"
+      # Prometheus scrape labels
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: "/metrics"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Node Exporter - Системные метрики хоста
+  # CPU, RAM, Disk, Network metrics
+  # ═══════════════════════════════════════════════════════════════════
+  node-exporter:
+    image: docker.io/prom/node-exporter:latest  # Alpine-based
+    container_name: pressograph-observability-node-exporter
+    restart: unless-stopped
+    profiles: ["monitoring", "full"]
+
+    # Security context
+    user: "65534:65534"  # nobody:nogroup
+    <<: *common-security
+    cap_add:
+      - SYS_TIME  # Для сбора времени системы
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+
+    # Logging
+    logging: *common-logging
+
+    # Command
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+    # Volumes (read-only host filesystem)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+
+    # Networking
+    networks:
+      - observability
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9100/metrics || exit 1"]
+      <<: *healthcheck-defaults
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "Node Exporter"
+      org.opencontainers.image.description: "Системные метрики хоста (CPU, RAM, Disk)"
+      com.pressograph.service: "node-exporter"
+      # Prometheus scrape labels
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9100"
+      prometheus.io/path: "/metrics"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Grafana - Visualization Platform
+  # Единый UI для метрик, логов и трейсов
+  # ═══════════════════════════════════════════════════════════════════
+  grafana:
+    image: docker.io/grafana/grafana:latest-ubuntu  # v12.1.1+ Ubuntu-based (вместо Alpine)
+    container_name: pressograph-observability-grafana
+    restart: unless-stopped
+    profiles: ["monitoring", "logging", "tracing", "full"]
+
+    # Security context
+    user: "472:0"  # grafana user (GID 0 для read-only volumes)
+    <<: *common-security
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Logging
+    logging: *common-logging
+
+    # Environment
+    environment:
+      # Admin credentials
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+
+      # Server settings
+      GF_SERVER_ROOT_URL: "${GRAFANA_ROOT_URL:-https://grafana-dev.infra4.dev}"
+      GF_SERVER_DOMAIN: "${GRAFANA_DOMAIN:-grafana-dev.infra4.dev}"
+
+      # Auth settings
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+
+      # Security
+      GF_SECURITY_SECRET_KEY: "${GRAFANA_SECRET_KEY}"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+
+      # Database (SQLite встроенная)
+      GF_DATABASE_TYPE: "sqlite3"
+
+      # Logging
+      GF_LOG_LEVEL: "${GRAFANA_LOG_LEVEL:-info}"
+
+      # Plugins
+      GF_INSTALL_PLUGINS: ""
+
+      # Provisioning
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
+
+    # Volumes
+    volumes:
+      - grafana-data:/var/lib/grafana:z
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,z
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro,z
+
+    # Networking
+    networks:
+      - observability
+      - traefik-public
+
+    # Dependencies
+    depends_on:
+      - victoriametrics
+      - victorialogs
+      - tempo
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      <<: *healthcheck-defaults
+      start_period: 60s
+
+    # Labels
+    labels:
+      <<: *common-labels
+      org.opencontainers.image.title: "Grafana Visualization Platform"
+      org.opencontainers.image.description: "Grafana для визуализации метрик, логов и трейсов"
+      com.pressograph.service: "grafana"
+
+      # Traefik routing
+      traefik.enable: "true"
+      traefik.docker.network: "traefik-public"
+
+      # Grafana UI
+      traefik.http.routers.grafana-${ENVIRONMENT:-dev}.entrypoints: "https"
+      traefik.http.routers.grafana-${ENVIRONMENT:-dev}.rule: "Host(`${GRAFANA_DOMAIN:-grafana-dev.infra4.dev}`)"
+      traefik.http.routers.grafana-${ENVIRONMENT:-dev}.tls: "true"
+      traefik.http.routers.grafana-${ENVIRONMENT:-dev}.tls.certresolver: "cloudflare"
+      traefik.http.routers.grafana-${ENVIRONMENT:-dev}.middlewares: "web-standard@file"
+
+      # Service
+      traefik.http.services.grafana-${ENVIRONMENT:-dev}.loadbalancer.server.port: "3000"
+
+# ═══════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════
+networks:
+  # External Traefik network (для доступа через HTTPS)
+  traefik-public:
+    external: true
+    name: traefik-public
+
+  # Internal observability network (isolated)
+  observability:
+    driver: bridge
+    internal: false  # False для доступа к внешним targets (Traefik, etc.)
+    labels:
+      com.pressograph.network.type: "observability"
+      com.pressograph.network.environment: "${ENVIRONMENT:-development}"
+
+# ═══════════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════════
+volumes:
+  # VictoriaMetrics data (метрики)
+  victoria-metrics-data:
+    driver: local
+    name: pressograph-observability-victoria-metrics-data
+    labels:
+      com.pressograph.volume.type: "timeseries"
+      com.pressograph.volume.backup: "required"
+      com.pressograph.volume.retention: "${VM_RETENTION_PERIOD:-30d}"
+
+  # VictoriaLogs data (логи)
+  victoria-logs-data:
+    driver: local
+    name: pressograph-observability-victoria-logs-data
+    labels:
+      com.pressograph.volume.type: "logs"
+      com.pressograph.volume.backup: "optional"
+      com.pressograph.volume.retention: "${VLOGS_RETENTION_PERIOD:-14d}"
+
+  # Tempo data (трейсы)
+  tempo-data:
+    driver: local
+    name: pressograph-observability-tempo-data
+    labels:
+      com.pressograph.volume.type: "traces"
+      com.pressograph.volume.backup: "optional"
+      com.pressograph.volume.retention: "${TEMPO_RETENTION_PERIOD:-7d}"
+
+  # Grafana data (dashboards, users, settings)
+  grafana-data:
+    driver: local
+    name: pressograph-observability-grafana-data
+    labels:
+      com.pressograph.volume.type: "application"
+      com.pressograph.volume.backup: "required"
+
+  # vmagent persistent queue data
+  vmagent-data:
+    driver: local
+    name: pressograph-observability-vmagent-data
+    labels:
+      com.pressograph.volume.type: "queue"
+      com.pressograph.volume.backup: "optional"
+
+# ═══════════════════════════════════════════════════════════════════
+# Notes:
+# ═══════════════════════════════════════════════════════════════════
+# 1. Profiles:
+#    - monitoring: VictoriaMetrics + vmagent + exporters + Grafana
+#    - logging: VictoriaLogs + Promtail + Grafana
+#    - tracing: Tempo + Grafana
+#    - full: Все компоненты (по умолчанию)
+#
+# 2. Resource Limits:
+#    - VictoriaMetrics: 2GB RAM (оптимально для 30d retention)
+#    - VictoriaLogs: 1.5GB RAM (для 14d retention)
+#    - Tempo: 1GB RAM (для 7d retention)
+#    - Grafana: 512MB RAM (достаточно для визуализации)
+#
+# 3. Retention Policies:
+#    - Метрики: 30 дней (VM_RETENTION_PERIOD)
+#    - Логи: 14 дней (VLOGS_RETENTION_PERIOD)
+#    - Трейсы: 7 дней (TEMPO_RETENTION_PERIOD)
+#    - Настраивается через .env.observability
+#
+# 4. Security:
+#    - Все сервисы работают с no-new-privileges
+#    - Non-root users где возможно
+#    - Traefik middleware admin-secure@file для admin UI
+#    - Grafana admin credentials через env variables
+#
+# 5. Service Discovery:
+#    - vmagent автоматически обнаруживает контейнеры с labels:
+#      prometheus.io/scrape: "true"
+#      prometheus.io/port: "PORT"
+#      prometheus.io/path: "/metrics"
+#    - Promtail читает логи всех контейнеров через Docker socket
+#
+# 6. Integration:
+#    - Backend должен экспортировать метрики на /metrics (prom-client)
+#    - Backend должен писать structured JSON logs
+#    - Backend можно инструментировать с OpenTelemetry для трейсов
+#
+# 7. Access URLs (Development):
+#    - Grafana: https://grafana-dev.infra4.dev
+#    - VictoriaMetrics: https://victoria-dev.infra4.dev
+#    - VictoriaLogs: https://logs-dev.infra4.dev
+#
+# 8. Backup Strategy:
+#    - VictoriaMetrics data: CRITICAL (требует бэкапа)
+#    - Grafana data: CRITICAL (dashboards, users)
+#    - VictoriaLogs: опционально (логи можно потерять)
+#    - Tempo: опционально (трейсы временные данные)
+# ═══════════════════════════════════════════════════════════════════

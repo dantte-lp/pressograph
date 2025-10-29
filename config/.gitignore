@@ -1,0 +1,7 @@
+# Ignore all real config files (keep only .example files)
+*
+!.gitignore
+!README.md
+!*/README.md
+!*.example
+!*/
