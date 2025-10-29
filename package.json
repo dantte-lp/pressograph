@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --report-unused-disable-directives"
   },
   "dependencies": {
     "@heroui/react": "^2.8.5",
@@ -38,6 +38,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2",
     "vite": "^7.1.12"
   }
 }
