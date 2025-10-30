@@ -78,7 +78,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     res.json({
       success: true,
-      token,
+      accessToken: token,
       refreshToken,
       user: {
         id: user.id,
@@ -127,7 +127,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
     res.json({
       success: true,
-      token,
+      accessToken: token,
     });
   } catch (error) {
     next(error);

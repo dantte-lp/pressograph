@@ -52,12 +52,12 @@ export interface APIError {
 export const exportPNG = async (
   config: PNGExportConfig
 ): Promise<{ blob: Blob; filename: string; metadata: ExportMetadata }> => {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE}/graph/export/png`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // TODO: Add authentication token when auth is integrated
-      // 'Authorization': `Bearer ${getAuthToken()}`,
+      ...(token && { 'Authorization': `Bearer ${token}` }),
     },
     body: JSON.stringify(config),
   });

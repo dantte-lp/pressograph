@@ -8,6 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useLanguage } from '../i18n';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE = `${API_URL}/v1`;
+
 export const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -23,8 +26,7 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
