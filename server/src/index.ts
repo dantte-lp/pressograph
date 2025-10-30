@@ -115,11 +115,12 @@ logger.info('📚 Swagger UI available at /api-docs');
 logger.info('📄 OpenAPI spec available at /api-docs.json');
 
 // API Routes
-app.use('/api/v1/setup', setupRoutes);
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/graph', graphRoutes);
-app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/public', publicRoutes);
+// Note: Traefik strips /api prefix before forwarding, so routes are registered at /v1/*
+app.use('/v1/setup', setupRoutes);
+app.use('/v1/auth', authRoutes);
+app.use('/v1/graph', graphRoutes);
+app.use('/v1/admin', adminRoutes);
+app.use('/v1/public', publicRoutes);
 
 // Error handling
 app.use(notFoundHandler);
