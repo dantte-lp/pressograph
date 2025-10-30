@@ -481,7 +481,7 @@ export const Help: React.FC = () => {
   // Scroll to section when active section changes
   useEffect(() => {
     if (activeSection) {
-      const element = document.getElementById(`section-${activeSection}`);
+      const element = document.getElementById(activeSection);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }

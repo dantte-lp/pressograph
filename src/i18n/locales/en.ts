@@ -77,9 +77,17 @@ export const en = {
   exportPDF: 'Export PDF',
   exportJSON: 'Export JSON',
   importJSON: 'Import JSON',
+  saveGraph: 'Save Graph',
   exportDescription: 'Export the graph as PNG or PDF for reports. Save/load settings as JSON for later use.',
   importSuccess: 'Settings imported successfully!',
   importFailed: 'Import failed: {{error}}',
+  saveSuccess: 'Graph saved successfully!',
+  saveFailed: 'Failed to save graph',
+  unsavedChangesTitle: 'Unsaved Changes',
+  unsavedChangesMessage: 'You have unsaved changes. Do you want to save them before leaving?',
+  unsavedChangesSave: 'Save',
+  unsavedChangesDontSave: "Don't Save",
+  unsavedChangesCancel: 'Cancel',
 
   // Theme
   darkMode: 'Dark Mode',
@@ -294,6 +302,7 @@ export const en = {
     confirm: 'Delete',
   },
   historyToast: {
+    fetchError: 'Failed to fetch history',
     deleteSuccess: 'Graph deleted successfully',
     deleteError: 'Failed to delete graph',
     downloadError: 'Failed to download graph',

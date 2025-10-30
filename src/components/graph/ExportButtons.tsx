@@ -35,6 +35,9 @@ export const ExportButtons = () => {
       pressureTests: state.pressureTests,
     }))
   );
+  const { isDirty, markAsSaved } = useTestStore(
+    useShallow((state) => ({ isDirty: state.isDirty, markAsSaved: state.markAsSaved }))
+  );
   const importSettingsFn = useTestStore((state) => state.importSettings);
   // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
   const theme = useThemeStore(useShallow((state) => state.theme));
@@ -43,6 +46,7 @@ export const ExportButtons = () => {
   // Loading states for export operations
   const [isExportingPNG, setIsExportingPNG] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   /**
    * Export PNG using backend API (server-side rendering)
@@ -143,6 +147,42 @@ export const ExportButtons = () => {
     event.target.value = '';
   };
 
+  /**
+   * Handle save button click
+   * Saves the current graph to backend and marks as saved
+   */
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    const toastId = toast.loading(t.saveGraph + '...');
+
+    try {
+      // Export PNG to backend (which also saves to database)
+      const { blob, filename, metadata } = await exportPNGBackend({
+        settings,
+        theme,
+        scale: 4,
+        width: 1200,
+        height: 800,
+      });
+
+      // Mark as saved (no longer dirty)
+      markAsSaved();
+
+      toast.success(t.saveSuccess, {
+        id: toastId,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Save failed:', error);
+      toast.error(t.saveFailed, {
+        id: toastId,
+        duration: 5000,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [settings, theme, markAsSaved, t]);
+
   return (
     <Card shadow="lg" radius="lg">
       <CardHeader className="flex-col items-start gap-2 pb-3">
@@ -154,7 +194,26 @@ export const ExportButtons = () => {
         </p>
       </CardHeader>
       <CardBody className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <Button
+            color="primary"
+            variant={isDirty ? "solid" : "bordered"}
+            onPress={handleSave}
+            size="md"
+            className="h-16"
+            isDisabled={isSaving || !isDirty}
+            isLoading={isSaving}
+            startContent={
+              !isSaving && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+              )
+            }
+          >
+            {isSaving ? 'Сохранение...' : t.saveGraph}
+            {isDirty && <span className="ml-1">•</span>}
+          </Button>
           <Button
             variant="bordered"
             onPress={handleExportPNG}

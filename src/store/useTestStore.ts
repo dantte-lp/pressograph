@@ -8,6 +8,10 @@ import type { TestSettings, PressureTest, PresetTemplate } from '../types';
 import { generateId } from '../utils/helpers';
 
 interface TestStore extends TestSettings {
+  // Dirty state tracking
+  isDirty: boolean;
+  lastSavedState: TestSettings | null;
+
   // Actions
   updateField: <K extends keyof TestSettings>(field: K, value: TestSettings[K]) => void;
   addPressureTest: () => void;
@@ -19,6 +23,8 @@ interface TestStore extends TestSettings {
   importSettings: (settings: Partial<TestSettings>) => void;
   exportSettings: () => TestSettings;
   resetToDefaults: () => void;
+  markAsSaved: () => void;
+  markAsDirty: () => void;
 }
 
 const getDefaultSettings = (): TestSettings => ({
@@ -79,8 +85,10 @@ export const useTestStore = create<TestStore>()(
   persist(
     (set, get) => ({
       ...getDefaultSettings(),
+      isDirty: false,
+      lastSavedState: null,
 
-      updateField: (field, value) => set({ [field]: value }),
+      updateField: (field, value) => set({ [field]: value, isDirty: true }),
 
       addPressureTest: () =>
         set((state) => ({
@@ -88,11 +96,13 @@ export const useTestStore = create<TestStore>()(
             ...state.pressureTests,
             { id: generateId(), time: 0, duration: state.pressureDuration },
           ],
+          isDirty: true,
         })),
 
       removePressureTest: (id) =>
         set((state) => ({
           pressureTests: state.pressureTests.filter((test) => test.id !== id),
+          isDirty: true,
         })),
 
       duplicatePressureTest: (id) =>
@@ -107,6 +117,7 @@ export const useTestStore = create<TestStore>()(
 
           return {
             pressureTests: [...state.pressureTests, duplicatedTest],
+            isDirty: true,
           };
         }),
 
@@ -115,6 +126,7 @@ export const useTestStore = create<TestStore>()(
           pressureTests: state.pressureTests.map((test) =>
             test.id === id ? { ...test, [field]: value } : test
           ),
+          isDirty: true,
         })),
 
       loadPreset: (preset) => {
@@ -138,12 +150,13 @@ export const useTestStore = create<TestStore>()(
           ...template,
           endDate,
           endTime,
+          isDirty: true,
         }));
       },
 
-      clearAllTests: () => set({ pressureTests: [] }),
+      clearAllTests: () => set({ pressureTests: [], isDirty: true }),
 
-      importSettings: (settings) => set((state) => ({ ...state, ...settings })),
+      importSettings: (settings) => set((state) => ({ ...state, ...settings, isDirty: true })),
 
       exportSettings: () => {
         const state = get();
@@ -165,7 +178,30 @@ export const useTestStore = create<TestStore>()(
         };
       },
 
-      resetToDefaults: () => set(getDefaultSettings()),
+      resetToDefaults: () => set({ ...getDefaultSettings(), isDirty: true }),
+
+      markAsSaved: () => {
+        const state = get();
+        const currentSettings: TestSettings = {
+          testNumber: state.testNumber,
+          startDate: state.startDate,
+          startTime: state.startTime,
+          endDate: state.endDate,
+          endTime: state.endTime,
+          testDuration: state.testDuration,
+          workingPressure: state.workingPressure,
+          maxPressure: state.maxPressure,
+          temperature: state.temperature,
+          pressureDuration: state.pressureDuration,
+          graphTitle: state.graphTitle,
+          showInfo: state.showInfo,
+          date: state.date,
+          pressureTests: state.pressureTests,
+        };
+        set({ isDirty: false, lastSavedState: currentSettings });
+      },
+
+      markAsDirty: () => set({ isDirty: true }),
     }),
     {
       name: 'pressure-test-settings',

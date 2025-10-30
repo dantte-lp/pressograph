@@ -2,13 +2,14 @@
 // Main Application Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useShallow } from "zustand/react/shallow";
 import { useThemeStore } from "./store/useThemeStore";
 import { useInitializationStore } from "./store/useInitializationStore";
 import { useLanguage } from "./i18n";
+import { useDebounce } from "./hooks/useDebounce";
 import { NavBar } from "./components/layout/NavBar";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ErrorBoundary } from "./components/errors";
@@ -55,14 +56,29 @@ function App() {
   const theme = useThemeStore(useShallow((state) => state.theme));
   const { t } = useLanguage();
 
-  useEffect(() => {
+  // PERFORMANCE FIX: Debounce theme changes to prevent UI freeze during rapid toggling
+  // Reduced from default 300ms to 100ms for better responsiveness while preventing thrashing
+  const debouncedTheme = useDebounce(theme, 100);
+
+  // PERFORMANCE FIX: Use useCallback to memoize theme application
+  // This prevents unnecessary function recreations on every render
+  const applyTheme = useCallback((themeValue: string) => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-  }, [theme]);
+
+    // Use requestAnimationFrame to defer DOM manipulation to the next paint cycle
+    // This prevents blocking the main thread and improves perceived performance
+    requestAnimationFrame(() => {
+      if (themeValue === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    applyTheme(debouncedTheme);
+  }, [debouncedTheme, applyTheme]);
 
   const toastOptions = useMemo(
     () => ({

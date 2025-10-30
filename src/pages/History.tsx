@@ -113,7 +113,7 @@ export const History: React.FC = () => {
       setTotal(response.total);
     } catch (error) {
       console.error('Failed to fetch history:', error);
-      toast.error(t.historyToast.deleteError);
+      toast.error(t.historyToast.fetchError);
     } finally {
       setIsLoading(false);
     }

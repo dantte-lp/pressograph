@@ -1,5 +1,5 @@
 {
-  "name": "pressure-test-visualizer",
+  "name": "pressograph",
   "version": "1.0.0",
   "description": "Генератор графиков испытаний давления (Pressure Test Graph Generator)",
   "type": "module",

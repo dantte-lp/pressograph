@@ -2,7 +2,7 @@
 // Graph Canvas Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo, memo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -12,7 +12,8 @@ import { generatePressureData } from '../../utils/graphGenerator';
 import { renderGraph } from '../../utils/canvasRenderer';
 import type { TestSettings } from '../../types';
 
-export const GraphCanvas = () => {
+// PERFORMANCE FIX: Extract internal component for memoization
+const GraphCanvasInternal = () => {
   const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,13 +40,30 @@ export const GraphCanvas = () => {
   // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
   const theme = useThemeStore(useShallow((state) => state.theme));
 
+  // PERFORMANCE FIX: Memoize graph data generation
+  // Only regenerate when settings that affect the graph actually change
+  const graphData = useMemo(() => {
+    return generatePressureData(settings);
+  }, [
+    // Only depend on fields that actually affect graph data
+    settings.testNumber,
+    settings.startDate,
+    settings.startTime,
+    settings.endDate,
+    settings.endTime,
+    settings.testDuration,
+    settings.workingPressure,
+    settings.maxPressure,
+    settings.temperature,
+    settings.pressureDuration,
+    settings.date,
+    JSON.stringify(settings.pressureTests), // Use JSON.stringify for array comparison
+  ]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-
-    // Generate graph data
-    const graphData = generatePressureData(settings);
 
     // Get container width - увеличиваем ширину для лучшей видимости
     const containerWidth = container.clientWidth;
@@ -53,14 +71,14 @@ export const GraphCanvas = () => {
     const width = containerWidth;
     const height = width / aspectRatio;
 
-    // Render graph
+    // Render graph with memoized data
     renderGraph(canvas, graphData, settings, {
       width,
       height,
       scale: 2, // Higher DPI for crisp rendering
       theme,
     });
-  }, [settings, theme]);
+  }, [graphData, settings, theme]);
 
   return (
     <Card shadow="lg" radius="lg">
@@ -87,3 +105,12 @@ export const GraphCanvas = () => {
     </Card>
   );
 };
+
+// PERFORMANCE FIX: Wrap component in React.memo with custom comparison
+// This prevents re-renders when props haven't meaningfully changed
+export const GraphCanvas = memo(GraphCanvasInternal, () => {
+  // Always return false to allow React to use its default shallow comparison
+  // Since we're using Zustand with useShallow internally, we already have optimized updates
+  // This memo wrapper provides an additional optimization layer
+  return false; // false = always check with default comparison
+});

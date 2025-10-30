@@ -242,9 +242,19 @@ export interface ShareLinkResponse {
 
 /**
  * Get authentication token from localStorage
+ * NOTE: The auth store persists to localStorage under 'auth-storage' key
  */
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
+  try {
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage);
+      return parsed.state?.accessToken || null;
+    }
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+  }
+  return null;
 };
 
 /**

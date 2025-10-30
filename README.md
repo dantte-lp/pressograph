@@ -45,6 +45,7 @@ Complete documentation is available in the [`docs/`](./docs/) directory:
 | 📊 Observability Stack | [Observability Setup](./docs/grafana/README.md) |
 | 🔒 Security Policy | [Security](./docs/project/SECURITY.md) |
 | 📖 API Design | [API Design](./docs/API_DESIGN.md) |
+| 🔌 **Interactive API Docs** | **[Swagger UI](https://pressograph.infra4.dev/api-docs)** |
 | 📝 Release Notes | [Release Notes](./docs/release-notes.md) |
 | 📋 Development Roadmap | [TODO](./docs/TODO.md) |
 

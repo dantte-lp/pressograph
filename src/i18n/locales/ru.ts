@@ -79,9 +79,17 @@ export const ru: TranslationKeys = {
   exportPDF: 'Экспорт PDF',
   exportJSON: 'Экспорт JSON',
   importJSON: 'Импорт JSON',
+  saveGraph: 'Сохранить график',
   exportDescription: 'Экспортируйте график как PNG или PDF для отчетов. Сохраняйте/загружайте настройки в формате JSON для последующего использования.',
   importSuccess: 'Настройки успешно импортированы!',
   importFailed: 'Ошибка импорта: {{error}}',
+  saveSuccess: 'График успешно сохранен!',
+  saveFailed: 'Не удалось сохранить график',
+  unsavedChangesTitle: 'Несохраненные изменения',
+  unsavedChangesMessage: 'У вас есть несохраненные изменения. Хотите сохранить их перед выходом?',
+  unsavedChangesSave: 'Сохранить',
+  unsavedChangesDontSave: 'Не сохранять',
+  unsavedChangesCancel: 'Отмена',
 
   // Theme
   darkMode: 'Темная тема',
@@ -296,6 +304,7 @@ export const ru: TranslationKeys = {
     confirm: 'Удалить',
   },
   historyToast: {
+    fetchError: 'Не удалось загрузить историю',
     deleteSuccess: 'График успешно удален',
     deleteError: 'Не удалось удалить график',
     downloadError: 'Не удалось скачать график',

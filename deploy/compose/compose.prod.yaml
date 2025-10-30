@@ -59,7 +59,6 @@ x-common-logging: &common-logging
     max-size: "10m"
     max-file: "5"
     labels: "service,env,project,version"
-    tag: "{{.Name}}/{{.ID}}"
     compress: "true"
 
 # Enhanced security для production
@@ -182,7 +181,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-        restart: true
 
     # Environment variables (из .env.prod)
     env_file:
@@ -197,6 +195,7 @@ services:
     volumes:
       - backend_uploads:/app/uploads:z
       - backend_logs:/app/logs:z
+      - backend_exports:/app/exports:z
 
     # Networking
     networks:
@@ -235,9 +234,10 @@ services:
 
     # Health check
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       <<: *healthcheck-defaults
-      start_period: 45s
+      start_period: 60s
+      retries: 5
 
   # ═══════════════════════════════════════════════════════════════════
   # Frontend (Nginx with React SPA)
@@ -263,13 +263,15 @@ services:
       - CHOWN
       - SETUID
       - SETGID
+      - DAC_OVERRIDE
 
-    # Read-only filesystem (security hardening)
+    # Read-only filesystem with necessary tmpfs mounts
     read_only: true
     tmpfs:
       - /var/cache/nginx:mode=0755,size=50m
       - /var/run:mode=0755,size=10m
       - /tmp:mode=1777,size=50m
+      - /var/log/nginx:mode=0755,size=10m
 
     # Resource limits (Nginx очень легковесный)
     deploy:
@@ -327,9 +329,10 @@ services:
 
     # Health check
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/health || exit 1"]
       <<: *healthcheck-defaults
-      start_period: 15s
+      start_period: 30s
+      retries: 5
 
 # ═══════════════════════════════════════════════════════════════════
 # Volumes
@@ -364,6 +367,15 @@ volumes:
       com.pressograph.volume.backup: "optional"
       com.pressograph.volume.retention: "30d"
 
+  # Backend exports (generated PDF/PNG exports)
+  backend_exports:
+    driver: local
+    name: pressograph-backend-exports
+    labels:
+      com.pressograph.volume.type: "exports"
+      com.pressograph.volume.backup: "optional"
+      com.pressograph.volume.retention: "30d"
+
 # ═══════════════════════════════════════════════════════════════════
 # Networks
 # ═══════════════════════════════════════════════════════════════════
@@ -379,8 +391,8 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.28.0.0/16
-          gateway: 172.28.0.1
+        - subnet: 172.29.0.0/16
+          gateway: 172.29.0.1
 
   # External Traefik network (shared with all projects)
   traefik-public:
