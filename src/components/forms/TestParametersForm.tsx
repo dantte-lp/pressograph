@@ -19,7 +19,6 @@ import {
   NumberInput
 } from '@heroui/react';
 import { parseDate, parseTime } from '@internationalized/date';
-import { CheckCircle2, XCircle } from 'lucide-react';
 import type { InfoDisplayOption } from '../../types';
 
 export const TestParametersForm = () => {
@@ -143,8 +142,22 @@ export const TestParametersForm = () => {
 
   // Helper function to get validation icon
   const getValidationIcon = (value: number | string, error: string | null) => {
-    if (error) return <XCircle className="w-4 h-4 text-danger" />;
-    if (value !== 0 && value !== '') return <CheckCircle2 className="w-4 h-4 text-success" />;
+    if (error) {
+      return (
+        <svg className="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" strokeWidth="2" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9l-6 6m0-6l6 6" />
+        </svg>
+      );
+    }
+    if (value !== 0 && value !== '') {
+      return (
+        <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" strokeWidth="2" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+        </svg>
+      );
+    }
     return null;
   };
 
