@@ -439,7 +439,9 @@ Response: PDF file download
 
 ## Phase 3: User Management & Admin Dashboard 🟡
 
-### Sprint 8: Admin Dashboard Backend (Week 4) 🟡
+**GitHub Issue:** [#1 Sprint 8: Admin Dashboard Backend API](https://github.com/dantte-lp/pressograph/issues/1)
+
+### Sprint 8: Admin Dashboard Backend (Week 4) 🟡 NEXT
 
 **Epic: Admin API Endpoints**
 - [ ] **US-023: Implement Dashboard Statistics Endpoint** (3h)
@@ -488,6 +490,8 @@ Response: PDF file download
   - [ ] Write integration tests
 
 ### Sprint 9: Admin Dashboard Frontend (Week 5) 🟡
+
+**GitHub Issue:** [#2 Sprint 9: Admin Dashboard Frontend UI](https://github.com/dantte-lp/pressograph/issues/2)
 
 **Epic: Admin UI**
 - [ ] **US-028: Create Admin Dashboard Layout** (3h)
