@@ -78,7 +78,7 @@ export const exportPNG = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: JSON.stringify(config),
   });
@@ -89,7 +89,7 @@ export const exportPNG = async (
     try {
       const errorData: APIError = await response.json();
       if (errorData.errors && errorData.errors.length > 0) {
-        errorMessage = errorData.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+        errorMessage = errorData.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
       } else if (errorData.error) {
         errorMessage = errorData.error;
       }
@@ -137,7 +137,7 @@ export const exportPDF = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: JSON.stringify(config),
   });
@@ -147,7 +147,7 @@ export const exportPDF = async (
     try {
       const errorData: APIError = await response.json();
       if (errorData.errors && errorData.errors.length > 0) {
-        errorMessage = errorData.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+        errorMessage = errorData.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
       } else if (errorData.error) {
         errorMessage = errorData.error;
       }
@@ -192,7 +192,7 @@ export const exportJSON = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: JSON.stringify(config),
   });
@@ -202,7 +202,7 @@ export const exportJSON = async (
     try {
       const errorData: APIError = await response.json();
       if (errorData.errors && errorData.errors.length > 0) {
-        errorMessage = errorData.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+        errorMessage = errorData.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
       } else if (errorData.error) {
         errorMessage = errorData.error;
       }
@@ -384,7 +384,7 @@ const getAuthToken = (): string | null => {
       return parsed.state?.accessToken || null;
     }
   } catch (error) {
-    console.error('Failed to get auth token:', error);
+    console.error('[Pressograph] Failed to get auth token:', error);
   }
   return null;
 };
@@ -411,7 +411,7 @@ export const getHistory = async (params: HistoryQueryParams = {}): Promise<Histo
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
   });
 
@@ -429,19 +429,51 @@ export const getHistory = async (params: HistoryQueryParams = {}): Promise<Histo
  * @returns Promise with success status
  * @throws Error if deletion fails
  */
-export const deleteGraph = async (graphId: number): Promise<{ success: boolean; message: string }> => {
+export const deleteGraph = async (
+  graphId: number
+): Promise<{ success: boolean; message: string }> => {
   const token = getAuthToken();
   const response = await fetch(`${API_BASE}/graph/history/${graphId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Delete failed' }));
     throw new Error(errorData.error || 'Failed to delete graph');
+  }
+
+  return await response.json();
+};
+
+/**
+ * Update comment for a graph
+ *
+ * @param graphId - ID of graph to update
+ * @param comment - New comment text
+ * @returns Promise with success status
+ * @throws Error if update fails
+ */
+export const updateComment = async (
+  graphId: number,
+  comment: string
+): Promise<{ success: boolean; message: string }> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/graph/history/${graphId}/comment`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ comment }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Update failed' }));
+    throw new Error(errorData.error || 'Failed to update comment');
   }
 
   return await response.json();
@@ -459,7 +491,7 @@ export const downloadGraph = async (graphId: number): Promise<{ blob: Blob; file
   const response = await fetch(`${API_BASE}/graph/history/${graphId}/download`, {
     method: 'GET',
     headers: {
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
   });
 
@@ -486,7 +518,7 @@ export const createShareLink = async (options: ShareLinkOptions): Promise<ShareL
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: JSON.stringify(options),
   });
@@ -497,6 +529,71 @@ export const createShareLink = async (options: ShareLinkOptions): Promise<ShareL
   }
 
   return await response.json();
+};
+
+/**
+ * Regenerate Configuration
+ */
+export interface RegenerateConfig {
+  format: 'png' | 'pdf' | 'json';
+  theme?: 'light' | 'dark';
+  scale?: number;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * Regenerate a graph from history with new format or theme
+ *
+ * @param graphId - ID of graph to regenerate
+ * @param config - Regeneration configuration (format, theme)
+ * @returns Promise with blob, filename, and metadata
+ * @throws Error if regeneration fails
+ */
+export const regenerateGraph = async (
+  graphId: number,
+  config: RegenerateConfig
+): Promise<{ blob: Blob; filename: string; metadata: ExportMetadata }> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/graph/history/${graphId}/regenerate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify(config),
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'Graph regeneration failed';
+    try {
+      const errorData: APIError = await response.json();
+      if (errorData.errors && errorData.errors.length > 0) {
+        errorMessage = errorData.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {
+      errorMessage = `Regeneration failed: ${response.statusText}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const filename = extractFilenameFromHeaders(response.headers);
+  const fileSize = parseInt(response.headers.get('X-File-Size') || '0', 10);
+  const generationTimeMs = parseInt(response.headers.get('X-Generation-Time-Ms') || '0', 10);
+
+  const blob = await response.blob();
+
+  return {
+    blob,
+    filename,
+    metadata: {
+      filename,
+      fileSize,
+      generationTimeMs,
+    },
+  };
 };
 
 /**

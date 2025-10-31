@@ -196,7 +196,7 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
       height = 800,
       pageSize = 'A4',
       metadata = {},
-      comment
+      comment,
     } = req.body;
 
     // Validate settings
@@ -254,7 +254,8 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
       info: {
         Title: metadata.title || `Pressure Test Graph - ${settings.testNumber}`,
         Author: metadata.author || 'Pressograph',
-        Subject: metadata.subject || `Pressure Test ${settings.testNumber} - ${settings.graphTitle}`,
+        Subject:
+          metadata.subject || `Pressure Test ${settings.testNumber} - ${settings.graphTitle}`,
         Keywords: metadata.keywords || `pressure test, ${settings.testNumber}, graph`,
         Creator: 'Pressograph - Pressure Test Visualizer',
         Producer: 'Pressograph PDF Export',
@@ -482,21 +483,36 @@ export const getHistory = async (req: Request, res: Response, next: NextFunction
     const user = req.user!;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
-    const search = req.query.search as string || '';
-    const format = req.query.format as string || '';
-    const sortBy = req.query.sortBy as string || 'created_at';
-    const sortOrder = req.query.sortOrder as string || 'desc';
+    const search = (req.query.search as string) || '';
+    const format = (req.query.format as string) || '';
+    const sortBy = (req.query.sortBy as string) || 'created_at';
+    const sortOrder = (req.query.sortOrder as string) || 'desc';
 
     // Build WHERE clause with filters
     const conditions: string[] = ['user_id = $1'];
     const params: any[] = [user.id];
     let paramIndex = 2;
 
-    // Search filter (by test_number)
+    // Search filter (by ID, test_number or comment)
     if (search) {
-      conditions.push(`test_number ILIKE $${paramIndex}`);
-      params.push(`%${search}%`);
-      paramIndex++;
+      // Strip leading "#" for ID search (users often type #9 instead of 9)
+      const cleanSearch = search.replace(/^#/, '');
+      const searchParam = `%${search}%`;
+
+      // If search looks like a number (with or without #), try exact ID match first
+      if (/^\d+$/.test(cleanSearch)) {
+        conditions.push(
+          `(id = $${paramIndex} OR test_number ILIKE $${paramIndex + 1} OR comment ILIKE $${paramIndex + 1})`
+        );
+        params.push(parseInt(cleanSearch, 10));
+        params.push(searchParam);
+        paramIndex += 2;
+      } else {
+        // Text search only
+        conditions.push(`(test_number ILIKE $${paramIndex} OR comment ILIKE $${paramIndex})`);
+        params.push(searchParam);
+        paramIndex++;
+      }
     }
 
     // Format filter
@@ -547,10 +563,10 @@ export const createShareLink = async (req: Request, res: Response, next: NextFun
     const { graphId, expiresIn, maxViews, allowDownload = true } = req.body;
 
     // Verify graph belongs to user
-    const graphResult = await query(
-      'SELECT id FROM graph_history WHERE id = $1 AND user_id = $2',
-      [graphId, user.id]
-    );
+    const graphResult = await query('SELECT id FROM graph_history WHERE id = $1 AND user_id = $2', [
+      graphId,
+      user.id,
+    ]);
 
     if (graphResult.rows.length === 0) {
       throw new AppError('Graph not found', 404);
@@ -667,6 +683,52 @@ export const deleteGraph = async (req: Request, res: Response, next: NextFunctio
 };
 
 /**
+ * Update comment for a graph
+ * PATCH /api/v1/graph/history/:id/comment
+ *
+ * Updates the comment field for a graph in history.
+ * Verifies ownership before updating.
+ *
+ * @param req.params.id - Graph ID to update
+ * @param req.body.comment - New comment text
+ * @throws AppError 404 if graph not found or not owned by user
+ * @throws AppError 500 for unexpected errors
+ */
+export const updateComment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const graphId = parseInt(req.params.id);
+    const { comment } = req.body;
+
+    if (isNaN(graphId)) {
+      throw new AppError('Invalid graph ID', 400);
+    }
+
+    // Verify graph belongs to user
+    const graphResult = await query(
+      'SELECT id, test_number FROM graph_history WHERE id = $1 AND user_id = $2',
+      [graphId, user.id]
+    );
+
+    if (graphResult.rows.length === 0) {
+      throw new AppError('Graph not found', 404);
+    }
+
+    // Update comment
+    await query('UPDATE graph_history SET comment = $1 WHERE id = $2', [comment, graphId]);
+
+    logger.info(`Comment updated`, { graphId, userId: user.id });
+
+    res.json({
+      success: true,
+      message: 'Comment updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Download a graph file from history
  * GET /api/v1/graph/history/:id/download
  *
@@ -711,17 +773,25 @@ export const downloadGraph = async (req: Request, res: Response, next: NextFunct
     // Log download
     await query(
       'INSERT INTO audit_log (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)',
-      [user.id, 'graph_downloaded', JSON.stringify({ graphId, testNumber: graph.test_number }), req.ip]
+      [
+        user.id,
+        'graph_downloaded',
+        JSON.stringify({ graphId, testNumber: graph.test_number }),
+        req.ip,
+      ]
     );
 
     logger.info(`Graph downloaded`, { graphId, testNumber: graph.test_number, userId: user.id });
 
     // Set appropriate content type
     const contentType =
-      graph.export_format === 'png' ? 'image/png' :
-      graph.export_format === 'pdf' ? 'application/pdf' :
-      graph.export_format === 'json' ? 'application/json' :
-      'application/octet-stream';
+      graph.export_format === 'png'
+        ? 'image/png'
+        : graph.export_format === 'pdf'
+          ? 'application/pdf'
+          : graph.export_format === 'json'
+            ? 'application/json'
+            : 'application/octet-stream';
 
     // Send file
     res.setHeader('Content-Type', contentType);
@@ -730,6 +800,204 @@ export const downloadGraph = async (req: Request, res: Response, next: NextFunct
 
     res.send(fileBuffer);
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Regenerate a graph from history with new format or theme
+ * POST /api/v1/graph/history/:id/regenerate
+ *
+ * Re-exports an existing graph with updated settings (format, theme).
+ * Useful for applying font fixes to old graphs or exporting in different formats.
+ *
+ * @param req.params.id - Graph ID to regenerate
+ * @param req.body.format - Export format ('png', 'pdf', 'json')
+ * @param req.body.theme - Theme ('light' or 'dark', optional, default from original)
+ * @param req.body.scale - Rendering scale (optional, default: 4)
+ * @throws AppError 404 if graph not found or not owned by user
+ * @throws AppError 400 if invalid format or parameters
+ * @throws AppError 500 for unexpected errors
+ */
+export const regenerateGraph = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const startTime = Date.now();
+    const user = req.user!;
+    const graphId = parseInt(req.params.id);
+    const { format = 'png', theme = 'light', scale = 4, width = 1200, height = 800 } = req.body;
+
+    if (isNaN(graphId)) {
+      throw new AppError('Invalid graph ID', 400);
+    }
+
+    // Validate format
+    const validFormats = ['png', 'pdf', 'json'];
+    if (!validFormats.includes(format)) {
+      throw new AppError(`Invalid format. Must be one of: ${validFormats.join(', ')}`, 400);
+    }
+
+    // Verify graph belongs to user and get original settings
+    const graphResult = await query(
+      `SELECT id, settings, test_number, comment
+       FROM graph_history
+       WHERE id = $1 AND user_id = $2`,
+      [graphId, user.id]
+    );
+
+    if (graphResult.rows.length === 0) {
+      throw new AppError('Graph not found', 404);
+    }
+
+    const originalGraph = graphResult.rows[0];
+    const settings: TestSettings = originalGraph.settings;
+
+    logger.info('Graph regeneration started', {
+      graphId,
+      testNumber: settings.testNumber,
+      format,
+      theme,
+    });
+
+    // Validate settings
+    const validation = validateTestSettings(settings);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        errors: validation.errors,
+      });
+    }
+
+    let buffer: Buffer;
+    let filename: string;
+    const { storageService } = await import('../services/storage.service');
+
+    // Generate based on format
+    if (format === 'png') {
+      // Generate graph data and render PNG
+      const graphData = generatePressureData(settings);
+      const { renderGraph } = await import('../utils/canvasRenderer');
+      buffer = renderGraph(graphData, settings, {
+        width,
+        height,
+        scale,
+        theme: theme as 'light' | 'dark',
+      });
+      filename = await storageService.saveFile(buffer, 'png', `graph-${settings.testNumber}`);
+    } else if (format === 'pdf') {
+      // Generate graph data and render PDF
+      const graphData = generatePressureData(settings);
+      const { renderGraph } = await import('../utils/canvasRenderer');
+      const pngBuffer = renderGraph(graphData, settings, {
+        width,
+        height,
+        scale,
+        theme: theme as 'light' | 'dark',
+      });
+
+      // Create PDF with embedded PNG
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'landscape',
+        margin: 50,
+        info: {
+          Title: `Pressure Test Graph - ${settings.testNumber}`,
+          Author: 'Pressograph',
+          Subject: `Pressure Test ${settings.testNumber} - ${settings.graphTitle}`,
+          Creator: 'Pressograph - Pressure Test Visualizer',
+          Producer: 'Pressograph PDF Export',
+          CreationDate: new Date(),
+        },
+      });
+
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk));
+
+      const pdfPromise = new Promise<Buffer>((resolve, reject) => {
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+      });
+
+      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const pageHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom;
+
+      const imageAspectRatio = width / height;
+      let imageWidth = pageWidth;
+      let imageHeight = pageWidth / imageAspectRatio;
+
+      if (imageHeight > pageHeight) {
+        imageHeight = pageHeight;
+        imageWidth = pageHeight * imageAspectRatio;
+      }
+
+      const x = doc.page.margins.left + (pageWidth - imageWidth) / 2;
+      const y = doc.page.margins.top + (pageHeight - imageHeight) / 2;
+
+      doc.image(pngBuffer, x, y, { width: imageWidth, height: imageHeight });
+      doc.end();
+
+      buffer = await pdfPromise;
+      filename = await storageService.saveFile(buffer, 'pdf', `graph-${settings.testNumber}`);
+    } else {
+      // JSON export
+      const graphData = generatePressureData(settings);
+      const exportData = {
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        settings,
+        graphData,
+        comment: originalGraph.comment || null,
+      };
+      const jsonString = JSON.stringify(exportData, null, 2);
+      buffer = Buffer.from(jsonString, 'utf-8');
+      filename = await storageService.saveFile(buffer, 'json', `graph-${settings.testNumber}`);
+    }
+
+    const generationTime = Date.now() - startTime;
+
+    // Save new version to graph history
+    await query(
+      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent, comment)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        user.id,
+        settings.testNumber,
+        JSON.stringify(settings),
+        format,
+        filename,
+        buffer.length,
+        generationTime,
+        'success',
+        req.ip,
+        req.get('user-agent') || null,
+        originalGraph.comment || null,
+      ]
+    );
+
+    logger.info('Graph regeneration completed', {
+      graphId,
+      testNumber: settings.testNumber,
+      format,
+      filename,
+      fileSize: buffer.length,
+      generationTimeMs: generationTime,
+    });
+
+    // Set appropriate content type
+    const contentType =
+      format === 'png' ? 'image/png' : format === 'pdf' ? 'application/pdf' : 'application/json';
+
+    // Return download response
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.length.toString());
+    res.setHeader('X-Generation-Time-Ms', generationTime.toString());
+    res.setHeader('X-File-Size', buffer.length.toString());
+
+    res.send(buffer);
+  } catch (error) {
+    logger.error('Graph regeneration failed', { error });
     next(error);
   }
 };

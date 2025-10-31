@@ -2,25 +2,26 @@
 // Main Application Component
 // ═══════════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo, useCallback } from "react";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
-import { useShallow } from "zustand/react/shallow";
-import { useThemeStore } from "./store/useThemeStore";
-import { useInitializationStore } from "./store/useInitializationStore";
-import { useLanguage } from "./i18n";
-import { useDebounce } from "./hooks/useDebounce";
-import { NavBar } from "./components/layout/NavBar";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { ErrorBoundary } from "./components/errors";
-import { SkipToContent } from "./components/accessibility";
-import { HomePage } from "./pages/Home";
-import { LoginPage } from "./pages/Login";
-import { SetupPage } from "./pages/Setup";
-import { History } from "./pages/History";
-import { Admin } from "./pages/Admin";
-import { Help } from "./pages/Help";
-import { Profile } from "./pages/Profile";
+import { useEffect, useMemo, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { useShallow } from 'zustand/react/shallow';
+import { useThemeStore } from './store/useThemeStore';
+import { useInitializationStore } from './store/useInitializationStore';
+import { useLanguage } from './i18n';
+import { useDebounce } from './hooks/useDebounce';
+import { NavBar } from './components/layout/NavBar';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ErrorBoundary } from './components/errors';
+import { SkipToContent } from './components/accessibility';
+import { Version } from './components/common/Version';
+import { HomePage } from './pages/Home';
+import { LoginPage } from './pages/Login';
+import { SetupPage } from './pages/Setup';
+import { History } from './pages/History';
+import { Admin } from './pages/Admin';
+import { Help } from './pages/Help';
+import { Profile } from './pages/Profile';
 
 // Initialization Guard Component
 function InitializationGuard({ children }: { children: React.ReactNode }) {
@@ -33,8 +34,12 @@ function InitializationGuard({ children }: { children: React.ReactNode }) {
   }, [checkInitialization]);
 
   useEffect(() => {
-    if (isInitialized === false && !location.pathname.startsWith("/setup") && !location.pathname.startsWith("/share/")) {
-      navigate("/setup", { replace: true });
+    if (
+      isInitialized === false &&
+      !location.pathname.startsWith('/setup') &&
+      !location.pathname.startsWith('/share/')
+    ) {
+      navigate('/setup', { replace: true });
     }
   }, [isInitialized, navigate, location.pathname]);
 
@@ -68,10 +73,10 @@ function App() {
     // Use requestAnimationFrame to defer DOM manipulation to the next paint cycle
     // This prevents blocking the main thread and improves perceived performance
     requestAnimationFrame(() => {
-      if (themeValue === "dark") {
-        root.classList.add("dark");
+      if (themeValue === 'dark') {
+        root.classList.add('dark');
       } else {
-        root.classList.remove("dark");
+        root.classList.remove('dark');
       }
     });
   }, []);
@@ -84,21 +89,21 @@ function App() {
     () => ({
       duration: 4000,
       style: {
-        background: theme === "dark" ? "#1f2937" : "#fff",
-        color: theme === "dark" ? "#f3f4f6" : "#1f2937",
-        border: `2px solid ${theme === "dark" ? "#374151" : "#d1d5db"}`,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+        background: theme === 'dark' ? '#1f2937' : '#fff',
+        color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
+        border: `2px solid ${theme === 'dark' ? '#374151' : '#d1d5db'}`,
+        boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
       },
       success: {
         iconTheme: {
-          primary: "#065f46",
-          secondary: "#fff",
+          primary: '#065f46',
+          secondary: '#fff',
         },
       },
       error: {
         iconTheme: {
-          primary: "#991b1b",
-          secondary: "#fff",
+          primary: '#991b1b',
+          secondary: '#fff',
         },
       },
     }),
@@ -147,53 +152,54 @@ function App() {
 
                     <main id="main-content" tabIndex={-1} className="outline-none">
                       <Routes>
-                      <Route
-                        path="/"
-                        element={
-                          <ErrorBoundary>
-                            <HomePage />
-                          </ErrorBoundary>
-                        }
-                      />
-                      <Route
-                        path="/history"
-                        element={
-                          <ErrorBoundary>
-                            <History />
-                          </ErrorBoundary>
-                        }
-                      />
-                      <Route
-                        path="/admin"
-                        element={
-                          <ErrorBoundary>
-                            <Admin />
-                          </ErrorBoundary>
-                        }
-                      />
-                      <Route
-                        path="/help"
-                        element={
-                          <ErrorBoundary>
-                            <Help />
-                          </ErrorBoundary>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <ErrorBoundary>
-                            <Profile />
-                          </ErrorBoundary>
-                        }
-                      />
-                    </Routes>
+                        <Route
+                          path="/"
+                          element={
+                            <ErrorBoundary>
+                              <HomePage />
+                            </ErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/history"
+                          element={
+                            <ErrorBoundary>
+                              <History />
+                            </ErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/admin"
+                          element={
+                            <ErrorBoundary>
+                              <Admin />
+                            </ErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/help"
+                          element={
+                            <ErrorBoundary>
+                              <Help />
+                            </ErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ErrorBoundary>
+                              <Profile />
+                            </ErrorBoundary>
+                          }
+                        />
+                      </Routes>
                     </main>
 
                     <footer className="backdrop-blur-sm bg-content1 border-t border-divider mt-16">
                       <div className="container mx-auto px-4 py-8 text-center">
                         <p className="text-sm font-medium text-default-500">{t.footerText}</p>
                       </div>
+                      <Version />
                     </footer>
                   </ProtectedRoute>
                 }

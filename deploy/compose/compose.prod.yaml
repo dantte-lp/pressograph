@@ -122,6 +122,11 @@ services:
     # Volumes
     volumes:
       - postgres_data:/var/lib/postgresql/data:z
+      - ../../deploy/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro,z
+      - ../../server/migrations:/migrations:ro,z
+
+    # Command (use custom config)
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
     # Networking (только internal - НЕ подключен к traefik-public)
     networks:
@@ -147,14 +152,7 @@ services:
   # Backend API (Node.js/Express Production Build)
   # ═══════════════════════════════════════════════════════════════════
   backend:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-        BUILD_DATE: ${BUILD_DATE:-2025-10-29}
-        VERSION: ${VERSION:-1.0.0}
-    image: pressograph-backend:${VERSION:-latest}
+    image: localhost/pressograph-backend:${VERSION:-latest}
     container_name: pressograph-backend
     restart: unless-stopped
 
@@ -243,15 +241,7 @@ services:
   # Frontend (Nginx with React SPA)
   # ═══════════════════════════════════════════════════════════════════
   frontend:
-    build:
-      context: ../../
-      dockerfile: deploy/Containerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
-        NODE_ENV: production
-        BUILD_DATE: ${BUILD_DATE:-2025-10-29}
-        VERSION: ${VERSION:-1.0.0}
-    image: pressograph-frontend:${VERSION:-latest}
+    image: localhost/pressograph-frontend:${VERSION:-latest}
     container_name: pressograph-frontend
     restart: unless-stopped
 

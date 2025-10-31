@@ -25,9 +25,15 @@ import {
   ModalBody,
   ModalFooter,
   Pagination,
-
+  RadioGroup,
+  Radio,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Textarea,
 } from '@heroui/react';
-import { TableSkeleton } from "../components/skeletons";
+import { TableSkeleton } from '../components/skeletons';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../i18n';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
@@ -36,6 +42,8 @@ import {
   deleteGraph,
   downloadGraph,
   createShareLink,
+  regenerateGraph,
+  updateComment,
   formatFileSize,
   formatGenerationTime,
   formatRelativeTime,
@@ -75,6 +83,18 @@ export const History: React.FC = () => {
   // Loading states for async actions
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [sharingId, setSharingId] = useState<number | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
+
+  // Regenerate modal state
+  const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
+  const [graphToRegenerate, setGraphToRegenerate] = useState<GraphHistoryItem | null>(null);
+  const [regenerateFormat, setRegenerateFormat] = useState<'png' | 'pdf' | 'json'>('png');
+  const [regenerateTheme, setRegenerateTheme] = useState<'light' | 'dark'>('light');
+
+  // Edit comment state
+  const [isEditingComment, setIsEditingComment] = useState(false);
+  const [editedComment, setEditedComment] = useState('');
+  const [isSavingComment, setIsSavingComment] = useState(false);
 
   // Keyboard shortcuts
   // Esc to close modals
@@ -171,12 +191,122 @@ export const History: React.FC = () => {
   /**
    * Handle download button click
    */
-  const handleDownload = useCallback(async (graphId: number) => {
-    try {
-      setDownloadingId(graphId);
-      const { blob, filename } = await downloadGraph(graphId);
+  const handleDownload = useCallback(
+    async (graphId: number) => {
+      try {
+        setDownloadingId(graphId);
+        const { blob, filename } = await downloadGraph(graphId);
 
-      // Create download link
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+        toast.error(t.historyToast.downloadError);
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [t]
+  );
+
+  /**
+   * Handle share button click
+   */
+  const handleShare = useCallback(
+    async (graphId: number) => {
+      try {
+        setSharingId(graphId);
+        const response = await createShareLink({
+          graphId,
+          allowDownload: true,
+        });
+
+        // Copy to clipboard
+        await navigator.clipboard.writeText(response.shareLink.url);
+        toast.success(t.historyToast.shareSuccess);
+      } catch (error) {
+        console.error('Share failed:', error);
+        toast.error(t.historyToast.shareError);
+      } finally {
+        setSharingId(null);
+      }
+    },
+    [t]
+  );
+
+  /**
+   * Handle view button click
+   */
+  const handleView = useCallback((graph: GraphHistoryItem) => {
+    setPreviewGraph(graph);
+    setEditedComment(graph.comment || '');
+    setIsEditingComment(false);
+    setPreviewModalOpen(true);
+  }, []);
+
+  /**
+   * Handle save comment
+   */
+  const handleSaveComment = useCallback(async () => {
+    if (!previewGraph) return;
+
+    try {
+      setIsSavingComment(true);
+      await updateComment(previewGraph.id, editedComment);
+      toast.success('Комментарий обновлен');
+
+      // Update preview graph
+      setPreviewGraph({ ...previewGraph, comment: editedComment });
+      setIsEditingComment(false);
+
+      // Refresh history to show updated comment
+      await fetchHistory();
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+      toast.error('Ошибка обновления комментария');
+    } finally {
+      setIsSavingComment(false);
+    }
+  }, [previewGraph, editedComment, fetchHistory]);
+
+  /**
+   * Handle regenerate button click
+   */
+  const handleRegenerateClick = useCallback((graph: GraphHistoryItem) => {
+    setGraphToRegenerate(graph);
+    setRegenerateFormat(graph.export_format as 'png' | 'pdf' | 'json');
+    setRegenerateTheme('light');
+    setRegenerateModalOpen(true);
+  }, []);
+
+  /**
+   * Confirm regenerate action
+   */
+  const handleRegenerateConfirm = useCallback(async () => {
+    if (!graphToRegenerate) return;
+
+    try {
+      setRegeneratingId(graphToRegenerate.id);
+      setRegenerateModalOpen(false);
+
+      const toastId = toast.loading(`Regenerating ${regenerateFormat.toUpperCase()}...`);
+
+      const { blob, filename, metadata } = await regenerateGraph(graphToRegenerate.id, {
+        format: regenerateFormat,
+        theme: regenerateTheme,
+        scale: 4,
+        width: 1200,
+        height: 800,
+      });
+
+      // Download file
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -185,43 +315,27 @@ export const History: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast.error(t.historyToast.downloadError);
-    } finally {
-      setDownloadingId(null);
-    }
-  }, [t]);
 
-  /**
-   * Handle share button click
-   */
-  const handleShare = useCallback(async (graphId: number) => {
-    try {
-      setSharingId(graphId);
-      const response = await createShareLink({
-        graphId,
-        allowDownload: true,
+      toast.success(
+        `График регенерирован!\n${formatFileSize(metadata.fileSize)} • ${formatGenerationTime(metadata.generationTimeMs)}`,
+        {
+          id: toastId,
+          duration: 3000,
+        }
+      );
+
+      // Refresh history to show new version
+      await fetchHistory();
+    } catch (error) {
+      console.error('Regenerate failed:', error);
+      toast.error(`Ошибка регенерации: ${(error as Error).message}`, {
+        duration: 5000,
       });
-
-      // Copy to clipboard
-      await navigator.clipboard.writeText(response.shareLink.url);
-      toast.success(t.historyToast.shareSuccess);
-    } catch (error) {
-      console.error('Share failed:', error);
-      toast.error(t.historyToast.shareError);
     } finally {
-      setSharingId(null);
+      setRegeneratingId(null);
+      setGraphToRegenerate(null);
     }
-  }, [t]);
-
-  /**
-   * Handle view button click
-   */
-  const handleView = useCallback((graph: GraphHistoryItem) => {
-    setPreviewGraph(graph);
-    setPreviewModalOpen(true);
-  }, []);
+  }, [graphToRegenerate, regenerateFormat, regenerateTheme, fetchHistory]);
 
   /**
    * Handle sort change
@@ -299,17 +413,11 @@ export const History: React.FC = () => {
             <CardBody>
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="text-6xl mb-4">📊</div>
-                <h2 className="text-2xl font-semibold mb-2">
-                  {t.historyEmpty.title}
-                </h2>
+                <h2 className="text-2xl font-semibold mb-2">{t.historyEmpty.title}</h2>
                 <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-6">
                   {t.historyEmpty.description}
                 </p>
-                <Button
-                  color="primary"
-                  size="lg"
-                  onPress={() => navigate('/')}
-                >
+                <Button color="primary" size="lg" onPress={() => navigate('/')}>
                   {t.historyEmpty.button}
                 </Button>
               </div>
@@ -321,17 +429,17 @@ export const History: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8" role="main" aria-label={t.accessibility?.historyPage || 'Test history page'}>
+    <div
+      className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8"
+      role="main"
+      aria-label={t.accessibility?.historyPage || 'Test history page'}
+    >
       <div className="container mx-auto px-4 max-w-7xl">
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col gap-4 pb-4">
             <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-bold">
-                {t.historyTitle}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {t.historySubtitle}
-              </p>
+              <h1 className="text-3xl font-bold">{t.historyTitle}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{t.historySubtitle}</p>
             </div>
 
             {/* Filters */}
@@ -370,8 +478,8 @@ export const History: React.FC = () => {
                   sortBy === 'created_at' && sortOrder === 'desc'
                     ? 'newest'
                     : sortBy === 'created_at' && sortOrder === 'asc'
-                    ? 'oldest'
-                    : 'testNumber',
+                      ? 'oldest'
+                      : 'testNumber',
                 ]}
                 onSelectionChange={(keys) => {
                   const selected = Array.from(keys)[0] as string;
@@ -402,9 +510,7 @@ export const History: React.FC = () => {
             ) : graphs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="text-5xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold mb-2">
-                  {t.historyNoResults}
-                </h3>
+                <h3 className="text-xl font-semibold mb-2">{t.historyNoResults}</h3>
                 <Button
                   color="default"
                   variant="light"
@@ -426,26 +532,33 @@ export const History: React.FC = () => {
                 >
                   <TableHeader>
                     <TableColumn className="select-text w-16">ID</TableColumn>
-                    <TableColumn className="select-text w-32">{t.historyTable.testNumber}</TableColumn>
+                    <TableColumn className="select-text w-32">
+                      {t.historyTable.testNumber}
+                    </TableColumn>
                     <TableColumn className="select-text w-20">{t.historyTable.format}</TableColumn>
-                    <TableColumn className="select-text w-24">{t.historyTable.fileSize}</TableColumn>
+                    <TableColumn className="select-text w-24">
+                      {t.historyTable.fileSize}
+                    </TableColumn>
                     <TableColumn className="select-text w-40">Дата создания</TableColumn>
                     <TableColumn className="select-text w-32">Комментарий</TableColumn>
                     <TableColumn className="select-text w-24">{t.historyTable.status}</TableColumn>
-                    <TableColumn className="select-text" align="center">{t.historyTable.actions}</TableColumn>
+                    <TableColumn className="select-text" align="center">
+                      {t.historyTable.actions}
+                    </TableColumn>
                   </TableHeader>
                   <TableBody>
                     {graphs.map((graph) => (
-                      <TableRow key={graph.id} aria-label={`${t.accessibility?.testRow || 'Test result row'} ${graph.test_number}`}>
+                      <TableRow
+                        key={graph.id}
+                        aria-label={`${t.accessibility?.testRow || 'Test result row'} ${graph.test_number}`}
+                      >
                         <TableCell>
                           <span className="text-xs font-mono text-gray-600 dark:text-gray-400">
                             #{graph.id}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono font-semibold">
-                            {graph.test_number}
-                          </span>
+                          <span className="font-mono font-semibold">{graph.test_number}</span>
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -460,7 +573,9 @@ export const History: React.FC = () => {
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className="text-sm">{formatDate(graph.created_at)}</span>
-                            <span className="text-xs text-gray-500">{formatRelativeTime(graph.created_at)}</span>
+                            <span className="text-xs text-gray-500">
+                              {formatRelativeTime(graph.created_at)}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -472,55 +587,222 @@ export const History: React.FC = () => {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            color={getStatusColor(graph.status)}
-                            size="sm"
-                            variant="dot"
-                          >
+                          <Chip color={getStatusColor(graph.status)} size="sm" variant="dot">
                             {t.historyStatus[graph.status as keyof typeof t.historyStatus]}
                           </Chip>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2 justify-center">
-                            <Button
-                              size="sm"
-                              color="primary"
-                              variant="light"
-                              onPress={() => handleView(graph)}
-                              aria-label={t.accessibility?.previewGraph?.replace('{{number}}', graph.test_number) || `Preview graph for test ${graph.test_number}`}
-                            >
-                              {t.historyActions.view}
-                            </Button>
-                            <Button
-                              size="sm"
-                              color="success"
-                              variant="light"
-                              onPress={() => handleDownload(graph.id)}
-                              isDisabled={!graph.file_path}
-                              isLoading={downloadingId === graph.id}
-                              aria-label={t.accessibility?.downloadGraph?.replace('{{number}}', graph.test_number) || `Download graph for test ${graph.test_number}`}
-                            >
-                              {t.historyActions.download}
-                            </Button>
-                            <Button
-                              size="sm"
-                              color="secondary"
-                              variant="light"
-                              onPress={() => handleShare(graph.id)}
-                              isLoading={sharingId === graph.id}
-                              aria-label={t.accessibility?.shareGraph?.replace('{{number}}', graph.test_number) || `Share graph for test ${graph.test_number}`}
-                            >
-                              {t.historyActions.share}
-                            </Button>
-                            <Button
-                              size="sm"
-                              color="danger"
-                              variant="light"
-                              onPress={() => handleDeleteClick(graph.id)}
-                              aria-label={t.accessibility?.deleteGraph?.replace('{{number}}', graph.test_number) || `Delete graph for test ${graph.test_number}`}
-                            >
-                              {t.historyActions.delete}
-                            </Button>
+                          <div className="flex justify-center">
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button
+                                  size="sm"
+                                  variant="flat"
+                                  endContent={
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                      />
+                                    </svg>
+                                  }
+                                  aria-label={`Actions for test ${graph.test_number}`}
+                                >
+                                  Действия
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu aria-label="Graph actions">
+                                <DropdownItem
+                                  key="view"
+                                  onPress={() => handleView(graph)}
+                                  startContent={
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                      />
+                                    </svg>
+                                  }
+                                >
+                                  {t.historyActions.view}
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="download"
+                                  onPress={() => handleDownload(graph.id)}
+                                  isDisabled={!graph.file_path || downloadingId === graph.id}
+                                  startContent={
+                                    downloadingId === graph.id ? (
+                                      <svg
+                                        className="w-4 h-4 animate-spin"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                          className="opacity-75"
+                                          fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                        />
+                                      </svg>
+                                    )
+                                  }
+                                >
+                                  {t.historyActions.download}
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="regenerate"
+                                  onPress={() => handleRegenerateClick(graph)}
+                                  isDisabled={regeneratingId === graph.id}
+                                  startContent={
+                                    regeneratingId === graph.id ? (
+                                      <svg
+                                        className="w-4 h-4 animate-spin"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                          className="opacity-75"
+                                          fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                        />
+                                      </svg>
+                                    )
+                                  }
+                                >
+                                  Перегенерировать
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="share"
+                                  onPress={() => handleShare(graph.id)}
+                                  isDisabled={sharingId === graph.id}
+                                  startContent={
+                                    sharingId === graph.id ? (
+                                      <svg
+                                        className="w-4 h-4 animate-spin"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                          className="opacity-75"
+                                          fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                        />
+                                      </svg>
+                                    )
+                                  }
+                                >
+                                  {t.historyActions.share}
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="delete"
+                                  onPress={() => handleDeleteClick(graph.id)}
+                                  className="text-danger"
+                                  color="danger"
+                                  startContent={
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  }
+                                >
+                                  {t.historyActions.delete}
+                                </DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -574,11 +856,7 @@ export const History: React.FC = () => {
             >
               {t.historyDeleteModal.cancel}
             </Button>
-            <Button
-              color="danger"
-              onPress={handleDeleteConfirm}
-              isLoading={isDeleting}
-            >
+            <Button color="danger" onPress={handleDeleteConfirm} isLoading={isDeleting}>
               {t.historyDeleteModal.confirm}
             </Button>
           </ModalFooter>
@@ -605,7 +883,9 @@ export const History: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">ID</p>
-                    <p className="text-sm font-mono text-gray-600 dark:text-gray-400">#{previewGraph.id}</p>
+                    <p className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                      #{previewGraph.id}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -634,11 +914,11 @@ export const History: React.FC = () => {
                     <p>{formatGenerationTime(previewGraph.generation_time_ms)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Дата создания
-                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Дата создания</p>
                     <p>{formatDate(previewGraph.created_at)}</p>
-                    <p className="text-xs text-gray-500">{new Date(previewGraph.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(previewGraph.created_at).toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -650,15 +930,56 @@ export const History: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Comment Section */}
-                {previewGraph.comment && (
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-2">Комментарий</h4>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                      {previewGraph.comment}
-                    </p>
+                {/* Comment Section with Edit Capability */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold">Комментарий</h4>
+                    {!isEditingComment && (
+                      <Button size="sm" variant="flat" onPress={() => setIsEditingComment(true)}>
+                        Редактировать
+                      </Button>
+                    )}
                   </div>
-                )}
+                  {isEditingComment ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editedComment}
+                        onValueChange={setEditedComment}
+                        minRows={3}
+                        maxRows={10}
+                        variant="bordered"
+                        placeholder="Введите комментарий..."
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          onPress={() => {
+                            setEditedComment(previewGraph.comment || '');
+                            setIsEditingComment(false);
+                          }}
+                          isDisabled={isSavingComment}
+                        >
+                          Отмена
+                        </Button>
+                        <Button
+                          size="sm"
+                          color="success"
+                          onPress={handleSaveComment}
+                          isLoading={isSavingComment}
+                        >
+                          Сохранить
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                      {previewGraph.comment || (
+                        <span className="text-gray-400 italic">Комментарий отсутствует</span>
+                      )}
+                    </p>
+                  )}
+                </div>
 
                 {/* Test Settings Preview */}
                 {previewGraph.settings && (
@@ -674,7 +995,9 @@ export const History: React.FC = () => {
                         <span>{previewGraph.settings.testDuration}h</span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">{t.workingPressure}: </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {t.workingPressure}:{' '}
+                        </span>
                         <span>{previewGraph.settings.workingPressure} MPa</span>
                       </div>
                       <div>
@@ -699,13 +1022,95 @@ export const History: React.FC = () => {
               {t.helpCopy !== t.helpCopy ? 'Close' : 'Close'}
             </Button>
             {previewGraph && (
-              <Button
-                color="success"
-                onPress={() => handleDownload(previewGraph.id)}
-              >
+              <Button color="success" onPress={() => handleDownload(previewGraph.id)}>
                 {t.historyActions.download}
               </Button>
             )}
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Regenerate Modal */}
+      <Modal
+        isOpen={regenerateModalOpen}
+        onClose={() => {
+          setRegenerateModalOpen(false);
+          setGraphToRegenerate(null);
+        }}
+        size="lg"
+        aria-labelledby="regenerate-modal-title"
+      >
+        <ModalContent>
+          <ModalHeader id="regenerate-modal-title">
+            Regenerate Graph: {graphToRegenerate?.test_number}
+          </ModalHeader>
+          <ModalBody className="gap-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Regenerate this graph with updated font rendering and choose export format and theme.
+            </p>
+
+            {/* Format Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Export Format</label>
+              <RadioGroup
+                value={regenerateFormat}
+                onValueChange={(value) => setRegenerateFormat(value as 'png' | 'pdf' | 'json')}
+                orientation="horizontal"
+              >
+                <Radio value="png" description="High-quality image">
+                  PNG
+                </Radio>
+                <Radio value="pdf" description="Printable document">
+                  PDF
+                </Radio>
+                <Radio value="json" description="Data export">
+                  JSON
+                </Radio>
+              </RadioGroup>
+            </div>
+
+            {/* Theme Selection - only for PNG and PDF */}
+            {(regenerateFormat === 'png' || regenerateFormat === 'pdf') && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Graph Theme</label>
+                <RadioGroup
+                  value={regenerateTheme}
+                  onValueChange={(value) => setRegenerateTheme(value as 'light' | 'dark')}
+                  orientation="horizontal"
+                >
+                  <Radio value="light" description="Light background">
+                    Light
+                  </Radio>
+                  <Radio value="dark" description="Dark background">
+                    Dark
+                  </Radio>
+                </RadioGroup>
+              </div>
+            )}
+
+            {graphToRegenerate?.comment && (
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2 text-sm">Original Comment</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {graphToRegenerate.comment}
+                </p>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="default"
+              variant="light"
+              onPress={() => {
+                setRegenerateModalOpen(false);
+                setGraphToRegenerate(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button color="warning" onPress={handleRegenerateConfirm}>
+              Regenerate
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

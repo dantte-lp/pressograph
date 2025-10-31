@@ -18,7 +18,10 @@ try {
     weight: 'bold',
   });
 } catch (error) {
-  console.warn('Warning: Could not register DejaVu Sans font. Cyrillic text may not display correctly:', error);
+  console.warn(
+    'Warning: Could not register DejaVu Sans font. Cyrillic text may not display correctly:',
+    error
+  );
 }
 
 type Theme = 'light' | 'dark';
@@ -37,6 +40,8 @@ interface Colors {
   gridLight: string;
   infoBoxBg: string;
   infoBoxBorder: string;
+  graphLine: string;
+  graphFill: string;
 }
 
 const getColors = (theme: Theme): Colors => {
@@ -48,6 +53,8 @@ const getColors = (theme: Theme): Colors => {
       gridLight: '#383838',
       infoBoxBg: 'rgba(56, 56, 56, 0.9)',
       infoBoxBorder: '#555',
+      graphLine: '#4da6ff', // Brighter blue for dark theme
+      graphFill: 'rgba(77, 166, 255, 0.3)', // Matching fill with opacity
     };
   }
   return {
@@ -57,6 +64,8 @@ const getColors = (theme: Theme): Colors => {
     gridLight: '#f0f0f0',
     infoBoxBg: 'rgba(255, 248, 220, 0.9)',
     infoBoxBorder: '#ddd',
+    graphLine: '#0066cc', // Standard blue for light theme
+    graphFill: 'rgba(173, 216, 230, 0.3)', // Light blue fill
   };
 };
 
@@ -74,7 +83,8 @@ export const renderGraph = (
 ): Buffer => {
   const { width, height, scale, theme } = config;
   const { points, startDateTime, endDateTime } = graphData;
-  const { workingPressure, maxPressure, graphTitle, testNumber, temperature, date, showInfo } = settings;
+  const { workingPressure, maxPressure, graphTitle, testNumber, temperature, date, showInfo } =
+    settings;
 
   // Create canvas (node-canvas creates new Canvas objects)
   const displayWidth = width;
@@ -211,11 +221,7 @@ export const renderGraph = (
   const thirtyMinutes = 30 * 60 * 1000;
   ctx.strokeStyle = colors.gridLight;
   ctx.lineWidth = 0.5;
-  for (
-    let time = graphStartTime.getTime();
-    time <= graphEndTime.getTime();
-    time += thirtyMinutes
-  ) {
+  for (let time = graphStartTime.getTime(); time <= graphEndTime.getTime(); time += thirtyMinutes) {
     const x = xScale(time);
     if (x >= margin.left && x <= margin.left + graphWidth) {
       ctx.beginPath();
@@ -288,8 +294,8 @@ export const renderGraph = (
     return canvas.toBuffer('image/png');
   }
 
-  // Рисование графика - заливка
-  ctx.fillStyle = 'rgba(173, 216, 230, 0.3)';
+  // Рисование графика - заливка (theme-aware)
+  ctx.fillStyle = colors.graphFill;
   ctx.beginPath();
   ctx.moveTo(xScale(points[0].time.getTime()), yScale(0));
   for (const point of points) {
@@ -299,8 +305,8 @@ export const renderGraph = (
   ctx.closePath();
   ctx.fill();
 
-  // Рисование графика - линия
-  ctx.strokeStyle = '#0066cc';
+  // Рисование графика - линия (theme-aware)
+  ctx.strokeStyle = colors.graphLine;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(xScale(points[0].time.getTime()), yScale(points[0].pressure));
@@ -331,7 +337,11 @@ export const renderGraph = (
     const baseY = displayHeight - 45;
     ctx.fillText(`Испытание №${testNumber}`, displayWidth / 2, baseY);
     ctx.fillText(`Дата: ${date}`, displayWidth / 2, baseY + 12);
-    ctx.fillText(`Рабочее давление: ${workingPressure} МПа | Температура: ${temperature}°C`, displayWidth / 2, baseY + 24);
+    ctx.fillText(
+      `Рабочее давление: ${workingPressure} МПа | Температура: ${temperature}°C`,
+      displayWidth / 2,
+      baseY + 24
+    );
   }
 
   // Return PNG buffer

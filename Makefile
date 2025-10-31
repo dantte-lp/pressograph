@@ -8,6 +8,9 @@
 .PHONY: observability-monitoring observability-logging observability-tracing observability-full
 .PHONY: observability-restart observability-clean
 .PHONY: gen-secrets init-env-dev init-env-prod
+.PHONY: rebuild-frontend-prod deploy-frontend-prod frontend-prod restart-frontend-prod
+.PHONY: rebuild-frontend-dev deploy-frontend-dev frontend-dev restart-frontend-dev
+.PHONY: npm-build npm-install logs-frontend-prod logs-frontend-dev
 
 # Default target
 .DEFAULT_GOAL := help
@@ -27,10 +30,15 @@ PROJECT_ROOT := $(CURDIR)
 # Image registry (for push/pull operations)
 REGISTRY ?= localhost
 IMAGE_PREFIX ?= pressograph
+VERSION := $(shell cat VERSION 2>/dev/null || echo "1.2.0")
+COMMIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE := $(shell date -u +'%Y-%m-%d')
 
 # Image names
-FRONTEND_IMAGE := $(REGISTRY)/$(IMAGE_PREFIX)-frontend:latest
-BACKEND_IMAGE := $(REGISTRY)/$(IMAGE_PREFIX)-backend:latest
+FRONTEND_IMAGE := $(REGISTRY)/$(IMAGE_PREFIX)-frontend:$(VERSION)
+FRONTEND_IMAGE_LATEST := $(REGISTRY)/$(IMAGE_PREFIX)-frontend:latest
+BACKEND_IMAGE := $(REGISTRY)/$(IMAGE_PREFIX)-backend:$(VERSION)
+BACKEND_IMAGE_LATEST := $(REGISTRY)/$(IMAGE_PREFIX)-backend:latest
 
 # Pod and network names
 POD_NAME := pressograph
@@ -422,3 +430,206 @@ observability-clean: ## Stop and remove observability stack (including volumes)
 	@echo -e "$(CYAN)Stopping and removing observability stack...$(NC)"
 	podman-compose -f deploy/compose/compose.observability.yaml down -v
 	@echo -e "$(GREEN)Observability stack cleaned!$(NC)"
+
+# ═══════════════════════════════════════════════════════════════════
+# Frontend Rebuild & Deployment
+# ═══════════════════════════════════════════════════════════════════
+
+npm-install: ## Install npm dependencies
+	@echo -e "$(CYAN)Installing npm dependencies...$(NC)"
+	npm install --prefer-offline --no-audit
+	@echo -e "$(GREEN)Dependencies installed!$(NC)"
+
+npm-build: ## Build frontend with Vite
+	@echo -e "$(CYAN)Building frontend with Vite...$(NC)"
+	npm run build
+	@echo -e "$(GREEN)Frontend build complete!$(NC)"
+	@echo -e "$(CYAN)Output: $(PROJECT_ROOT)/dist$(NC)"
+
+# ───────────────────────────────────────────────────────────────────
+# Production Frontend
+# ───────────────────────────────────────────────────────────────────
+
+rebuild-frontend-prod: npm-install npm-build ## Rebuild production frontend container with buildah
+	@echo -e "$(CYAN)Building production frontend container image with buildah...$(NC)"
+	buildah bud \
+		--format docker \
+		--layers \
+		--tag localhost/pressograph-frontend:latest \
+		--tag localhost/pressograph-frontend:$(VERSION) \
+		--file deploy/Containerfile \
+		--build-arg VITE_API_URL=/api \
+		--build-arg NODE_ENV=production \
+		--build-arg BUILD_DATE="$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+		--build-arg VERSION=$(VERSION) \
+		.
+	@echo -e "$(GREEN)Production frontend container image built successfully!$(NC)"
+	@echo -e "$(CYAN)Image: localhost/pressograph-frontend:latest, localhost/pressograph-frontend:$(VERSION)$(NC)"
+
+deploy-frontend-prod: ## Deploy production frontend (restart with new image)
+	@echo -e "$(CYAN)Deploying production frontend...$(NC)"
+	@echo -e "$(YELLOW)Stopping current frontend container...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod stop frontend || true
+	@echo -e "$(YELLOW)Removing old frontend container...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod rm -f frontend || true
+	@echo -e "$(YELLOW)Starting new frontend container...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod up -d frontend
+	@echo -e "$(GREEN)Production frontend deployed successfully!$(NC)"
+	@echo -e "$(CYAN)Access: https://pressograph.infra4.dev$(NC)"
+	@echo -e "$(CYAN)Check status: make status-prod$(NC)"
+	@echo -e "$(CYAN)View logs: make logs-frontend-prod$(NC)"
+
+restart-frontend-prod: ## Restart production frontend without rebuild
+	@echo -e "$(CYAN)Restarting production frontend...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod restart frontend
+	@echo -e "$(GREEN)Production frontend restarted!$(NC)"
+
+frontend-prod: rebuild-frontend-prod deploy-frontend-prod ## Full production frontend rebuild and deployment
+	@echo -e "$(GREEN)═══════════════════════════════════════════════════════════════════$(NC)"
+	@echo -e "$(GREEN)   Production Frontend Rebuild & Deployment Complete!$(NC)"
+	@echo -e "$(GREEN)═══════════════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo -e "$(CYAN)Access your application:$(NC)"
+	@echo -e "  🌐 Frontend: https://pressograph.infra4.dev"
+	@echo -e "  🔌 API:      https://pressograph.infra4.dev/api"
+	@echo ""
+	@echo -e "$(CYAN)Useful commands:$(NC)"
+	@echo -e "  📊 Status:  make status-prod"
+	@echo -e "  📜 Logs:    make logs-frontend-prod"
+	@echo -e "  🔄 Restart: make restart-frontend-prod"
+	@echo ""
+
+logs-frontend-prod: ## Show production frontend logs
+	@echo -e "$(CYAN)Showing production frontend logs...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod logs -f --tail 100 frontend
+
+status-prod: ## Show production environment status
+	@echo -e "$(CYAN)Production Environment Status:$(NC)"
+	@echo ""
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod ps
+
+# ───────────────────────────────────────────────────────────────────
+# Development Frontend
+# ───────────────────────────────────────────────────────────────────
+
+rebuild-frontend-dev: npm-install npm-build ## Rebuild development frontend container with buildah
+	@echo -e "$(CYAN)Building development frontend container image with buildah...$(NC)"
+	buildah bud \
+		--format docker \
+		--layers \
+		--tag localhost/pressograph-frontend:dev \
+		--file deploy/Containerfile \
+		--build-arg VITE_API_URL=/api \
+		--build-arg NODE_ENV=development \
+		--build-arg BUILD_DATE="$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+		--build-arg VERSION=$(VERSION)-dev \
+		.
+	@echo -e "$(GREEN)Development frontend container image built successfully!$(NC)"
+	@echo -e "$(CYAN)Image: localhost/pressograph-frontend:dev$(NC)"
+
+deploy-frontend-dev: ## Deploy development frontend
+	@echo -e "$(CYAN)Deploying development frontend...$(NC)"
+	@if [ ! -f deploy/compose/compose.dev.yaml ]; then \
+		echo -e "$(RED)ERROR: deploy/compose/compose.dev.yaml not found!$(NC)"; \
+		echo -e "$(YELLOW)Run 'make create-dev-compose' first$(NC)"; \
+		exit 1; \
+	fi
+	@echo -e "$(YELLOW)Stopping current frontend container...$(NC)"
+	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev stop frontend || true
+	@echo -e "$(YELLOW)Removing old frontend container...$(NC)"
+	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev rm -f frontend || true
+	@echo -e "$(YELLOW)Starting new frontend container...$(NC)"
+	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev up -d frontend
+	@echo -e "$(GREEN)Development frontend deployed successfully!$(NC)"
+	@echo -e "$(CYAN)Access: https://dev-pressograph.infra4.dev$(NC)"
+
+restart-frontend-dev: ## Restart development frontend without rebuild
+	@echo -e "$(CYAN)Restarting development frontend...$(NC)"
+	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev restart frontend
+	@echo -e "$(GREEN)Development frontend restarted!$(NC)"
+
+frontend-dev: rebuild-frontend-dev deploy-frontend-dev ## Full development frontend rebuild and deployment
+	@echo -e "$(GREEN)Development frontend rebuild and deployment complete!$(NC)"
+
+logs-frontend-dev: ## Show development frontend logs
+	@echo -e "$(CYAN)Showing development frontend logs...$(NC)"
+	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev logs -f --tail 100 frontend
+
+status-dev: ## Show development environment status
+	@echo -e "$(CYAN)Development Environment Status:$(NC)"
+	@echo ""
+	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev ps
+
+# ═══════════════════════════════════════════════════════════════════
+# Backend Rebuild & Deployment
+# ═══════════════════════════════════════════════════════════════════
+
+rebuild-backend-prod: ## Rebuild production backend container with buildah
+	@echo -e "$(CYAN)Building production backend container image with buildah...$(NC)"
+	buildah bud \
+		--format docker \
+		--layers \
+		--tag localhost/pressograph-backend:latest \
+		--tag localhost/pressograph-backend:$(VERSION) \
+		--file server/Dockerfile \
+		--build-arg NODE_ENV=production \
+		--build-arg BUILD_DATE="$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+		--build-arg VERSION=$(VERSION) \
+		server/
+	@echo -e "$(GREEN)Production backend container image built successfully!$(NC)"
+	@echo -e "$(CYAN)Image: localhost/pressograph-backend:latest, localhost/pressograph-backend:$(VERSION)$(NC)"
+
+deploy-backend-prod: ## Deploy production backend (restart with new image)
+	@echo -e "$(CYAN)Deploying production backend...$(NC)"
+	@echo -e "$(YELLOW)Stopping current backend container...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod stop backend || true
+	@echo -e "$(YELLOW)Removing old backend container...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod rm -f backend || true
+	@echo -e "$(YELLOW)Starting new backend container...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod up -d backend
+	@echo -e "$(GREEN)Production backend deployed successfully!$(NC)"
+	@echo -e "$(CYAN)Check status: make status-prod$(NC)"
+	@echo -e "$(CYAN)View logs: make logs-backend-prod$(NC)"
+
+backend-prod: rebuild-backend-prod deploy-backend-prod ## Full production backend rebuild and deployment
+	@echo -e "$(GREEN)Production backend rebuild and deployment complete!$(NC)"
+
+logs-backend-prod: ## Show production backend logs
+	@echo -e "$(CYAN)Showing production backend logs...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod logs -f --tail 100 backend
+
+# ═══════════════════════════════════════════════════════════════════
+# Full Stack Rebuild & Deployment
+# ═══════════════════════════════════════════════════════════════════
+
+rebuild-all-prod: rebuild-frontend-prod rebuild-backend-prod ## Rebuild all production containers
+	@echo -e "$(GREEN)All production containers rebuilt!$(NC)"
+
+deploy-all-prod: ## Deploy all production services
+	@echo -e "$(CYAN)Deploying all production services...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod up -d
+	@echo -e "$(GREEN)All production services deployed!$(NC)"
+	@echo ""
+	@echo -e "$(CYAN)Access your application:$(NC)"
+	@echo -e "  🌐 Frontend: https://pressograph.infra4.dev"
+	@echo -e "  🔌 API:      https://pressograph.infra4.dev/api"
+	@echo ""
+	@echo -e "$(CYAN)Useful commands:$(NC)"
+	@echo -e "  📊 Status:  make status-prod"
+	@echo -e "  📜 Logs:    make logs-frontend-prod / make logs-backend-prod"
+	@echo ""
+
+full-prod: rebuild-all-prod deploy-all-prod ## Full production rebuild and deployment (all services)
+	@echo -e "$(GREEN)═══════════════════════════════════════════════════════════════════$(NC)"
+	@echo -e "$(GREEN)   Full Production Stack Rebuild & Deployment Complete!$(NC)"
+	@echo -e "$(GREEN)═══════════════════════════════════════════════════════════════════$(NC)"
+
+restart-prod: ## Restart all production services without rebuild
+	@echo -e "$(CYAN)Restarting all production services...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod restart
+	@echo -e "$(GREEN)All production services restarted!$(NC)"
+
+down-prod: ## Stop all production services
+	@echo -e "$(CYAN)Stopping all production services...$(NC)"
+	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod down
+	@echo -e "$(GREEN)All production services stopped!$(NC)"
