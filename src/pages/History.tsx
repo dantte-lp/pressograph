@@ -398,7 +398,7 @@ export const History: React.FC = () => {
 
           <CardBody>
             {isLoading ? (
-              <TableSkeleton rows={5} columns={7} showCard={false} />
+              <TableSkeleton rows={5} columns={8} showCard={false} />
             ) : graphs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="text-5xl mb-4">🔍</div>
@@ -425,14 +425,13 @@ export const History: React.FC = () => {
                   className="mb-4"
                 >
                   <TableHeader>
-                    <TableColumn className="select-text">ID</TableColumn>
-                    <TableColumn className="select-text">{t.historyTable.testNumber}</TableColumn>
-                    <TableColumn className="select-text">{t.historyTable.format}</TableColumn>
-                    <TableColumn className="select-text">{t.historyTable.fileSize}</TableColumn>
-                    <TableColumn className="select-text">{t.historyTable.generationTime}</TableColumn>
-                    <TableColumn className="select-text">Дата создания</TableColumn>
-                    <TableColumn className="select-text">Комментарий</TableColumn>
-                    <TableColumn className="select-text">{t.historyTable.status}</TableColumn>
+                    <TableColumn className="select-text w-16">ID</TableColumn>
+                    <TableColumn className="select-text w-32">{t.historyTable.testNumber}</TableColumn>
+                    <TableColumn className="select-text w-20">{t.historyTable.format}</TableColumn>
+                    <TableColumn className="select-text w-24">{t.historyTable.fileSize}</TableColumn>
+                    <TableColumn className="select-text w-40">Дата создания</TableColumn>
+                    <TableColumn className="select-text w-32">Комментарий</TableColumn>
+                    <TableColumn className="select-text w-24">{t.historyTable.status}</TableColumn>
                     <TableColumn className="select-text" align="center">{t.historyTable.actions}</TableColumn>
                   </TableHeader>
                   <TableBody>
@@ -458,7 +457,6 @@ export const History: React.FC = () => {
                           </Chip>
                         </TableCell>
                         <TableCell>{formatFileSize(graph.file_size)}</TableCell>
-                        <TableCell>{formatGenerationTime(graph.generation_time_ms)}</TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className="text-sm">{formatDate(graph.created_at)}</span>
@@ -466,7 +464,10 @@ export const History: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate block" title={graph.comment || ''}>
+                          <span
+                            className="text-sm text-gray-700 dark:text-gray-300 block truncate max-w-[15ch]"
+                            title={graph.comment || ''}
+                          >
                             {graph.comment || '-'}
                           </span>
                         </TableCell>

@@ -245,10 +245,11 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
       theme: theme as 'light' | 'dark',
     });
 
-    // Create PDF document
+    // Create PDF document with landscape orientation
     const PDFDocument = (await import('pdfkit')).default;
     const doc = new PDFDocument({
       size: pageSize,
+      layout: 'landscape',
       margin: 50,
       info: {
         Title: metadata.title || `Pressure Test Graph - ${settings.testNumber}`,
@@ -294,17 +295,7 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
       height: imageHeight,
     });
 
-    // Add footer with metadata
-    doc.fontSize(8).fillColor('#666666');
-    const footerY = doc.page.height - 30;
-    doc.text(
-      `Generated: ${new Date().toLocaleString('ru-RU')} | Test: ${settings.testNumber}`,
-      doc.page.margins.left,
-      footerY,
-      { align: 'center', width: pageWidth }
-    );
-
-    // Finalize PDF
+    // Finalize PDF (footer removed per user request)
     doc.end();
 
     // Wait for PDF generation to complete

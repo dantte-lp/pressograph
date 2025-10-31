@@ -8,7 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useLanguage } from '../../i18n';
-import { Card, CardHeader, CardBody, Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea } from '@heroui/react';
+import { Card, CardHeader, CardBody, Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea, RadioGroup, Radio } from '@heroui/react';
 import { generatePressureData } from '../../utils/graphGenerator';
 import { exportToPNG as exportToPNGClient, exportSettings, importSettings } from '../../utils/export';
 import { exportPNG as exportPNGBackend, exportPDF as exportPDFBackend, exportJSON as exportJSONBackend, formatFileSize, formatGenerationTime } from '../../services/api.service';
@@ -54,6 +54,7 @@ export const ExportButtons = () => {
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [commentOverride, setCommentOverride] = useState('');
   const [exportType, setExportType] = useState<'save' | 'png' | 'pdf' | 'json'>('save');
+  const [exportTheme, setExportTheme] = useState<'current' | 'light' | 'dark'>('current');
 
   /**
    * Open comment modal before export (optional override of comment from Test Parameters)
@@ -61,6 +62,7 @@ export const ExportButtons = () => {
   const openCommentModal = useCallback((type: 'save' | 'png' | 'pdf' | 'json') => {
     setExportType(type);
     setCommentOverride(settings.comment || '');
+    setExportTheme('current'); // Reset to current theme
     setIsCommentModalOpen(true);
   }, [settings.comment]);
 
@@ -95,10 +97,13 @@ export const ExportButtons = () => {
     const toastId = toast.loading('Генерация PNG...');
 
     try {
+      // Determine theme to use for export
+      const themeToUse = exportTheme === 'current' ? theme : exportTheme;
+
       // Try backend API first (higher quality, server-side rendering)
       const { blob, filename, metadata } = await exportPNGBackend({
         settings,
-        theme,
+        theme: themeToUse,
         scale: 4, // High quality
         width: 1200,
         height: 800,
@@ -141,7 +146,7 @@ export const ExportButtons = () => {
     } finally {
       setIsExportingPNG(false);
     }
-  }, [settings, theme, commentOverride]);
+  }, [settings, theme, commentOverride, exportTheme]);
 
   /**
    * Export PDF using backend API
@@ -151,9 +156,12 @@ export const ExportButtons = () => {
     const toastId = toast.loading('Генерация PDF...');
 
     try {
+      // Determine theme to use for export
+      const themeToUse = exportTheme === 'current' ? theme : exportTheme;
+
       const { blob, filename, metadata } = await exportPDFBackend({
         settings,
-        theme,
+        theme: themeToUse,
         scale: 4,
         width: 1200,
         height: 800,
@@ -178,7 +186,7 @@ export const ExportButtons = () => {
     } finally {
       setIsExportingPDF(false);
     }
-  }, [settings, theme, commentOverride]);
+  }, [settings, theme, commentOverride, exportTheme]);
 
   /**
    * Export JSON using backend API
@@ -249,10 +257,13 @@ export const ExportButtons = () => {
     const toastId = toast.loading(t.saveGraph + '...');
 
     try {
+      // Determine theme to use for export
+      const themeToUse = exportTheme === 'current' ? theme : exportTheme;
+
       // Export PNG to backend (which also saves to database)
       const { blob, filename, metadata } = await exportPNGBackend({
         settings,
-        theme,
+        theme: themeToUse,
         scale: 4,
         width: 1200,
         height: 800,
@@ -275,7 +286,7 @@ export const ExportButtons = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [settings, theme, markAsSaved, t, commentOverride]);
+  }, [settings, theme, markAsSaved, t, commentOverride, exportTheme]);
 
   return (
     <>
@@ -396,23 +407,53 @@ export const ExportButtons = () => {
     >
       <ModalContent>
         <ModalHeader>
-          Добавить или изменить комментарий (опционально)
+          Настройки экспорта
         </ModalHeader>
-        <ModalBody>
-          <Textarea
-            label="Комментарий"
-            placeholder="Введите комментарий к графику..."
-            value={commentOverride}
-            onValueChange={setCommentOverride}
-            minRows={3}
-            maxRows={6}
-            variant="bordered"
-          />
-          <p className="text-sm text-default-500 mt-2">
-            {settings.comment
-              ? 'Изменить комментарий из "Параметры испытания" для этого экспорта.'
-              : 'Комментарий будет сохранен вместе с графиком и отображен в истории.'}
-          </p>
+        <ModalBody className="gap-4">
+          {/* Theme Selection - only show for PNG and PDF exports */}
+          {(exportType === 'png' || exportType === 'pdf' || exportType === 'save') && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Тема графика
+              </label>
+              <RadioGroup
+                value={exportTheme}
+                onValueChange={(value) => setExportTheme(value as 'current' | 'light' | 'dark')}
+                orientation="horizontal"
+              >
+                <Radio value="current" description="Использовать текущую тему приложения">
+                  Текущая
+                </Radio>
+                <Radio value="light" description="Светлый фон и темный текст">
+                  Светлая
+                </Radio>
+                <Radio value="dark" description="Темный фон и светлый текст">
+                  Темная
+                </Radio>
+              </RadioGroup>
+              <p className="text-xs text-default-500 mt-1">
+                Текущая тема: <strong>{theme === 'dark' ? 'Темная' : 'Светлая'}</strong>
+              </p>
+            </div>
+          )}
+
+          {/* Comment Input */}
+          <div className="space-y-2">
+            <Textarea
+              label="Комментарий (опционально)"
+              placeholder="Введите комментарий к графику..."
+              value={commentOverride}
+              onValueChange={setCommentOverride}
+              minRows={3}
+              maxRows={6}
+              variant="bordered"
+            />
+            <p className="text-xs text-default-500">
+              {settings.comment
+                ? 'Изменить комментарий из "Параметры испытания" для этого экспорта.'
+                : 'Комментарий будет сохранен вместе с графиком и отображен в истории.'}
+            </p>
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button
@@ -425,7 +466,7 @@ export const ExportButtons = () => {
             color="primary"
             onPress={executeExport}
           >
-            Продолжить
+            Экспортировать
           </Button>
         </ModalFooter>
       </ModalContent>
