@@ -15,16 +15,19 @@ vi.mock('./helpers', () => ({
 }));
 
 // Mock jsPDF with proper constructor
-const mockPdfInstance = {
+// Create mock instance outside of factory but keep reference inside
+const mockPdfMethods = {
   addImage: vi.fn(),
   save: vi.fn(),
 };
 
-vi.mock('jspdf', () => ({
-  jsPDF: vi.fn(() => {
-    return mockPdfInstance;
-  }),
-}));
+vi.mock('jspdf', () => {
+  return {
+    jsPDF: vi.fn(() => {
+      return mockPdfMethods;
+    }),
+  };
+});
 
 describe('Export Utilities', () => {
   let mockGraphData: GraphData;
@@ -204,7 +207,7 @@ describe('Export Utilities', () => {
       const theme: Theme = 'light';
       exportToPDF(mockGraphData, mockSettings, theme);
 
-      expect(mockPdfInstance.addImage).toHaveBeenCalledWith(
+      expect(mockPdfMethods.addImage).toHaveBeenCalledWith(
         'data:image/png;base64,mockImageData',
         'PNG',
         0,
@@ -218,7 +221,7 @@ describe('Export Utilities', () => {
       const theme: Theme = 'light';
       exportToPDF(mockGraphData, mockSettings, theme);
 
-      expect(mockPdfInstance.save).toHaveBeenCalledWith(
+      expect(mockPdfMethods.save).toHaveBeenCalledWith(
         'pressure_test_graph_TEST-001_20251031_120000.pdf'
       );
     });
