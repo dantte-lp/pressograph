@@ -46,6 +46,7 @@ const getDefaultSettings = (): TestSettings => ({
     { id: generateId(), time: 12, duration: 15 },
     { id: generateId(), time: 14, duration: 15 },
   ],
+  comment: '',
 });
 
 const presetTemplates: Record<PresetTemplate, Partial<TestSettings>> = {
@@ -175,6 +176,7 @@ export const useTestStore = create<TestStore>()(
           showInfo: state.showInfo,
           date: state.date,
           pressureTests: state.pressureTests,
+          comment: state.comment,
         };
       },
 
@@ -197,6 +199,7 @@ export const useTestStore = create<TestStore>()(
           showInfo: state.showInfo,
           date: state.date,
           pressureTests: state.pressureTests,
+          comment: state.comment,
         };
         set({ isDirty: false, lastSavedState: currentSettings });
       },

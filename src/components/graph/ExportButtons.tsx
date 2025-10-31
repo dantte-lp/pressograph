@@ -33,6 +33,7 @@ export const ExportButtons = () => {
       showInfo: state.showInfo,
       date: state.date,
       pressureTests: state.pressureTests,
+      comment: state.comment,
     }))
   );
   const { isDirty, markAsSaved } = useTestStore(
@@ -49,19 +50,19 @@ export const ExportButtons = () => {
   const [isExportingJSON, setIsExportingJSON] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Comment modal state
+  // Comment modal state (for optional override)
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [comment, setComment] = useState('');
+  const [commentOverride, setCommentOverride] = useState('');
   const [exportType, setExportType] = useState<'save' | 'png' | 'pdf' | 'json'>('save');
 
   /**
-   * Open comment modal before export
+   * Open comment modal before export (optional override of comment from Test Parameters)
    */
   const openCommentModal = useCallback((type: 'save' | 'png' | 'pdf' | 'json') => {
     setExportType(type);
-    setComment('');
+    setCommentOverride(settings.comment || '');
     setIsCommentModalOpen(true);
-  }, []);
+  }, [settings.comment]);
 
   /**
    * Execute export with comment
@@ -83,7 +84,7 @@ export const ExportButtons = () => {
         await handleExportJSON();
         break;
     }
-  }, [exportType, comment]);
+  }, [exportType]);
 
   /**
    * Export PNG using backend API (server-side rendering)
@@ -101,7 +102,7 @@ export const ExportButtons = () => {
         scale: 4, // High quality
         width: 1200,
         height: 800,
-        comment: comment || undefined,
+        comment: commentOverride || undefined,
       });
 
       // Download file
@@ -140,7 +141,7 @@ export const ExportButtons = () => {
     } finally {
       setIsExportingPNG(false);
     }
-  }, [settings, theme, comment]);
+  }, [settings, theme, commentOverride]);
 
   /**
    * Export PDF using backend API
@@ -156,7 +157,7 @@ export const ExportButtons = () => {
         scale: 4,
         width: 1200,
         height: 800,
-        comment: comment || undefined,
+        comment: commentOverride || undefined,
       });
 
       downloadFile(blob, filename);
@@ -177,7 +178,7 @@ export const ExportButtons = () => {
     } finally {
       setIsExportingPDF(false);
     }
-  }, [settings, theme, comment]);
+  }, [settings, theme, commentOverride]);
 
   /**
    * Export JSON using backend API
@@ -189,7 +190,7 @@ export const ExportButtons = () => {
     try {
       const { blob, filename, metadata } = await exportJSONBackend({
         settings,
-        comment: comment || undefined,
+        comment: commentOverride || undefined,
       });
 
       downloadFile(blob, filename);
@@ -210,7 +211,7 @@ export const ExportButtons = () => {
     } finally {
       setIsExportingJSON(false);
     }
-  }, [settings, comment]);
+  }, [settings, commentOverride]);
 
   const handleImportJSON = () => {
     fileInputRef.current?.click();
@@ -255,7 +256,7 @@ export const ExportButtons = () => {
         scale: 4,
         width: 1200,
         height: 800,
-        comment: comment || undefined,
+        comment: commentOverride || undefined,
       });
 
       // Mark as saved (no longer dirty)
@@ -274,7 +275,7 @@ export const ExportButtons = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [settings, theme, markAsSaved, t, comment]);
+  }, [settings, theme, markAsSaved, t, commentOverride]);
 
   return (
     <>
@@ -395,20 +396,22 @@ export const ExportButtons = () => {
     >
       <ModalContent>
         <ModalHeader>
-          Добавить комментарий (опционально)
+          Добавить или изменить комментарий (опционально)
         </ModalHeader>
         <ModalBody>
           <Textarea
             label="Комментарий"
             placeholder="Введите комментарий к графику..."
-            value={comment}
-            onValueChange={setComment}
+            value={commentOverride}
+            onValueChange={setCommentOverride}
             minRows={3}
             maxRows={6}
             variant="bordered"
           />
           <p className="text-sm text-default-500 mt-2">
-            Комментарий будет сохранен вместе с графиком и отображен в истории.
+            {settings.comment
+              ? 'Изменить комментарий из "Параметры испытания" для этого экспорта.'
+              : 'Комментарий будет сохранен вместе с графиком и отображен в истории.'}
           </p>
         </ModalBody>
         <ModalFooter>

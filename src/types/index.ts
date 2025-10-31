@@ -42,6 +42,7 @@ export interface TestSettings {
   showInfo: 'under' | 'on' | 'off';
   date: string; // дата отчета YYYY-MM-DD
   pressureTests: PressureTest[];
+  comment?: string; // комментарий к испытанию
 }
 
 /**

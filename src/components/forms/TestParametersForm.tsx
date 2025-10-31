@@ -16,7 +16,8 @@ import {
   Divider,
   DatePicker,
   TimeInput,
-  NumberInput
+  NumberInput,
+  Textarea
 } from '@heroui/react';
 import { parseDate, parseTime } from '@internationalized/date';
 import type { InfoDisplayOption } from '../../types';
@@ -45,6 +46,7 @@ export const TestParametersForm = () => {
     graphTitle,
     showInfo,
     date,
+    comment,
     updateField,
   } = useTestStore();
 
@@ -456,6 +458,24 @@ export const TestParametersForm = () => {
                   input: "text-sm",
                 }}
                 endContent={getValidationIcon(graphTitle, graphTitleError)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <Textarea
+                label="Комментарий"
+                labelPlacement="outside"
+                placeholder="Добавьте комментарий к испытанию..."
+                value={comment || ''}
+                onValueChange={(value) => updateField('comment', value)}
+                variant="bordered"
+                minRows={2}
+                maxRows={4}
+                classNames={{
+                  label: "font-medium text-sm",
+                  input: "text-sm",
+                }}
+                description="Комментарий будет сохранен вместе с графиком"
               />
             </div>
           </div>
