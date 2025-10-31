@@ -135,7 +135,7 @@ services:
   # Backend API (Node.js with Hot Reload)
   # ═══════════════════════════════════════════════════════════════════
   backend:
-    image: docker.io/library/node:22-trixie-slim
+    image: docker.io/library/node:lts-trixie
     container_name: pressograph-dev-backend
     restart: unless-stopped
     working_dir: /app
@@ -234,7 +234,7 @@ services:
   # Frontend (Vite Dev Server with HMR)
   # ═══════════════════════════════════════════════════════════════════
   frontend:
-    image: docker.io/library/node:22-trixie-slim
+    image: docker.io/library/node:lts-trixie
     container_name: pressograph-dev-frontend
     restart: unless-stopped
     working_dir: /app

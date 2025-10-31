@@ -3,7 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════
 
 # Stage 1: Build
-FROM node:22-trixie-slim AS builder
+FROM node:lts-trixie AS builder
 
 WORKDIR /app
 
@@ -34,7 +34,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production
-FROM node:22-trixie-slim
+FROM node:lts-trixie
 
 WORKDIR /app
 

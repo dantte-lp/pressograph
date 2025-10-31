@@ -6,11 +6,36 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+server/logs/
+server/logs/*.log
 
+# Dependencies
 node_modules
+server/node_modules/
+.npm-cache
+server/.npm-cache/
+.pnp
+.pnp.js
+
+# Build outputs and artifacts
 dist
 dist-ssr
-*.local
+build/
+*.tsbuildinfo
+server/dist/
+coverage/
+.nyc_output/
+
+# Runtime generated files
+server/exports/
+server/exports/*.png
+server/exports/*.pdf
+backups/
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
 
 # Editor directories and files
 .vscode/*
@@ -22,8 +47,51 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
 
 # Environment
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+.cache/
+.tmp/
+
+# Deployment artifacts (keep only source configs)
+deploy/compose/.env
+deploy/compose/.env.dev
+deploy/compose/.env.prod
+deploy/compose/.env.observability
+
+# Husky git hooks (auto-generated)
+.husky/_
