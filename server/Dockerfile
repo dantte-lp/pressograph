@@ -1,9 +1,28 @@
 # ═══════════════════════════════════════════════════════════════════
-# Backend Dockerfile - Multi-stage build
+# Pressograph Backend Dockerfile - Multi-stage Build
+# ═══════════════════════════════════════════════════════════════════
+# Build optimized Node.js Express API with Canvas support
+# Follows OCI image spec and Buildah best practices 2025
+#
+# Build command:
+#   buildah bud -f server/Dockerfile \
+#     --tag localhost/pressograph-backend:latest \
+#     --build-arg VERSION=1.2.0 \
+#     --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+#     server/
 # ═══════════════════════════════════════════════════════════════════
 
-# Stage 1: Build
-FROM node:lts-trixie AS builder
+# Build arguments (can be overridden at build time)
+ARG NODE_VERSION=lts-trixie
+ARG VERSION=1.2.0
+ARG BUILD_DATE
+ARG VCS_REF
+ARG NODE_ENV=production
+
+# ═══════════════════════════════════════════════════════════════════
+# Stage 1: Builder - Compile TypeScript and install dependencies
+# ═══════════════════════════════════════════════════════════════════
+FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /app
 
@@ -30,11 +49,19 @@ RUN npm ci --only=production && \
 # Copy source code
 COPY . .
 
-# Build TypeScript
+# Build TypeScript (creates dist/ directory)
 RUN npm run build
 
-# Stage 2: Production
-FROM node:lts-trixie
+# ═══════════════════════════════════════════════════════════════════
+# Stage 2: Production - Minimal runtime image
+# ═══════════════════════════════════════════════════════════════════
+FROM node:${NODE_VERSION}
+
+# Re-declare ARGs for this stage
+ARG VERSION=1.2.0
+ARG BUILD_DATE
+ARG VCS_REF
+ARG NODE_ENV=production
 
 WORKDIR /app
 
@@ -86,6 +113,28 @@ USER nodejs
 
 # Expose port
 EXPOSE 3001
+
+# Environment variables
+ENV NODE_ENV=${NODE_ENV} \
+    PORT=3001 \
+    HOST=0.0.0.0
+
+# OCI Image Labels
+# https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.title="Pressograph Backend API" \
+      org.opencontainers.image.description="Node.js Express REST API for pressure test visualization with PostgreSQL and Canvas support" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="Pressograph" \
+      org.opencontainers.image.authors="Pressograph Team" \
+      org.opencontainers.image.url="https://pressograph.infra4.dev" \
+      org.opencontainers.image.source="https://github.com/your-org/pressograph" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/node:lts-trixie" \
+      com.pressograph.component="backend" \
+      com.pressograph.service="api" \
+      com.pressograph.environment="production"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

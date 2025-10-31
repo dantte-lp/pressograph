@@ -216,10 +216,15 @@ build-frontend: ## Build frontend image with Buildah
 	@echo -e "$(CYAN)Building frontend image with Buildah...$(NC)"
 	buildah bud --format docker --layers \
 		-t $(FRONTEND_IMAGE) \
-		-f $(PODS_DIR)/pressograph-frontend/Containerfile \
+		-t $(FRONTEND_IMAGE_LATEST) \
+		-f deploy/Containerfile \
 		--build-arg VITE_API_URL=/api \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VCS_REF="$(COMMIT_HASH)" \
 		$(PROJECT_ROOT)
 	@echo -e "$(GREEN)Frontend build complete!$(NC)"
+	@echo -e "$(CYAN)Tagged: $(FRONTEND_IMAGE) and $(FRONTEND_IMAGE_LATEST)$(NC)"
 
 build-backend: ## Build backend image with Buildah
 	@if ! command -v buildah >/dev/null 2>&1; then \
@@ -230,9 +235,15 @@ build-backend: ## Build backend image with Buildah
 	@echo -e "$(CYAN)Building backend image with Buildah...$(NC)"
 	buildah bud --format docker --layers \
 		-t $(BACKEND_IMAGE) \
-		-f $(PODS_DIR)/pressograph-backend/Containerfile \
+		-t $(BACKEND_IMAGE_LATEST) \
+		-f server/Dockerfile \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VCS_REF="$(COMMIT_HASH)" \
+		--build-arg NODE_ENV=production \
 		$(PROJECT_ROOT)/server
 	@echo -e "$(GREEN)Backend build complete!$(NC)"
+	@echo -e "$(CYAN)Tagged: $(BACKEND_IMAGE) and $(BACKEND_IMAGE_LATEST)$(NC)"
 
 build-buildah: build-images ## Build all images using Buildah (alias for build-images)
 
@@ -300,8 +311,11 @@ dev: ## Run development environment (via systemd Quadlet)
 
 dev-compose: ## Run development environment (via podman-compose)
 	@echo -e "$(CYAN)Starting development environment via podman-compose...$(NC)"
-	podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev up -d
+	@bash deploy/dev.sh --no-logs
 	@echo -e "$(GREEN)Development environment started!$(NC)"
+
+dev-compose-build: ## Build and run development environment
+	@bash deploy/dev.sh --build --no-logs
 
 prod: ## Run production environment (via systemd Quadlet)
 	@echo -e "$(CYAN)Starting production environment via systemd...$(NC)"
@@ -314,8 +328,19 @@ prod: ## Run production environment (via systemd Quadlet)
 
 prod-compose: ## Run production environment (via podman-compose)
 	@echo -e "$(CYAN)Starting production environment via podman-compose...$(NC)"
-	podman-compose -f deploy/compose/compose.prod.yaml --env-file deploy/compose/.env.prod up -d
+	@bash deploy/prod.sh --no-logs
 	@echo -e "$(GREEN)Production environment started!$(NC)"
+
+prod-compose-build: ## Build and run production environment
+	@bash deploy/prod.sh --build --backup --no-logs
+
+health-check-dev: ## Check health of development environment
+	@bash deploy/health-check.sh dev
+
+health-check-prod: ## Check health of production environment
+	@bash deploy/health-check.sh prod
+
+health-check: health-check-prod ## Alias for health-check-prod
 
 install-quadlet: ## Install Quadlet systemd units (rootless)
 	@echo -e "$(CYAN)Installing Quadlet units for rootless mode...$(NC)"
