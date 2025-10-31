@@ -425,18 +425,24 @@ export const History: React.FC = () => {
                   className="mb-4"
                 >
                   <TableHeader>
-                    <TableColumn>{t.historyTable.testNumber}</TableColumn>
-                    <TableColumn>{t.historyTable.format}</TableColumn>
-                    <TableColumn>{t.historyTable.fileSize}</TableColumn>
-                    <TableColumn>{t.historyTable.generationTime}</TableColumn>
-                    <TableColumn>Дата создания</TableColumn>
-                    <TableColumn>Комментарий</TableColumn>
-                    <TableColumn>{t.historyTable.status}</TableColumn>
-                    <TableColumn align="center">{t.historyTable.actions}</TableColumn>
+                    <TableColumn className="select-text">ID</TableColumn>
+                    <TableColumn className="select-text">{t.historyTable.testNumber}</TableColumn>
+                    <TableColumn className="select-text">{t.historyTable.format}</TableColumn>
+                    <TableColumn className="select-text">{t.historyTable.fileSize}</TableColumn>
+                    <TableColumn className="select-text">{t.historyTable.generationTime}</TableColumn>
+                    <TableColumn className="select-text">Дата создания</TableColumn>
+                    <TableColumn className="select-text">Комментарий</TableColumn>
+                    <TableColumn className="select-text">{t.historyTable.status}</TableColumn>
+                    <TableColumn className="select-text" align="center">{t.historyTable.actions}</TableColumn>
                   </TableHeader>
                   <TableBody>
                     {graphs.map((graph) => (
                       <TableRow key={graph.id} aria-label={`${t.accessibility?.testRow || 'Test result row'} ${graph.test_number}`}>
+                        <TableCell>
+                          <span className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                            #{graph.id}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <span className="font-mono font-semibold">
                             {graph.test_number}
@@ -596,6 +602,10 @@ export const History: React.FC = () => {
             {previewGraph && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">ID</p>
+                    <p className="text-sm font-mono text-gray-600 dark:text-gray-400">#{previewGraph.id}</p>
+                  </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {t.historyTable.testNumber}

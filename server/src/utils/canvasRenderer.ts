@@ -2,9 +2,24 @@
 // Canvas Rendering Logic for Pressure Test Graph (Backend)
 // ═══════════════════════════════════════════════════════════════════
 
-import { createCanvas, Canvas } from 'canvas';
+import { createCanvas, Canvas, registerFont } from 'canvas';
 import type { GraphData, TestSettings } from '../types/graph.types';
 import { formatDateTime } from './helpers';
+
+// Register DejaVu Sans font for Cyrillic support
+// Font is installed in Docker container via fonts-dejavu-core package
+// This fixes the issue where Russian text shows as squares in PNG exports
+try {
+  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', {
+    family: 'DejaVu Sans',
+  });
+  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', {
+    family: 'DejaVu Sans',
+    weight: 'bold',
+  });
+} catch (error) {
+  console.warn('Warning: Could not register DejaVu Sans font. Cyrillic text may not display correctly:', error);
+}
 
 type Theme = 'light' | 'dark';
 
