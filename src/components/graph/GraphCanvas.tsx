@@ -20,22 +20,24 @@ const GraphCanvasInternal = () => {
 
   // Use shallow comparison to prevent infinite loops
   const settings = useTestStore(
-    useShallow((state): TestSettings => ({
-      testNumber: state.testNumber,
-      startDate: state.startDate,
-      startTime: state.startTime,
-      endDate: state.endDate,
-      endTime: state.endTime,
-      testDuration: state.testDuration,
-      workingPressure: state.workingPressure,
-      maxPressure: state.maxPressure,
-      temperature: state.temperature,
-      pressureDuration: state.pressureDuration,
-      graphTitle: state.graphTitle,
-      showInfo: state.showInfo,
-      date: state.date,
-      pressureTests: state.pressureTests,
-    }))
+    useShallow(
+      (state): TestSettings => ({
+        testNumber: state.testNumber,
+        startDate: state.startDate,
+        startTime: state.startTime,
+        endDate: state.endDate,
+        endTime: state.endTime,
+        testDuration: state.testDuration,
+        workingPressure: state.workingPressure,
+        maxPressure: state.maxPressure,
+        temperature: state.temperature,
+        pressureDuration: state.pressureDuration,
+        graphTitle: state.graphTitle,
+        showInfo: state.showInfo,
+        date: state.date,
+        pressureTests: state.pressureTests,
+      })
+    )
   );
   // PERFORMANCE FIX: Use useShallow to prevent unnecessary re-renders
   const theme = useThemeStore(useShallow((state) => state.theme));
@@ -44,21 +46,7 @@ const GraphCanvasInternal = () => {
   // Only regenerate when settings that affect the graph actually change
   const graphData = useMemo(() => {
     return generatePressureData(settings);
-  }, [
-    // Only depend on fields that actually affect graph data
-    settings.testNumber,
-    settings.startDate,
-    settings.startTime,
-    settings.endDate,
-    settings.endTime,
-    settings.testDuration,
-    settings.workingPressure,
-    settings.maxPressure,
-    settings.temperature,
-    settings.pressureDuration,
-    settings.date,
-    JSON.stringify(settings.pressureTests), // Use JSON.stringify for array comparison
-  ]);
+  }, [settings]); // Depend on entire settings object for simplicity
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -85,8 +73,18 @@ const GraphCanvasInternal = () => {
       <CardHeader className="flex justify-between items-center pb-5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-default-900 dark:bg-default-100 rounded-md">
-            <svg className="w-5 h-5 text-default-50 dark:text-default-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <svg
+              className="w-5 h-5 text-default-50 dark:text-default-900"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
           </div>
           <h2 className="text-base font-semibold text-foreground uppercase">
@@ -96,10 +94,7 @@ const GraphCanvasInternal = () => {
       </CardHeader>
       <CardBody className="p-6">
         <div ref={containerRef} className="w-full">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-auto rounded-lg"
-          />
+          <canvas ref={canvasRef} className="w-full h-auto rounded-lg" />
         </div>
       </CardBody>
     </Card>
