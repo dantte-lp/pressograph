@@ -38,7 +38,15 @@ FROM node:22-trixie-slim
 
 WORKDIR /app
 
-# Install runtime dependencies for canvas and dumb-init
+# Install runtime dependencies for canvas, fonts, and dumb-init
+# Canvas runtime libs:
+# - libcairo2, libpango*: Cairo graphics and Pango text rendering
+# - libjpeg62-turbo, libgif7, librsvg2-2: Image format support
+# Font packages (FIX for PNG text encoding issue):
+# - fontconfig: Font configuration library (fixes "Cannot load default config file" error)
+# - fonts-dejavu-core: DejaVu Sans/Serif/Mono (excellent Cyrillic support)
+# - fonts-liberation: Liberation Sans/Serif/Mono (Arial/Times/Courier alternatives)
+# - fonts-noto-core: Noto Sans/Serif (comprehensive Unicode coverage)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         dumb-init \
@@ -47,7 +55,12 @@ RUN apt-get update && \
         libpangocairo-1.0-0 \
         libjpeg62-turbo \
         libgif7 \
-        librsvg2-2 && \
+        librsvg2-2 \
+        fontconfig \
+        fonts-dejavu-core \
+        fonts-liberation \
+        fonts-noto-core && \
+    fc-cache -fv && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

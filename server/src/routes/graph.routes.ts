@@ -36,6 +36,11 @@ router.post('/export/pdf',
   graphController.exportPDF
 );
 
+// POST /api/v1/graph/export/json
+router.post('/export/json',
+  graphController.exportJSON
+);
+
 // POST /api/v1/graph/validate
 router.post('/validate',
   graphController.validateSettings

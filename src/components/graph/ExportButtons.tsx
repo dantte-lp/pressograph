@@ -8,10 +8,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTestStore } from '../../store/useTestStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useLanguage } from '../../i18n';
-import { Card, CardHeader, CardBody, Button, Spinner } from '@heroui/react';
+import { Card, CardHeader, CardBody, Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea } from '@heroui/react';
 import { generatePressureData } from '../../utils/graphGenerator';
-import { exportToPNG as exportToPNGClient, exportToPDF, exportSettings, importSettings } from '../../utils/export';
-import { exportPNG as exportPNGBackend, formatFileSize, formatGenerationTime } from '../../services/api.service';
+import { exportToPNG as exportToPNGClient, exportSettings, importSettings } from '../../utils/export';
+import { exportPNG as exportPNGBackend, exportPDF as exportPDFBackend, exportJSON as exportJSONBackend, formatFileSize, formatGenerationTime } from '../../services/api.service';
 import { downloadFile } from '../../utils/helpers';
 import type { TestSettings } from '../../types';
 
@@ -46,7 +46,44 @@ export const ExportButtons = () => {
   // Loading states for export operations
   const [isExportingPNG, setIsExportingPNG] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportingJSON, setIsExportingJSON] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Comment modal state
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [comment, setComment] = useState('');
+  const [exportType, setExportType] = useState<'save' | 'png' | 'pdf' | 'json'>('save');
+
+  /**
+   * Open comment modal before export
+   */
+  const openCommentModal = useCallback((type: 'save' | 'png' | 'pdf' | 'json') => {
+    setExportType(type);
+    setComment('');
+    setIsCommentModalOpen(true);
+  }, []);
+
+  /**
+   * Execute export with comment
+   */
+  const executeExport = useCallback(async () => {
+    setIsCommentModalOpen(false);
+
+    switch (exportType) {
+      case 'save':
+        await handleSave();
+        break;
+      case 'png':
+        await handleExportPNG();
+        break;
+      case 'pdf':
+        await handleExportPDF();
+        break;
+      case 'json':
+        await handleExportJSON();
+        break;
+    }
+  }, [exportType, comment]);
 
   /**
    * Export PNG using backend API (server-side rendering)
@@ -64,6 +101,7 @@ export const ExportButtons = () => {
         scale: 4, // High quality
         width: 1200,
         height: 800,
+        comment: comment || undefined,
       });
 
       // Download file
@@ -102,23 +140,77 @@ export const ExportButtons = () => {
     } finally {
       setIsExportingPNG(false);
     }
-  }, [settings, theme]);
+  }, [settings, theme, comment]);
 
-  const handleExportPDF = () => {
-    const graphData = generatePressureData(settings);
-    if (graphData.points.length === 0) return; // Skip if validation failed
-    exportToPDF(graphData, settings, theme);
-    toast.success('График экспортирован в PDF', {
-      duration: 2000,
-    });
-  };
+  /**
+   * Export PDF using backend API
+   */
+  const handleExportPDF = useCallback(async () => {
+    setIsExportingPDF(true);
+    const toastId = toast.loading('Генерация PDF...');
 
-  const handleExportJSON = () => {
-    exportSettings(settings);
-    toast.success('Настройки экспортированы в JSON', {
-      duration: 2000,
-    });
-  };
+    try {
+      const { blob, filename, metadata } = await exportPDFBackend({
+        settings,
+        theme,
+        scale: 4,
+        width: 1200,
+        height: 800,
+        comment: comment || undefined,
+      });
+
+      downloadFile(blob, filename);
+
+      toast.success(
+        `PDF экспортирован!\n${formatFileSize(metadata.fileSize)} • ${formatGenerationTime(metadata.generationTimeMs)}`,
+        {
+          id: toastId,
+          duration: 3000,
+        }
+      );
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast.error(`Ошибка экспорта PDF: ${(error as Error).message}`, {
+        id: toastId,
+        duration: 5000,
+      });
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [settings, theme, comment]);
+
+  /**
+   * Export JSON using backend API
+   */
+  const handleExportJSON = useCallback(async () => {
+    setIsExportingJSON(true);
+    const toastId = toast.loading('Генерация JSON...');
+
+    try {
+      const { blob, filename, metadata } = await exportJSONBackend({
+        settings,
+        comment: comment || undefined,
+      });
+
+      downloadFile(blob, filename);
+
+      toast.success(
+        `JSON экспортирован!\n${formatFileSize(metadata.fileSize)} • ${formatGenerationTime(metadata.generationTimeMs)}`,
+        {
+          id: toastId,
+          duration: 3000,
+        }
+      );
+    } catch (error) {
+      console.error('JSON export failed:', error);
+      toast.error(`Ошибка экспорта JSON: ${(error as Error).message}`, {
+        id: toastId,
+        duration: 5000,
+      });
+    } finally {
+      setIsExportingJSON(false);
+    }
+  }, [settings, comment]);
 
   const handleImportJSON = () => {
     fileInputRef.current?.click();
@@ -163,6 +255,7 @@ export const ExportButtons = () => {
         scale: 4,
         width: 1200,
         height: 800,
+        comment: comment || undefined,
       });
 
       // Mark as saved (no longer dirty)
@@ -181,9 +274,10 @@ export const ExportButtons = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [settings, theme, markAsSaved, t]);
+  }, [settings, theme, markAsSaved, t, comment]);
 
   return (
+    <>
     <Card shadow="lg" radius="lg">
       <CardHeader className="flex-col items-start gap-2 pb-3">
         <h2 className="text-base font-semibold text-foreground uppercase">
@@ -198,7 +292,7 @@ export const ExportButtons = () => {
           <Button
             color="primary"
             variant={isDirty ? "solid" : "bordered"}
-            onPress={handleSave}
+            onPress={() => openCommentModal('save')}
             size="md"
             className="h-16"
             isDisabled={isSaving || !isDirty}
@@ -216,7 +310,7 @@ export const ExportButtons = () => {
           </Button>
           <Button
             variant="bordered"
-            onPress={handleExportPNG}
+            onPress={() => openCommentModal('png')}
             size="md"
             className="h-16"
             isDisabled={isExportingPNG}
@@ -234,29 +328,39 @@ export const ExportButtons = () => {
           </Button>
           <Button
             variant="bordered"
-            onPress={handleExportPDF}
+            onPress={() => openCommentModal('pdf')}
             size="md"
             className="h-16"
+            isDisabled={isExportingPDF}
             startContent={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
+              isExportingPDF ? (
+                <Spinner size="sm" color="current" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              )
             }
           >
-            {t.exportPDF}
+            {isExportingPDF ? 'Экспорт...' : t.exportPDF}
           </Button>
           <Button
             variant="bordered"
-            onPress={handleExportJSON}
+            onPress={() => openCommentModal('json')}
             size="md"
             className="h-16"
+            isDisabled={isExportingJSON}
             startContent={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
+              isExportingJSON ? (
+                <Spinner size="sm" color="current" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+              )
             }
           >
-            {t.exportJSON}
+            {isExportingJSON ? 'Экспорт...' : t.exportJSON}
           </Button>
           <Button
             variant="bordered"
@@ -282,5 +386,47 @@ export const ExportButtons = () => {
         />
       </CardBody>
     </Card>
+
+    {/* Comment Modal */}
+    <Modal
+      isOpen={isCommentModalOpen}
+      onClose={() => setIsCommentModalOpen(false)}
+      size="lg"
+    >
+      <ModalContent>
+        <ModalHeader>
+          Добавить комментарий (опционально)
+        </ModalHeader>
+        <ModalBody>
+          <Textarea
+            label="Комментарий"
+            placeholder="Введите комментарий к графику..."
+            value={comment}
+            onValueChange={setComment}
+            minRows={3}
+            maxRows={6}
+            variant="bordered"
+          />
+          <p className="text-sm text-default-500 mt-2">
+            Комментарий будет сохранен вместе с графиком и отображен в истории.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="light"
+            onPress={() => setIsCommentModalOpen(false)}
+          >
+            Отмена
+          </Button>
+          <Button
+            color="primary"
+            onPress={executeExport}
+          >
+            Продолжить
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+    </>
   );
 };

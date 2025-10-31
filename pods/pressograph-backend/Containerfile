@@ -25,9 +25,21 @@ FROM node:22-trixie-slim
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
+# Install dumb-init and font packages for canvas text rendering
+# Required packages:
+# - dumb-init: proper signal handling
+# - fontconfig: font configuration library (fixes "Cannot load default config file")
+# - fonts-dejavu-core: DejaVu Sans/Serif/Mono (good Cyrillic support)
+# - fonts-liberation: Liberation Sans/Serif/Mono (Arial/Times/Courier alternatives)
+# - fonts-noto-core: Noto Sans/Serif (comprehensive Unicode support)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends dumb-init && \
+    apt-get install -y --no-install-recommends \
+      dumb-init \
+      fontconfig \
+      fonts-dejavu-core \
+      fonts-liberation \
+      fonts-noto-core && \
+    fc-cache -fv && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

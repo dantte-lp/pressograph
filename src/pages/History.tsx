@@ -39,6 +39,7 @@ import {
   formatFileSize,
   formatGenerationTime,
   formatRelativeTime,
+  formatDate,
   type GraphHistoryItem,
   type HistoryQueryParams,
 } from '../services/api.service';
@@ -428,7 +429,8 @@ export const History: React.FC = () => {
                     <TableColumn>{t.historyTable.format}</TableColumn>
                     <TableColumn>{t.historyTable.fileSize}</TableColumn>
                     <TableColumn>{t.historyTable.generationTime}</TableColumn>
-                    <TableColumn>{t.historyTable.createdAt}</TableColumn>
+                    <TableColumn>Дата создания</TableColumn>
+                    <TableColumn>Комментарий</TableColumn>
                     <TableColumn>{t.historyTable.status}</TableColumn>
                     <TableColumn align="center">{t.historyTable.actions}</TableColumn>
                   </TableHeader>
@@ -451,7 +453,17 @@ export const History: React.FC = () => {
                         </TableCell>
                         <TableCell>{formatFileSize(graph.file_size)}</TableCell>
                         <TableCell>{formatGenerationTime(graph.generation_time_ms)}</TableCell>
-                        <TableCell>{formatRelativeTime(graph.created_at)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm">{formatDate(graph.created_at)}</span>
+                            <span className="text-xs text-gray-500">{formatRelativeTime(graph.created_at)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate block" title={graph.comment || ''}>
+                            {graph.comment || '-'}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <Chip
                             color={getStatusColor(graph.status)}
@@ -612,9 +624,10 @@ export const History: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {t.historyTable.createdAt}
+                      Дата создания
                     </p>
-                    <p>{new Date(previewGraph.created_at).toLocaleString()}</p>
+                    <p>{formatDate(previewGraph.created_at)}</p>
+                    <p className="text-xs text-gray-500">{new Date(previewGraph.created_at).toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -625,6 +638,16 @@ export const History: React.FC = () => {
                     </Chip>
                   </div>
                 </div>
+
+                {/* Comment Section */}
+                {previewGraph.comment && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2">Комментарий</h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                      {previewGraph.comment}
+                    </p>
+                  </div>
+                )}
 
                 {/* Test Settings Preview */}
                 {previewGraph.settings && (

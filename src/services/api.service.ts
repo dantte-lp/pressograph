@@ -19,6 +19,27 @@ export interface PNGExportConfig {
   scale?: number; // 1-4, default: 2
   width?: number; // 400-4000, default: 1200
   height?: number; // 300-3000, default: 800
+  comment?: string; // Optional comment to save with the graph
+}
+
+/**
+ * PDF Export Configuration
+ */
+export interface PDFExportConfig {
+  settings: TestSettings;
+  theme?: Theme;
+  scale?: number;
+  width?: number;
+  height?: number;
+  comment?: string;
+}
+
+/**
+ * JSON Export Configuration
+ */
+export interface JSONExportConfig {
+  settings: TestSettings;
+  comment?: string;
 }
 
 /**
@@ -85,6 +106,116 @@ export const exportPNG = async (
   const generationTimeMs = parseInt(response.headers.get('X-Generation-Time-Ms') || '0', 10);
 
   // Get blob
+  const blob = await response.blob();
+
+  return {
+    blob,
+    filename,
+    metadata: {
+      filename,
+      fileSize,
+      generationTimeMs,
+    },
+  };
+};
+
+/**
+ * Export PDF via backend API
+ *
+ * Sends graph settings to backend, which renders the graph
+ * server-side and returns a PDF file.
+ *
+ * @param config - PDF export configuration
+ * @returns Promise with blob, filename, and metadata
+ * @throws Error if export fails or validation errors occur
+ */
+export const exportPDF = async (
+  config: PDFExportConfig
+): Promise<{ blob: Blob; filename: string; metadata: ExportMetadata }> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/graph/export/pdf`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    },
+    body: JSON.stringify(config),
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'PDF export failed';
+    try {
+      const errorData: APIError = await response.json();
+      if (errorData.errors && errorData.errors.length > 0) {
+        errorMessage = errorData.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {
+      errorMessage = `PDF export failed: ${response.statusText}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const filename = extractFilenameFromHeaders(response.headers);
+  const fileSize = parseInt(response.headers.get('X-File-Size') || '0', 10);
+  const generationTimeMs = parseInt(response.headers.get('X-Generation-Time-Ms') || '0', 10);
+
+  const blob = await response.blob();
+
+  return {
+    blob,
+    filename,
+    metadata: {
+      filename,
+      fileSize,
+      generationTimeMs,
+    },
+  };
+};
+
+/**
+ * Export JSON via backend API
+ *
+ * Sends graph settings to backend, which returns the graph data
+ * and settings as JSON.
+ *
+ * @param config - JSON export configuration
+ * @returns Promise with blob, filename, and metadata
+ * @throws Error if export fails or validation errors occur
+ */
+export const exportJSON = async (
+  config: JSONExportConfig
+): Promise<{ blob: Blob; filename: string; metadata: ExportMetadata }> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/graph/export/json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    },
+    body: JSON.stringify(config),
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'JSON export failed';
+    try {
+      const errorData: APIError = await response.json();
+      if (errorData.errors && errorData.errors.length > 0) {
+        errorMessage = errorData.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {
+      errorMessage = `JSON export failed: ${response.statusText}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const filename = extractFilenameFromHeaders(response.headers);
+  const fileSize = parseInt(response.headers.get('X-File-Size') || '0', 10);
+  const generationTimeMs = parseInt(response.headers.get('X-Generation-Time-Ms') || '0', 10);
+
   const blob = await response.blob();
 
   return {
@@ -189,6 +320,7 @@ export interface GraphHistoryItem {
   generation_time_ms: number;
   status: 'success' | 'failed' | 'pending';
   created_at: string;
+  comment?: string;
 }
 
 /**
@@ -389,4 +521,18 @@ export const formatRelativeTime = (dateString: string): string => {
 
   // For older dates, show absolute date
   return date.toLocaleDateString();
+};
+
+/**
+ * Format date as dd/mm/yyyy
+ *
+ * @param dateString - ISO date string
+ * @returns Formatted date string (dd/mm/yyyy)
+ */
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };

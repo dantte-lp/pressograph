@@ -74,7 +74,7 @@ export const generateGraph = async (req: Request, res: Response, next: NextFunct
 export const exportPNG = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const startTime = Date.now();
-    const { settings, theme = 'light', scale = 2, width = 1200, height = 800 } = req.body;
+    const { settings, theme = 'light', scale = 2, width = 1200, height = 800, comment } = req.body;
 
     // Validate settings
     const validation = validateTestSettings(settings);
@@ -129,8 +129,8 @@ export const exportPNG = async (req: Request, res: Response, next: NextFunction)
     // Save to graph history database
     const user = req.user!;
     await query(
-      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent, comment)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         user.id,
         settings.testNumber,
@@ -142,6 +142,7 @@ export const exportPNG = async (req: Request, res: Response, next: NextFunction)
         'success',
         req.ip,
         req.get('user-agent') || null,
+        comment || null,
       ]
     );
 
@@ -194,7 +195,8 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
       width = 1200,
       height = 800,
       pageSize = 'A4',
-      metadata = {}
+      metadata = {},
+      comment
     } = req.body;
 
     // Validate settings
@@ -321,8 +323,8 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
     // Save to graph history database
     const user = req.user!;
     await query(
-      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent, comment)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         user.id,
         settings.testNumber,
@@ -334,6 +336,7 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
         'success',
         req.ip,
         req.get('user-agent') || null,
+        comment || null,
       ]
     );
 
@@ -355,6 +358,104 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
     res.send(pdfBuffer);
   } catch (error) {
     logger.error('PDF export failed', { error });
+    next(error);
+  }
+};
+
+/**
+ * Export pressure test graph as JSON data
+ * POST /api/graph/export/json
+ *
+ * Exports the graph settings and generated data as a JSON file.
+ * Useful for data analysis, archiving, or importing into other tools.
+ *
+ * @param req.body.settings - TestSettings object
+ * @param req.body.comment - Optional comment to save with the graph
+ * @returns JSON file download
+ * @throws AppError 400 if validation fails
+ * @throws AppError 500 for unexpected errors
+ */
+export const exportJSON = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const startTime = Date.now();
+    const { settings, comment } = req.body;
+
+    // Validate settings
+    const validation = validateTestSettings(settings);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        errors: validation.errors,
+      });
+    }
+
+    logger.info('JSON export started', {
+      testNumber: settings.testNumber,
+    });
+
+    // Generate graph data
+    const graphData = generatePressureData(settings);
+
+    // Create JSON export object
+    const exportData = {
+      version: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      settings,
+      graphData,
+      comment: comment || null,
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const jsonBuffer = Buffer.from(jsonString, 'utf-8');
+
+    // Save to storage
+    const { storageService } = await import('../services/storage.service');
+    const filename = await storageService.saveFile(
+      jsonBuffer,
+      'json',
+      `graph-${settings.testNumber}`
+    );
+
+    const generationTime = Date.now() - startTime;
+
+    // Save to graph history database
+    const user = req.user!;
+    await query(
+      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent, comment)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        user.id,
+        settings.testNumber,
+        JSON.stringify(settings),
+        'json',
+        filename,
+        jsonBuffer.length,
+        generationTime,
+        'success',
+        req.ip,
+        req.get('user-agent') || null,
+        comment || null,
+      ]
+    );
+
+    logger.info('JSON export completed', {
+      testNumber: settings.testNumber,
+      filename,
+      fileSize: jsonBuffer.length,
+      generationTimeMs: generationTime,
+    });
+
+    // Return download response
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', jsonBuffer.length.toString());
+    res.setHeader('X-Generation-Time-Ms', generationTime.toString());
+    res.setHeader('X-File-Size', jsonBuffer.length.toString());
+
+    res.send(jsonBuffer);
+  } catch (error) {
+    logger.error('JSON export failed', { error });
     next(error);
   }
 };
@@ -423,7 +524,7 @@ export const getHistory = async (req: Request, res: Response, next: NextFunction
 
     // Query with filters and sorting
     const result = await query(
-      `SELECT id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, created_at
+      `SELECT id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, created_at, comment
        FROM graph_history
        WHERE ${whereClause}
        ORDER BY ${sortColumn} ${sortDirection}
@@ -625,7 +726,11 @@ export const downloadGraph = async (req: Request, res: Response, next: NextFunct
     logger.info(`Graph downloaded`, { graphId, testNumber: graph.test_number, userId: user.id });
 
     // Set appropriate content type
-    const contentType = graph.export_format === 'png' ? 'image/png' : 'application/pdf';
+    const contentType =
+      graph.export_format === 'png' ? 'image/png' :
+      graph.export_format === 'pdf' ? 'application/pdf' :
+      graph.export_format === 'json' ? 'application/json' :
+      'application/octet-stream';
 
     // Send file
     res.setHeader('Content-Type', contentType);

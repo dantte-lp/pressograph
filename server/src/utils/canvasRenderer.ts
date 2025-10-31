@@ -100,7 +100,7 @@ export const renderGraph = (
   };
 
   // Заголовок
-  ctx.font = 'bold 20px Arial';
+  ctx.font = 'bold 20px "DejaVu Sans", Arial, sans-serif';
   ctx.fillStyle = colors.text;
   ctx.textAlign = 'center';
   ctx.fillText(graphTitle, displayWidth / 2, 40);
@@ -132,7 +132,7 @@ export const renderGraph = (
   }
 
   // Подписи оси Y
-  ctx.font = '12px Arial';
+  ctx.font = '12px "DejaVu Sans", Arial, sans-serif';
   ctx.fillStyle = colors.text;
   ctx.textAlign = 'right';
 
@@ -148,7 +148,7 @@ export const renderGraph = (
   ctx.save();
   ctx.translate(20, displayHeight / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.font = '14px Arial';
+  ctx.font = '14px "DejaVu Sans", Arial, sans-serif';
   ctx.fillStyle = colors.text;
   ctx.textAlign = 'center';
   ctx.fillText('Давление, МПа', 0, 0);
@@ -167,7 +167,7 @@ export const renderGraph = (
     gridStartTime.setHours(gridStartTime.getHours() - intervalHours);
   }
 
-  ctx.font = '11px Arial';
+  ctx.font = '11px "DejaVu Sans", Arial, sans-serif';
   ctx.textAlign = 'center';
 
   for (
@@ -240,7 +240,7 @@ export const renderGraph = (
   }
 
   // Подпись оси X
-  ctx.font = 'bold 14px Arial';
+  ctx.font = 'bold 14px "DejaVu Sans", Arial, sans-serif';
   ctx.fillStyle = colors.text;
   ctx.textAlign = 'center';
   ctx.fillText('Время', displayWidth / 2, displayHeight - 60);
@@ -260,12 +260,12 @@ export const renderGraph = (
     ctx.strokeRect(errorBoxX, errorBoxY, errorBoxWidth, errorBoxHeight);
 
     ctx.fillStyle = '#ff6b6b';
-    ctx.font = 'bold 18px Arial';
+    ctx.font = 'bold 18px "DejaVu Sans", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('⚠ Ошибка валидации', displayWidth / 2, errorBoxY + 35);
 
     ctx.fillStyle = colors.text;
-    ctx.font = '14px Arial';
+    ctx.font = '14px "DejaVu Sans", Arial, sans-serif';
     ctx.fillText('Дата окончания должна быть позже даты начала', displayWidth / 2, errorBoxY + 60);
     ctx.fillText('Пожалуйста, исправьте даты в форме', displayWidth / 2, errorBoxY + 80);
 
@@ -302,7 +302,7 @@ export const renderGraph = (
     ctx.strokeRect(margin.left + 10, margin.top + 10, 200, 80);
 
     ctx.fillStyle = colors.text;
-    ctx.font = '12px Arial';
+    ctx.font = '12px "DejaVu Sans", Arial, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(`Испытание №${testNumber}`, margin.left + 20, margin.top + 30);
     ctx.fillText(`Дата: ${date}`, margin.left + 20, margin.top + 45);
@@ -310,7 +310,7 @@ export const renderGraph = (
     ctx.fillText(`Температура: ${temperature}°C`, margin.left + 20, margin.top + 75);
   } else if (showInfo === 'under') {
     ctx.fillStyle = colors.text;
-    ctx.font = '11px Arial';
+    ctx.font = '11px "DejaVu Sans", Arial, sans-serif';
     ctx.textAlign = 'center';
     // Информация под подписью "Время"
     const baseY = displayHeight - 45;
