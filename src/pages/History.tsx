@@ -82,6 +82,7 @@ export const History: React.FC = () => {
 
   // Loading states for async actions
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [downloadingJSONId, setDownloadingJSONId] = useState<number | null>(null);
   const [sharingId, setSharingId] = useState<number | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
 
@@ -217,6 +218,49 @@ export const History: React.FC = () => {
   );
 
   /**
+   * Handle download JSON settings button click
+   * Downloads the settings JSON directly from the database without regenerating
+   */
+  const handleDownloadJSON = useCallback(
+    async (graph: GraphHistoryItem) => {
+      try {
+        setDownloadingJSONId(graph.id);
+
+        // Create JSON from graph settings
+        const exportData = {
+          version: '1.0.0',
+          exportedAt: new Date().toISOString(),
+          settings: graph.settings,
+          graphData: null, // We don't store graphData in database, only settings
+          comment: graph.comment || null,
+        };
+
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const filename = `graph-${graph.test_number}-${Date.now()}.json`;
+
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast.success(t.historyToast.jsonExported);
+      } catch (error) {
+        console.error('Download JSON failed:', error);
+        toast.error(t.historyToast.downloadError);
+      } finally {
+        setDownloadingJSONId(null);
+      }
+    },
+    [t]
+  );
+
+  /**
    * Handle share button click
    */
   const handleShare = useCallback(
@@ -260,7 +304,7 @@ export const History: React.FC = () => {
     try {
       setIsSavingComment(true);
       await updateComment(previewGraph.id, editedComment);
-      toast.success('Комментарий обновлен');
+      toast.success(t.historyToast.commentUpdated);
 
       // Update preview graph
       setPreviewGraph({ ...previewGraph, comment: editedComment });
@@ -270,7 +314,7 @@ export const History: React.FC = () => {
       await fetchHistory();
     } catch (error) {
       console.error('Failed to update comment:', error);
-      toast.error('Ошибка обновления комментария');
+      toast.error(t.historyToast.commentUpdateError);
     } finally {
       setIsSavingComment(false);
     }
@@ -296,7 +340,9 @@ export const History: React.FC = () => {
       setRegeneratingId(graphToRegenerate.id);
       setRegenerateModalOpen(false);
 
-      const toastId = toast.loading(`Regenerating ${regenerateFormat.toUpperCase()}...`);
+      const toastId = toast.loading(
+        `${t.historyActions.regenerate} ${regenerateFormat.toUpperCase()}...`
+      );
 
       const { blob, filename, metadata } = await regenerateGraph(graphToRegenerate.id, {
         format: regenerateFormat,
@@ -317,7 +363,7 @@ export const History: React.FC = () => {
       window.URL.revokeObjectURL(url);
 
       toast.success(
-        `График регенерирован!\n${formatFileSize(metadata.fileSize)} • ${formatGenerationTime(metadata.generationTimeMs)}`,
+        `${t.historyToast.graphRegenerated}\n${formatFileSize(metadata.fileSize)} • ${formatGenerationTime(metadata.generationTimeMs)}`,
         {
           id: toastId,
           duration: 3000,
@@ -328,7 +374,7 @@ export const History: React.FC = () => {
       await fetchHistory();
     } catch (error) {
       console.error('Regenerate failed:', error);
-      toast.error(`Ошибка регенерации: ${(error as Error).message}`, {
+      toast.error(`${t.historyToast.regenerateError}: ${(error as Error).message}`, {
         duration: 5000,
       });
     } finally {
@@ -539,8 +585,10 @@ export const History: React.FC = () => {
                     <TableColumn className="select-text w-24">
                       {t.historyTable.fileSize}
                     </TableColumn>
-                    <TableColumn className="select-text w-40">Дата создания</TableColumn>
-                    <TableColumn className="select-text w-32">Комментарий</TableColumn>
+                    <TableColumn className="select-text w-40">
+                      {t.historyTable.creationDate}
+                    </TableColumn>
+                    <TableColumn className="select-text w-32">{t.historyTable.comment}</TableColumn>
                     <TableColumn className="select-text w-24">{t.historyTable.status}</TableColumn>
                     <TableColumn className="select-text" align="center">
                       {t.historyTable.actions}
@@ -615,7 +663,7 @@ export const History: React.FC = () => {
                                   }
                                   aria-label={`Actions for test ${graph.test_number}`}
                                 >
-                                  Действия
+                                  {t.historyTable.actions}
                                 </Button>
                               </DropdownTrigger>
                               <DropdownMenu aria-label="Graph actions">
@@ -691,6 +739,50 @@ export const History: React.FC = () => {
                                   {t.historyActions.download}
                                 </DropdownItem>
                                 <DropdownItem
+                                  key="downloadJSON"
+                                  onPress={() => handleDownloadJSON(graph)}
+                                  isDisabled={downloadingJSONId === graph.id}
+                                  startContent={
+                                    downloadingJSONId === graph.id ? (
+                                      <svg
+                                        className="w-4 h-4 animate-spin"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                          className="opacity-75"
+                                          fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                                        />
+                                      </svg>
+                                    )
+                                  }
+                                >
+                                  {t.historyActions.downloadJSON}
+                                </DropdownItem>
+                                <DropdownItem
                                   key="regenerate"
                                   onPress={() => handleRegenerateClick(graph)}
                                   isDisabled={regeneratingId === graph.id}
@@ -732,7 +824,7 @@ export const History: React.FC = () => {
                                     )
                                   }
                                 >
-                                  Перегенерировать
+                                  {t.historyActions.regenerate}
                                 </DropdownItem>
                                 <DropdownItem
                                   key="share"
@@ -914,7 +1006,9 @@ export const History: React.FC = () => {
                     <p>{formatGenerationTime(previewGraph.generation_time_ms)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Дата создания</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t.historyTable.creationDate}
+                    </p>
                     <p>{formatDate(previewGraph.created_at)}</p>
                     <p className="text-xs text-gray-500">
                       {new Date(previewGraph.created_at).toLocaleString()}
@@ -933,10 +1027,10 @@ export const History: React.FC = () => {
                 {/* Comment Section with Edit Capability */}
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">Комментарий</h4>
+                    <h4 className="font-semibold">{t.historyCommentModal.title}</h4>
                     {!isEditingComment && (
                       <Button size="sm" variant="flat" onPress={() => setIsEditingComment(true)}>
-                        Редактировать
+                        {t.historyCommentModal.edit}
                       </Button>
                     )}
                   </div>
@@ -948,7 +1042,7 @@ export const History: React.FC = () => {
                         minRows={3}
                         maxRows={10}
                         variant="bordered"
-                        placeholder="Введите комментарий..."
+                        placeholder={t.historyCommentModal.placeholder}
                       />
                       <div className="flex gap-2 justify-end">
                         <Button
@@ -960,7 +1054,7 @@ export const History: React.FC = () => {
                           }}
                           isDisabled={isSavingComment}
                         >
-                          Отмена
+                          {t.historyCommentModal.cancel}
                         </Button>
                         <Button
                           size="sm"
@@ -968,14 +1062,16 @@ export const History: React.FC = () => {
                           onPress={handleSaveComment}
                           isLoading={isSavingComment}
                         >
-                          Сохранить
+                          {t.historyCommentModal.save}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                       {previewGraph.comment || (
-                        <span className="text-gray-400 italic">Комментарий отсутствует</span>
+                        <span className="text-gray-400 italic">
+                          {t.historyCommentModal.noComment}
+                        </span>
                       )}
                     </p>
                   )}
@@ -1042,28 +1138,30 @@ export const History: React.FC = () => {
       >
         <ModalContent>
           <ModalHeader id="regenerate-modal-title">
-            Regenerate Graph: {graphToRegenerate?.test_number}
+            {t.historyRegenerateModal.title}: {graphToRegenerate?.test_number}
           </ModalHeader>
           <ModalBody className="gap-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Regenerate this graph with updated font rendering and choose export format and theme.
+              {t.historyRegenerateModal.description}
             </p>
 
             {/* Format Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Export Format</label>
+              <label className="text-sm font-medium text-foreground">
+                {t.historyRegenerateModal.exportFormat}
+              </label>
               <RadioGroup
                 value={regenerateFormat}
                 onValueChange={(value) => setRegenerateFormat(value as 'png' | 'pdf' | 'json')}
                 orientation="horizontal"
               >
-                <Radio value="png" description="High-quality image">
+                <Radio value="png" description={t.historyRegenerateModal.highQualityImage}>
                   PNG
                 </Radio>
-                <Radio value="pdf" description="Printable document">
+                <Radio value="pdf" description={t.historyRegenerateModal.printableDocument}>
                   PDF
                 </Radio>
-                <Radio value="json" description="Data export">
+                <Radio value="json" description={t.historyRegenerateModal.dataExport}>
                   JSON
                 </Radio>
               </RadioGroup>
@@ -1072,17 +1170,19 @@ export const History: React.FC = () => {
             {/* Theme Selection - only for PNG and PDF */}
             {(regenerateFormat === 'png' || regenerateFormat === 'pdf') && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Graph Theme</label>
+                <label className="text-sm font-medium text-foreground">
+                  {t.historyRegenerateModal.graphTheme}
+                </label>
                 <RadioGroup
                   value={regenerateTheme}
                   onValueChange={(value) => setRegenerateTheme(value as 'light' | 'dark')}
                   orientation="horizontal"
                 >
-                  <Radio value="light" description="Light background">
-                    Light
+                  <Radio value="light" description={t.historyRegenerateModal.lightBackground}>
+                    {t.historyRegenerateModal.lightBackground}
                   </Radio>
-                  <Radio value="dark" description="Dark background">
-                    Dark
+                  <Radio value="dark" description={t.historyRegenerateModal.darkBackground}>
+                    {t.historyRegenerateModal.darkBackground}
                   </Radio>
                 </RadioGroup>
               </div>
@@ -1090,7 +1190,9 @@ export const History: React.FC = () => {
 
             {graphToRegenerate?.comment && (
               <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2 text-sm">Original Comment</h4>
+                <h4 className="font-semibold mb-2 text-sm">
+                  {t.historyRegenerateModal.originalComment}
+                </h4>
                 <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                   {graphToRegenerate.comment}
                 </p>
@@ -1106,10 +1208,10 @@ export const History: React.FC = () => {
                 setGraphToRegenerate(null);
               }}
             >
-              Cancel
+              {t.historyRegenerateModal.cancel}
             </Button>
             <Button color="warning" onPress={handleRegenerateConfirm}>
-              Regenerate
+              {t.historyRegenerateModal.regenerate}
             </Button>
           </ModalFooter>
         </ModalContent>

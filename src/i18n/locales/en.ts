@@ -316,6 +316,7 @@ export const en = {
   historyActions: {
     view: 'View',
     download: 'Download',
+    downloadJSON: 'Download JSON',
     share: 'Share',
     delete: 'Delete',
     regenerate: 'Regenerate',
@@ -343,6 +344,7 @@ export const en = {
     commentUpdateError: 'Error updating comment',
     graphRegenerated: 'Graph regenerated!',
     regenerateError: 'Regeneration error',
+    jsonExported: 'JSON exported!',
   },
   historyStatus: {
     success: 'Success',
@@ -357,6 +359,29 @@ export const en = {
   historyNoComment: 'No comment',
   historyCancel: 'Cancel',
   historySave: 'Save',
+  historyRegenerateModal: {
+    title: 'Regenerate Graph',
+    description:
+      'Regenerate this graph with updated font rendering and choose export format and theme.',
+    exportFormat: 'Export Format',
+    graphTheme: 'Graph Theme',
+    highQualityImage: 'High-quality image',
+    printableDocument: 'Printable document',
+    dataExport: 'Data export',
+    lightBackground: 'Light background',
+    darkBackground: 'Dark background',
+    originalComment: 'Original Comment',
+    cancel: 'Cancel',
+    regenerate: 'Regenerate',
+  },
+  historyCommentModal: {
+    title: 'Comment',
+    edit: 'Edit',
+    cancel: 'Cancel',
+    save: 'Save',
+    placeholder: 'Enter comment...',
+    noComment: 'No comment',
+  },
 
   // Error Boundary
   errorBoundaryTitle: 'Something Went Wrong',

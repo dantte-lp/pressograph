@@ -129,6 +129,9 @@ export const ExportButtons = () => {
       // Determine theme to use for export
       const themeToUse = exportTheme === 'current' ? theme : exportTheme;
 
+      // Use commentOverride if set, otherwise fall back to settings.comment
+      const finalComment = commentOverride || settings.comment || undefined;
+
       // Try backend API first (higher quality, server-side rendering)
       const { blob, filename, metadata } = await exportPNGBackend({
         settings,
@@ -136,7 +139,7 @@ export const ExportButtons = () => {
         scale: 4, // High quality
         width: 1200,
         height: 800,
-        comment: commentOverride || undefined,
+        comment: finalComment,
       });
 
       // Download file
@@ -188,13 +191,16 @@ export const ExportButtons = () => {
       // Determine theme to use for export
       const themeToUse = exportTheme === 'current' ? theme : exportTheme;
 
+      // Use commentOverride if set, otherwise fall back to settings.comment
+      const finalComment = commentOverride || settings.comment || undefined;
+
       const { blob, filename, metadata } = await exportPDFBackend({
         settings,
         theme: themeToUse,
         scale: 4,
         width: 1200,
         height: 800,
-        comment: commentOverride || undefined,
+        comment: finalComment,
       });
 
       downloadFile(blob, filename);
@@ -225,9 +231,12 @@ export const ExportButtons = () => {
     const toastId = toast.loading('Генерация JSON...');
 
     try {
+      // Use commentOverride if set, otherwise fall back to settings.comment
+      const finalComment = commentOverride || settings.comment || undefined;
+
       const { blob, filename, metadata } = await exportJSONBackend({
         settings,
-        comment: commentOverride || undefined,
+        comment: finalComment,
       });
 
       downloadFile(blob, filename);
@@ -289,6 +298,10 @@ export const ExportButtons = () => {
       // Determine theme to use for export
       const themeToUse = exportTheme === 'current' ? theme : exportTheme;
 
+      // Use commentOverride if set, otherwise fall back to settings.comment
+      // This ensures comment is saved even if user doesn't edit it in the modal
+      const finalComment = commentOverride || settings.comment || undefined;
+
       // Export PNG to backend (which also saves to database)
       const { blob, filename, metadata } = await exportPNGBackend({
         settings,
@@ -296,7 +309,7 @@ export const ExportButtons = () => {
         scale: 4,
         width: 1200,
         height: 800,
-        comment: commentOverride || undefined,
+        comment: finalComment,
       });
 
       // Mark as saved (no longer dirty)

@@ -325,6 +325,7 @@ export const ru: TranslationKeys = {
   historyActions: {
     view: 'Просмотр',
     download: 'Скачать',
+    downloadJSON: 'Скачать JSON',
     share: 'Поделиться',
     delete: 'Удалить',
     regenerate: 'Перегенерировать',
@@ -352,6 +353,7 @@ export const ru: TranslationKeys = {
     commentUpdateError: 'Ошибка обновления комментария',
     graphRegenerated: 'График регенерирован!',
     regenerateError: 'Ошибка регенерации',
+    jsonExported: 'JSON экспортирован!',
   },
   historyStatus: {
     success: 'Успешно',
@@ -366,6 +368,29 @@ export const ru: TranslationKeys = {
   historyNoComment: 'Комментарий отсутствует',
   historyCancel: 'Отмена',
   historySave: 'Сохранить',
+  historyRegenerateModal: {
+    title: 'Регенерировать график',
+    description:
+      'Регенерировать этот график с обновленным отображением шрифтов и выбрать формат экспорта и тему.',
+    exportFormat: 'Формат экспорта',
+    graphTheme: 'Тема графика',
+    highQualityImage: 'Изображение высокого качества',
+    printableDocument: 'Печатный документ',
+    dataExport: 'Экспорт данных',
+    lightBackground: 'Светлый фон',
+    darkBackground: 'Темный фон',
+    originalComment: 'Исходный комментарий',
+    cancel: 'Отмена',
+    regenerate: 'Регенерировать',
+  },
+  historyCommentModal: {
+    title: 'Комментарий',
+    edit: 'Редактировать',
+    cancel: 'Отмена',
+    save: 'Сохранить',
+    placeholder: 'Введите комментарий...',
+    noComment: 'Комментарий отсутствует',
+  },
 
   // Error Boundary
   errorBoundaryTitle: 'Что-то пошло не так',
