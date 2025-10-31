@@ -38,10 +38,12 @@ app.use(helmet());
 
 // CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 // Body parsing
 app.use(express.json({ limit: process.env.MAX_FILE_SIZE || '10mb' }));
@@ -51,11 +53,13 @@ app.use(express.urlencoded({ extended: true, limit: process.env.MAX_FILE_SIZE ||
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 } else {
-  app.use(morgan('combined', {
-    stream: {
-      write: (message) => logger.info(message.trim())
-    }
-  }));
+  app.use(
+    morgan('combined', {
+      stream: {
+        write: (message) => logger.info(message.trim()),
+      },
+    })
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -99,11 +103,15 @@ app.get('/health', (req, res) => {
 });
 
 // Swagger UI - Interactive API documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'Pressograph API Documentation',
-  customCss: '.swagger-ui .topbar { display: none }',
-  explorer: true,
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'Pressograph API Documentation',
+    customCss: '.swagger-ui .topbar { display: none }',
+    explorer: true,
+  })
+);
 
 // OpenAPI JSON spec
 app.get('/api-docs.json', (req, res) => {
@@ -115,12 +123,20 @@ logger.info('📚 Swagger UI available at /api-docs');
 logger.info('📄 OpenAPI spec available at /api-docs.json');
 
 // API Routes
-// Note: Traefik strips /api prefix before forwarding, so routes are registered at /v1/*
+// FIX: Traefik api-gateway middleware is NOT stripping /api prefix as expected
+// Register routes at both /v1/* and /api/v1/* for compatibility
 app.use('/v1/setup', setupRoutes);
 app.use('/v1/auth', authRoutes);
 app.use('/v1/graph', graphRoutes);
 app.use('/v1/admin', adminRoutes);
 app.use('/v1/public', publicRoutes);
+
+// Also register with /api prefix for Traefik routing
+app.use('/api/v1/setup', setupRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/graph', graphRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/public', publicRoutes);
 
 // Error handling
 app.use(notFoundHandler);
