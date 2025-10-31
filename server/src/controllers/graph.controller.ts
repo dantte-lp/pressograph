@@ -126,6 +126,25 @@ export const exportPNG = async (req: Request, res: Response, next: NextFunction)
 
     const generationTime = Date.now() - startTime;
 
+    // Save to graph history database
+    const user = req.user!;
+    await query(
+      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        user.id,
+        settings.testNumber,
+        JSON.stringify(settings),
+        'png',
+        filename,
+        pngBuffer.length,
+        generationTime,
+        'success',
+        req.ip,
+        req.get('user-agent') || null,
+      ]
+    );
+
     logger.info('PNG export completed', {
       testNumber: settings.testNumber,
       filename,
@@ -298,6 +317,25 @@ export const exportPDF = async (req: Request, res: Response, next: NextFunction)
     );
 
     const generationTime = Date.now() - startTime;
+
+    // Save to graph history database
+    const user = req.user!;
+    await query(
+      `INSERT INTO graph_history (user_id, test_number, settings, export_format, file_path, file_size, generation_time_ms, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        user.id,
+        settings.testNumber,
+        JSON.stringify(settings),
+        'pdf',
+        filename,
+        pdfBuffer.length,
+        generationTime,
+        'success',
+        req.ip,
+        req.get('user-agent') || null,
+      ]
+    );
 
     logger.info('PDF export completed', {
       testNumber: settings.testNumber,
