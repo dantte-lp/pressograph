@@ -213,6 +213,42 @@ tasks:
     cmds:
       - open https://dev-grafana.infra4.dev || xdg-open https://dev-grafana.infra4.dev || echo "Open https://dev-grafana.infra4.dev manually"
 
+  # Uptrace (OpenTelemetry APM)
+  uptrace:start:
+    desc: Start Uptrace observability stack
+    cmds:
+      - podman-compose -f deploy/compose/compose.uptrace.yaml up -d
+      - echo "Uptrace stack started"
+      - echo "  Uptrace UI - https://dev-uptrace.infra4.dev"
+      - echo "  OTLP gRPC  - localhost:14317"
+      - echo "  OTLP HTTP  - localhost:14318"
+
+  uptrace:stop:
+    desc: Stop Uptrace observability stack
+    cmds:
+      - podman-compose -f deploy/compose/compose.uptrace.yaml down
+
+  uptrace:restart:
+    desc: Restart Uptrace observability stack
+    cmds:
+      - task: uptrace:stop
+      - task: uptrace:start
+
+  uptrace:logs:
+    desc: View Uptrace stack logs
+    cmds:
+      - podman-compose -f deploy/compose/compose.uptrace.yaml logs -f {{.CLI_ARGS}}
+
+  uptrace:status:
+    desc: Show Uptrace stack status
+    cmds:
+      - podman-compose -f deploy/compose/compose.uptrace.yaml ps
+
+  uptrace:open:
+    desc: Open Uptrace in browser
+    cmds:
+      - open https://dev-uptrace.infra4.dev || xdg-open https://dev-uptrace.infra4.dev || echo "Open https://dev-uptrace.infra4.dev manually"
+
   # Container status
   ps:
     desc: Show container status

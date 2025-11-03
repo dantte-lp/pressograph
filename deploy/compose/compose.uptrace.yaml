@@ -75,7 +75,7 @@ services:
   # PostgreSQL - Metadata Storage for Uptrace
   # ----------------------------------------------------------------------------
   postgres-uptrace:
-    image: postgres:17-alpine
+    image: postgres:18-trixie
     container_name: pressograph-uptrace-postgres
     hostname: uptrace-postgres
     restart: unless-stopped
@@ -113,7 +113,7 @@ services:
   # Uptrace - OpenTelemetry APM Platform
   # ----------------------------------------------------------------------------
   uptrace:
-    image: uptrace/uptrace:2.0.0
+    image: uptrace/uptrace:2.0.1
     container_name: pressograph-uptrace
     hostname: uptrace
     restart: unless-stopped

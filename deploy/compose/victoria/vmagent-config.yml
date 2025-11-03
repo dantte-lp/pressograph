@@ -60,18 +60,24 @@ scrape_configs:
     metrics_path: /api/metrics
     scrape_interval: 30s
 
-  # PostgreSQL exporter (if configured)
+  # PostgreSQL exporter
   - job_name: 'postgres'
     static_configs:
-      - targets: ['pressograph-dev-db:5432']
+      - targets: ['postgres-exporter:9187']
         labels:
           service: postgres
-    # Note: Requires postgres_exporter sidecar
+          app: pressograph-dev
+          instance: pressograph-dev-db
+    scrape_interval: 30s
+    scrape_timeout: 10s
 
-  # Valkey/Redis exporter (if configured)
-  - job_name: 'valkey'
+  # Valkey/Redis exporter
+  - job_name: 'redis'
     static_configs:
-      - targets: ['pressograph-dev-cache:6379']
+      - targets: ['redis-exporter:9121']
         labels:
-          service: valkey
-    # Note: Requires redis_exporter sidecar
+          service: redis
+          app: pressograph-dev
+          instance: pressograph-dev-cache
+    scrape_interval: 30s
+    scrape_timeout: 10s

@@ -32,7 +32,7 @@ services:
   # VictoriaMetrics - Metrics Storage
   # ----------------------------------------------------------------------------
   victoria-metrics:
-    image: victoriametrics/victoria-metrics:v1.105.0
+    image: victoriametrics/victoria-metrics:latest
     container_name: pressograph-victoria-metrics
     ports:
       - "8428:8428"
@@ -79,7 +79,7 @@ services:
   # VictoriaLogs - Log Storage
   # ----------------------------------------------------------------------------
   victoria-logs:
-    image: victoriametrics/victoria-logs:v0.45.0-victorialogs
+    image: victoriametrics/victoria-logs:latest
     container_name: pressograph-victoria-logs
     ports:
       - "9428:9428"
@@ -123,7 +123,7 @@ services:
   # VictoriaTraces - Distributed Tracing (OpenTelemetry)
   # ----------------------------------------------------------------------------
   victoria-traces:
-    image: victoriametrics/victoria-traces:v0.1.0
+    image: victoriametrics/victoria-traces:latest
     container_name: pressograph-victoria-traces
     ports:
       - "4318:4318"  # OTLP HTTP receiver
@@ -174,7 +174,7 @@ services:
   # vmagent - Metrics Collection Agent
   # ----------------------------------------------------------------------------
   vmagent:
-    image: victoriametrics/vmagent:v1.105.0
+    image: victoriametrics/vmagent:latest
     container_name: pressograph-vmagent
     ports:
       - "8429:8429"
@@ -204,7 +204,7 @@ services:
   # vmalert - Alerting and Recording Rules
   # ----------------------------------------------------------------------------
   vmalert:
-    image: victoriametrics/vmalert:v1.105.0
+    image: victoriametrics/vmalert:latest
     container_name: pressograph-vmalert
     ports:
       - "8880:8880"
@@ -236,7 +236,7 @@ services:
   # Grafana - Visualization Platform
   # ----------------------------------------------------------------------------
   grafana:
-    image: grafana/grafana:11.3.1
+    image: grafana/grafana:latest
     container_name: pressograph-grafana
     user: "472:472"  # Non-root user (grafana:grafana)
     ports:

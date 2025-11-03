@@ -13,17 +13,18 @@
 
 ## Story Points
 - **Planned:** 27
-- **Completed:** 7
-- **Remaining:** 20
+- **Completed:** 9
+- **Remaining:** 18
 
 ## Sprint Backlog
 
-### Completed (7 SP)
+### Completed (9 SP)
 - [x] Environment Setup with Podman (2 SP)
 - [x] Valkey Cache Integration (2 SP)
 - [x] Package Version Updates (1 SP)
 - [x] PM2 Auto-start Configuration (1 SP)
 - [x] Traefik HTTPS Routing (1 SP)
+- [x] Next.js downgrade from 16.0.1 to stable 15.5.6 (2 SP)
 
 ### In Progress (0 SP)
 - [ ] Sprint tracking structure setup (0 SP - admin task)
@@ -42,7 +43,7 @@
 - Labels: `sprint:1`, `type:feature`, `priority:high`
 
 ## Technical Stack
-- **Framework:** Next.js 16.0.1 + React 19.2.0
+- **Framework:** Next.js 15.5.6 + React 19.2.0 (downgraded from 16.0.1 due to Turbopack bug)
 - **Language:** TypeScript 5.9.3
 - **Database:** PostgreSQL 18 + Drizzle ORM 0.44.7
 - **Cache:** Valkey 9 (Redis fork)

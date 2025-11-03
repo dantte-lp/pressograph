@@ -162,6 +162,80 @@ services:
       timeout: 3s
       retries: 5
 
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Exporter - Metrics for VictoriaMetrics
+  # ----------------------------------------------------------------------------
+  postgres-exporter:
+    container_name: pressograph-dev-postgres-exporter
+    image: prometheuscommunity/postgres-exporter:latest
+    hostname: postgres-exporter
+    environment:
+      # PostgreSQL connection string
+      DATA_SOURCE_NAME: postgresql://postgres:postgres@db:5432/pressograph?sslmode=disable
+      # Disable default metrics that are too verbose
+      PG_EXPORTER_DISABLE_DEFAULT_METRICS: "false"
+      # Enable extended query metrics
+      PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yaml
+    ports:
+      - "9187:9187"
+    networks:
+      - pressograph-dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9187/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      io.podman.compose.project: pressograph-dev
+      com.pressograph.service: postgres-exporter
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+          cpus: '0.2'
+
+  # ----------------------------------------------------------------------------
+  # Redis/Valkey Exporter - Metrics for VictoriaMetrics
+  # ----------------------------------------------------------------------------
+  redis-exporter:
+    container_name: pressograph-dev-redis-exporter
+    image: oliver006/redis_exporter:latest
+    hostname: redis-exporter
+    environment:
+      # Redis connection string
+      REDIS_ADDR: redis://cache:6379
+      # No password for dev environment
+      # REDIS_PASSWORD: ""
+      # Include Go runtime metrics
+      REDIS_EXPORTER_INCLUDE_GO_RUNTIME_METRICS: "true"
+    ports:
+      - "9121:9121"
+    networks:
+      - pressograph-dev
+    restart: unless-stopped
+    depends_on:
+      cache:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9121/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      io.podman.compose.project: pressograph-dev
+      com.pressograph.service: redis-exporter
+    deploy:
+      resources:
+        limits:
+          memory: 50M
+          cpus: '0.1'
+
 volumes:
   postgres_data:
     name: pressograph-dev-postgres-data
