@@ -1,4 +1,4 @@
-import { trace, context, SpanStatusCode, Span } from '@opentelemetry/api';
+import { trace, SpanStatusCode, Span } from '@opentelemetry/api';
 
 const tracer = trace.getTracer('pressograph-tracer');
 

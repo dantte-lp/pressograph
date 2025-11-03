@@ -4,8 +4,12 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { Resource } from '@opentelemetry/resources';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_DEPLOYMENT_ENVIRONMENT } from '@opentelemetry/semantic-conventions';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_VERSION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+} from '@opentelemetry/semantic-conventions';
 
 // VictoriaMetrics endpoints (configure via environment variables)
 const VICTORIA_METRICS_URL = process.env.VICTORIA_METRICS_URL || 'http://victoria-metrics:8428';
@@ -13,10 +17,10 @@ const VICTORIA_LOGS_URL = process.env.VICTORIA_LOGS_URL || 'http://victoria-logs
 const VICTORIA_TRACES_URL = process.env.VICTORIA_TRACES_URL || 'http://victoria-traces:4318';
 
 // Resource attributes (identify the service)
-const resource = new Resource({
-  [ATTR_SERVICE_NAME]: 'pressograph',
-  [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '2.0.0',
-  [ATTR_DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
+const resource = resourceFromAttributes({
+  [SEMRESATTRS_SERVICE_NAME]: 'pressograph',
+  [SEMRESATTRS_SERVICE_VERSION]: process.env.npm_package_version || '2.0.0',
+  [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
 });
 
 // Metrics exporter (VictoriaMetrics)

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, jsonb, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, jsonb, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Organization Settings Type
