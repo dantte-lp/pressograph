@@ -9,10 +9,9 @@ import { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
+// import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
-import { compare } from 'bcrypt';
-import type { User } from '@prisma/client';
+// import { compare } from 'bcrypt';
 
 // Extend the built-in session types
 declare module 'next-auth' {
@@ -54,41 +53,42 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
 
-    // Email/Password credentials
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Invalid credentials');
-        }
+    // Email/Password credentials - TODO: Fix for Drizzle ORM
+    // CredentialsProvider({
+    //   name: 'credentials',
+    //   credentials: {
+    //     email: { label: 'Email', type: 'email' },
+    //     password: { label: 'Password', type: 'password' },
+    //   },
+    //   async authorize(credentials) {
+    //     if (!credentials?.email || !credentials?.password) {
+    //       throw new Error('Invalid credentials');
+    //     }
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-        });
+    //     // TODO: Update to use Drizzle ORM queries
+    //     const user = await db.user.findUnique({
+    //       where: { email: credentials.email },
+    //     });
 
-        if (!user || !user.password) {
-          throw new Error('Invalid credentials');
-        }
+    //     if (!user || !user.password) {
+    //       throw new Error('Invalid credentials');
+    //     }
 
-        const isPasswordValid = await compare(credentials.password, user.password);
+    //     const isPasswordValid = await compare(credentials.password, user.password);
 
-        if (!isPasswordValid) {
-          throw new Error('Invalid credentials');
-        }
+    //     if (!isPasswordValid) {
+    //       throw new Error('Invalid credentials');
+    //     }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        };
-      },
-    }),
+    //     return {
+    //       id: user.id,
+    //       email: user.email,
+    //       name: user.name,
+    //       image: user.image,
+    //       role: user.role,
+    //     };
+    //   },
+    // }),
   ],
 
   session: {
@@ -125,7 +125,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
-    async signIn({ user, account, profile }) {
+    async signIn({ account }) {
       // Allow OAuth sign-ins
       if (account?.provider !== 'credentials') {
         return true;
@@ -145,10 +145,10 @@ export const authOptions: NextAuthOptions = {
   },
 
   events: {
-    async signIn({ user, account, profile, isNewUser }) {
+    async signIn({ user, account }) {
       console.log(`User ${user.email} signed in via ${account?.provider}`);
     },
-    async signOut({ session, token }) {
+    async signOut() {
       console.log(`User signed out`);
     },
     async createUser({ user }) {
@@ -157,10 +157,10 @@ export const authOptions: NextAuthOptions = {
     async updateUser({ user }) {
       console.log(`User updated: ${user.email}`);
     },
-    async linkAccount({ user, account, profile }) {
+    async linkAccount({ user }) {
       console.log(`Account linked for user: ${user.email}`);
     },
-    async session({ session, token }) {
+    async session() {
       // Session accessed
     },
   },

@@ -32,7 +32,7 @@ export async function requireAuth() {
   const session = await getSession();
 
   if (!session) {
-    redirect('/login');
+    redirect('/login' as any);
   }
 
   return session;
@@ -45,7 +45,7 @@ export async function requireRole(role: string) {
   const session = await requireAuth();
 
   if (session.user.role !== role) {
-    redirect('/unauthorized');
+    redirect('/unauthorized' as any);
   }
 
   return session;

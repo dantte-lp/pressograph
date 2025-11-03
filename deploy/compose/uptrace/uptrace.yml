@@ -1,0 +1,93 @@
+##
+## Uptrace configuration file for Pressograph
+## https://uptrace.dev/get/config.html
+##
+
+# listen address for HTTP and gRPC APIs
+listen:
+  # OTLP/gRPC API
+  grpc: :14317
+  # OTLP/HTTP API and Uptrace UI
+  http: :14318
+
+# PostgreSQL database for storing metadata
+pg:
+  addr: postgres-uptrace:5432
+  user: uptrace
+  password: ${POSTGRES_PASSWORD}
+  database: uptrace
+
+# ClickHouse database for storing telemetry data
+ch:
+  addr: clickhouse:9000
+  user: uptrace
+  password: ${CLICKHOUSE_PASSWORD}
+  database: uptrace
+
+  # ClickHouse is awesome, but it can be slow when running queries over large time ranges.
+  # This setting helps by splitting large queries into smaller ones.
+  max_execution_time: 30s
+
+# A list of pre-configured projects
+projects:
+  # Default project for development
+  - id: 1
+    name: Pressograph Development
+    token: ${UPTRACE_PROJECT_TOKEN}
+    pinned_attrs:
+      - service_name
+      - host_name
+      - deployment_environment
+    # Create group attributes to organize spans and metrics
+    group_by_env: true
+    group_funcs:
+      - quantile(0.5)
+      - quantile(0.9)
+      - quantile(0.99)
+
+# Admin credentials for initial setup
+auth:
+  users:
+    - username: ${UPTRACE_ADMIN_EMAIL}
+      password: ${UPTRACE_ADMIN_PASSWORD}
+      # User can edit all projects
+      notify_by_email: true
+
+# Site configuration
+site:
+  # Public URL for Uptrace
+  addr: ${UPTRACE_SITE_ADDR}
+
+# Metrics configuration
+metrics:
+  # Disable some metrics to reduce storage usage
+  drop_attrs:
+    - telemetry_sdk_*
+    - process_runtime_*
+
+# Spans (traces) configuration
+spans:
+  # Buffer configuration for ingesting spans
+  buffer_size: 100000
+  batch_size: 10000
+
+# Logging
+logging:
+  # Log level: debug, info, warn, error
+  level: info
+
+# SMTP configuration for email alerts (optional)
+# smtp:
+#   enabled: false
+#   host: smtp.gmail.com
+#   port: 587
+#   username: your-email@gmail.com
+#   password: your-app-password
+#   from: uptrace@pressograph.local
+
+# Alerting configuration (optional)
+# alerting:
+#   enabled: true
+
+# Secret key for encryption (generate with: openssl rand -hex 32)
+secret_key: ${UPTRACE_SECRET_KEY:-please-change-this-secret-key-in-production}

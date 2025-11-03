@@ -3,6 +3,7 @@ FROM node:lts-trixie AS dev-base
 
 LABEL maintainer="Pressograph Team"
 LABEL description="Pressograph Development Container"
+LABEL org.pressograph.observability="OpenTelemetry instrumentation configured at application level"
 
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -1,0 +1,133 @@
+groups:
+  - name: pressograph-availability
+    interval: 1m
+    rules:
+      # Service availability alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} service has been down for more than 2 minutes."
+
+      - alert: VictoriaMetricsDown
+        expr: up{job="victoria-metrics"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "VictoriaMetrics is down"
+          description: "VictoriaMetrics has been down for more than 1 minute. Metrics collection is stopped."
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana has been down for more than 5 minutes."
+
+  - name: pressograph-performance
+    interval: 1m
+    rules:
+      # High request rate
+      - alert: HighRequestRate
+        expr: rate(http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request rate detected"
+          description: "Request rate is {{ $value }} requests/sec for more than 5 minutes."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(api_errors_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors/sec for more than 5 minutes."
+
+      # Slow requests (P95 latency)
+      - alert: SlowRequests
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow requests detected"
+          description: "P95 request latency is {{ $value }}s for more than 5 minutes."
+
+  - name: pressograph-resources
+    interval: 1m
+    rules:
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 > 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.job }}"
+          description: "Memory usage is {{ $value }}MB for more than 5 minutes."
+
+      # Database connection pool exhaustion
+      - alert: DatabaseConnectionPoolExhausted
+        expr: db_connections_active / db_connections_max > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "Using {{ $value | humanizePercentage }} of database connection pool."
+
+  - name: pressograph-storage
+    interval: 5m
+    rules:
+      # VictoriaMetrics disk usage
+      - alert: VictoriaMetricsHighDiskUsage
+        expr: vm_free_disk_space_bytes / vm_data_size_bytes < 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "VictoriaMetrics disk usage is high"
+          description: "Less than 20% disk space available for VictoriaMetrics data."
+
+  - name: pressograph-business
+    interval: 1m
+    rules:
+      # Low cache hit ratio
+      - alert: LowCacheHitRatio
+        expr: rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) < 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low cache hit ratio"
+          description: "Cache hit ratio is {{ $value | humanizePercentage }} for more than 10 minutes."
+
+# Recording rules for common queries
+  - name: pressograph-recording
+    interval: 1m
+    rules:
+      # Pre-calculate request rate
+      - record: job:http_requests:rate5m
+        expr: rate(http_requests_total[5m])
+
+      # Pre-calculate error rate
+      - record: job:api_errors:rate5m
+        expr: rate(api_errors_total[5m])
+
+      # Pre-calculate P95 latency
+      - record: job:http_request_duration:p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+      # Pre-calculate cache hit ratio
+      - record: job:cache_hit_ratio:rate5m
+        expr: rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m]))

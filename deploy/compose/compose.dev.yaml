@@ -1,5 +1,8 @@
 name: pressograph-dev
 
+# Compose Spec 2025 - Podman Compose compatible
+# No version field required per Compose Specification
+
 services:
   workspace:
     container_name: pressograph-dev-workspace
@@ -23,12 +26,27 @@ services:
       - next_cache:/workspace/.next
       - pnpm_store:/home/developer/.local/share/pnpm/store
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/pressograph
-      REDIS_URL: redis://cache:6379
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: dev-secret-change-in-production
+      # Core application
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: 1
+
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/pressograph
+
+      # Cache
+      REDIS_URL: redis://cache:6379
+
+      # Authentication
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-change-in-production
+
+      # Observability (OpenTelemetry + VictoriaMetrics)
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-pressograph-dev}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://victoria-traces:4318}
+      VICTORIA_METRICS_URL: ${VICTORIA_METRICS_URL:-http://victoria-metrics:8428}
+      VICTORIA_LOGS_URL: ${VICTORIA_LOGS_URL:-http://victoria-logs:9428}
+      VICTORIA_TRACES_URL: ${VICTORIA_TRACES_URL:-http://victoria-traces:4318}
     working_dir: /workspace
     stdin_open: true
     tty: true

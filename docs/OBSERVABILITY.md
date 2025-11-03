@@ -33,27 +33,53 @@ Pressograph uses a modern observability stack:
 ## Architecture
 
 ```
-┌─────────────┐
-│  Next.js    │──┐
-│ Application │  │ OpenTelemetry SDK
-└─────────────┘  │
-                 │
-                 ├──► VictoriaMetrics (metrics)
-                 ├──► VictoriaLogs (logs)
-                 └──► Tempo/Jaeger (traces) [optional]
-                          │
-                          ▼
-                    ┌──────────┐
-                    │ Grafana  │
-                    └──────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Pressograph Application               │
+│                  (OpenTelemetry Instrumentation)         │
+└──────────────────┬──────────────┬──────────────┬────────┘
+                   │              │              │
+                   ▼              ▼              ▼
+            ┌──────────┐   ┌──────────┐   ┌──────────────┐
+            │vmagent   │   │VictoriaL-│   │VictoriaTraces│
+            │(scrape)  │   │ogs       │   │(OTLP)        │
+            └─────┬────┘   └─────┬────┘   └──────┬───────┘
+                  │              │                │
+                  ▼              │                │
+            ┌──────────┐         │                │
+            │Victoria  │         │                │
+            │Metrics   │◄────────┴────────────────┘
+            └─────┬────┘
+                  │
+            ┌─────┴────┐
+            │vmalert   │
+            │(alerts)  │
+            └─────┬────┘
+                  │
+                  ▼
+            ┌──────────┐
+            │ Grafana  │  (Visualization & Dashboards)
+            └──────────┘
 ```
+
+**All services accessible via Traefik HTTPS:**
+- https://dev-grafana.infra4.dev
+- https://dev-vm.infra4.dev
+- https://dev-vl.infra4.dev
+- https://dev-vt.infra4.dev
 
 ### Data Flow
 
 1. **Instrumentation**: OpenTelemetry SDK auto-instruments Next.js, database queries, HTTP requests
-2. **Export**: Metrics/logs/traces exported via OTLP HTTP protocol
-3. **Storage**: VictoriaMetrics stores time-series data, VictoriaLogs stores logs
-4. **Visualization**: Grafana queries data sources and displays dashboards
+2. **Collection**:
+   - **Metrics**: vmagent scrapes Prometheus endpoints, writes to VictoriaMetrics
+   - **Logs**: Application sends logs to VictoriaLogs via HTTP
+   - **Traces**: Application sends traces to VictoriaTraces via OTLP HTTP (port 4318)
+3. **Storage**:
+   - VictoriaMetrics: Time-series metrics (12 months retention)
+   - VictoriaLogs: Structured logs (3 months retention)
+   - VictoriaTraces: Distributed traces (1 month retention)
+4. **Alerting**: vmalert evaluates rules and sends alerts based on metrics
+5. **Visualization**: Grafana queries all datasources and displays unified dashboards
 
 ## Quick Start
 
@@ -86,11 +112,17 @@ task metrics:logs
 
 ### 3. Access Grafana
 
-Open https://grafana-pressograph.infra4.dev
+Open https://dev-grafana.infra4.dev
 
 **Default credentials:**
 - Username: `admin`
 - Password: `admin` (change on first login)
+
+**All Services:**
+- Grafana: https://dev-grafana.infra4.dev
+- VictoriaMetrics: https://dev-vm.infra4.dev
+- VictoriaLogs: https://dev-vl.infra4.dev
+- VictoriaTraces: https://dev-vt.infra4.dev
 
 ### 4. Verify Data Collection
 
@@ -100,6 +132,48 @@ Open https://grafana-pressograph.infra4.dev
 4. You should see request metrics
 
 ## Components
+
+### VictoriaMetrics Stack
+
+#### VictoriaMetrics (Metrics Storage)
+- **Version**: v1.105.0
+- **Purpose**: High-performance time-series database for metrics
+- **URL**: https://dev-vm.infra4.dev
+- **Retention**: 12 months
+- **Features**: Prometheus-compatible, efficient storage compression
+
+#### VictoriaLogs (Log Aggregation)
+- **Version**: v0.45.0
+- **Purpose**: Fast log aggregation and search
+- **URL**: https://dev-vl.infra4.dev
+- **Retention**: 3 months
+- **Features**: LogsQL query language, high ingestion rate
+
+#### VictoriaTraces (Distributed Tracing)
+- **Version**: v0.1.0
+- **Purpose**: OpenTelemetry-compatible trace storage
+- **URL**: https://dev-vt.infra4.dev
+- **Retention**: 1 month
+- **Protocols**: OTLP HTTP (4318), OTLP gRPC (4317), Zipkin (9411), Jaeger (14268)
+
+#### vmagent (Metrics Collection)
+- **Version**: v1.105.0
+- **Purpose**: Prometheus-compatible scraping agent
+- **Port**: 8429
+- **Features**: Service discovery, metric relabeling, remote write to VictoriaMetrics
+
+#### vmalert (Alerting Engine)
+- **Version**: v1.105.0
+- **Purpose**: Alerting and recording rules evaluation
+- **Port**: 8880
+- **Configuration**: `/opt/projects/repositories/pressograph/deploy/compose/victoria/vmalert-rules.yml`
+
+#### Grafana (Visualization)
+- **Version**: 11.3.1
+- **Purpose**: Unified observability dashboard
+- **URL**: https://dev-grafana.infra4.dev
+- **User**: Non-root (UID 472)
+- **Features**: Pre-configured datasources, dashboard provisioning
 
 ### OpenTelemetry SDK
 
@@ -396,13 +470,32 @@ victoria-metrics:
     - '--memory.allowedPercent=50'  # Limit to 50% of available RAM
 ```
 
-### Missing Traces
+### VictoriaTraces Connection Issues
 
-**Note:** Basic setup only includes metrics and logs. For distributed tracing:
+**Check OTLP endpoint connectivity:**
+```bash
+# From inside workspace container
+curl -v http://victoria-traces:4318/v1/traces
 
-1. Add Tempo or Jaeger to compose file
-2. Update `VICTORIA_TRACES_URL` to Tempo endpoint
-3. Configure trace sampling rate in `otel.ts`
+# Check if VictoriaTraces is running
+task metrics:status | grep victoria-traces
+```
+
+**Verify trace export configuration:**
+```bash
+# Check environment variables
+echo $VICTORIA_TRACES_URL
+echo $OTEL_EXPORTER_OTLP_ENDPOINT
+```
+
+### Viewing Traces in Grafana
+
+1. Open Grafana → **Explore**
+2. Select **VictoriaTraces** datasource
+3. Search for traces by:
+   - Service name: `pressograph-dev`
+   - Operation name
+   - Tags (trace_id, user_id, etc.)
 
 ## Additional Resources
 

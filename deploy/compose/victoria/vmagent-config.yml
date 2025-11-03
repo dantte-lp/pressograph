@@ -1,0 +1,77 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: pressograph-dev
+    environment: development
+
+scrape_configs:
+  # Scrape vmagent itself
+  - job_name: 'vmagent'
+    static_configs:
+      - targets: ['localhost:8429']
+        labels:
+          service: vmagent
+
+  # Scrape VictoriaMetrics
+  - job_name: 'victoria-metrics'
+    static_configs:
+      - targets: ['victoria-metrics:8428']
+        labels:
+          service: victoria-metrics
+
+  # Scrape VictoriaLogs
+  - job_name: 'victoria-logs'
+    static_configs:
+      - targets: ['victoria-logs:9428']
+        labels:
+          service: victoria-logs
+
+  # Scrape VictoriaTraces
+  - job_name: 'victoria-traces'
+    static_configs:
+      - targets: ['victoria-traces:8428']
+        labels:
+          service: victoria-traces
+
+  # Scrape vmalert
+  - job_name: 'vmalert'
+    static_configs:
+      - targets: ['vmalert:8880']
+        labels:
+          service: vmalert
+
+  # Scrape Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          service: grafana
+
+  # Scrape Pressograph application (when running)
+  - job_name: 'pressograph'
+    static_configs:
+      - targets: ['pressograph-dev-workspace:3000']
+        labels:
+          service: pressograph
+          app: pressograph-dev
+    # Scrape metrics from /api/metrics endpoint if available
+    metrics_path: /api/metrics
+    scrape_interval: 30s
+
+  # PostgreSQL exporter (if configured)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['pressograph-dev-db:5432']
+        labels:
+          service: postgres
+    # Note: Requires postgres_exporter sidecar
+
+  # Valkey/Redis exporter (if configured)
+  - job_name: 'valkey'
+    static_configs:
+      - targets: ['pressograph-dev-cache:6379']
+        labels:
+          service: valkey
+    # Note: Requires redis_exporter sidecar

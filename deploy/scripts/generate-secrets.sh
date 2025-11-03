@@ -354,6 +354,16 @@ ENCRYPTION_KEY=${ENCRYPTION_KEY}
 ENABLE_SIGNUP=true
 ENABLE_EMAIL_VERIFICATION=${ENABLE_FEATURES}
 ENABLE_TWO_FACTOR=${ENABLE_FEATURES}
+
+# ----------------------------------------------
+# Observability (OpenTelemetry + VictoriaMetrics)
+# ----------------------------------------------
+OTEL_ENABLED=false
+VICTORIA_METRICS_URL=http://victoria-metrics:8428
+VICTORIA_LOGS_URL=http://victoria-logs:9428
+VICTORIA_TRACES_URL=http://victoria-traces:4318
+OTEL_SERVICE_NAME=pressograph
+OTEL_EXPORTER_OTLP_ENDPOINT=http://victoria-traces:4318
 EOF
 
 # Add production-specific settings
