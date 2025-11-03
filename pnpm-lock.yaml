@@ -107,6 +107,9 @@ importers:
       immer:
         specifier: ^10.2.0
         version: 10.2.0
+      import-in-the-middle:
+        specifier: ^2.0.0
+        version: 2.0.0
       ioredis:
         specifier: ^5.8.2
         version: 5.8.2
@@ -155,6 +158,9 @@ importers:
       recharts:
         specifier: ^3.3.0
         version: 3.3.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react-is@16.13.1)(react@19.2.0)(redux@5.0.1)
+      require-in-the-middle:
+        specifier: ^8.0.1
+        version: 8.0.1
       sharp:
         specifier: ^0.34.4
         version: 0.34.4

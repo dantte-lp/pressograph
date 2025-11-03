@@ -21,11 +21,18 @@ export function QueryProvider({ children }: QueryProviderProps) {
   // Using useState ensures it's only created once per component lifecycle
   const [queryClient] = useState(() => getQueryClient());
 
+  // Determine if we're in development mode (client-side only)
+  const [showDevTools] = useState(() => {
+    // Only check this on the client side to avoid hydration issues
+    if (typeof window === 'undefined') return false;
+    return process.env.NODE_ENV === 'development';
+  });
+
   return (
     <QueryClientProvider client={queryClient}>
       {children}
       {/* DevTools only shown in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {showDevTools && (
         <ReactQueryDevtools
           initialIsOpen={false}
           buttonPosition="bottom-left"
