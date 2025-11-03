@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:1.4
+FROM node:lts-trixie AS dev-base
+
+LABEL maintainer="Pressograph Team"
+LABEL description="Pressograph Development Container"
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    vim \
+    nano \
+    curl \
+    wget \
+    zsh \
+    sudo \
+    postgresql-client \
+    redis-tools \
+    build-essential \
+    python3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка oh-my-zsh для удобства разработки
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# Настройка pnpm
+RUN corepack enable && \
+    corepack prepare pnpm@latest --activate
+
+# Создание пользователя для разработки (non-root)
+# В node:lts-trixie уже есть пользователь node с UID 1000, используем его
+RUN usermod -l developer -d /home/developer -m node && \
+    groupmod -n developer node && \
+    chsh -s /bin/zsh developer && \
+    echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    mkdir -p /workspace && \
+    chown -R developer:developer /workspace
+
+# Настройка environment для pnpm ПЕРЕД установкой глобальных пакетов
+ENV PNPM_HOME="/home/developer/.local/share/pnpm" \
+    PATH="/home/developer/.local/share/pnpm:$PATH" \
+    SHELL="/bin/zsh"
+
+# Установка глобальных dev инструментов как пользователь developer
+USER developer
+RUN pnpm setup && \
+    pnpm add -g \
+    typescript \
+    tsx \
+    eslint \
+    prettier \
+    drizzle-kit \
+    turbo \
+    pm2
+
+# Копирование кастомной .zshrc конфигурации
+COPY --chown=developer:developer .devcontainer/.zshrc /home/developer/.zshrc
+
+# Копирование PM2 ecosystem конфигурации и startup скрипта
+COPY --chown=developer:developer ecosystem.config.js /workspace/ecosystem.config.js
+COPY --chown=developer:developer deploy/scripts/startup.sh /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/startup.sh
+
+WORKDIR /workspace
+
+# Ports
+EXPOSE 3000 5555
+
+# Start services with PM2
+CMD ["/usr/local/bin/startup.sh"]

@@ -1,0 +1,156 @@
+# ==============================================
+# Pressograph Development - Traefik File Provider Configuration
+# ==============================================
+# This file provides an alternative configuration method using Traefik's
+# file provider instead of Docker provider labels.
+#
+# USAGE:
+# 1. Copy this file to your Traefik configuration directory:
+#    cp deploy/traefik/pressograph-dev.yml /opt/projects/repositories/traefik/config/dynamic/
+#
+# 2. Ensure Traefik's traefik.yml includes:
+#    providers:
+#      file:
+#        directory: /config/dynamic
+#        watch: true
+#
+# 3. Connect Pressograph workspace container to traefik-public network:
+#    podman network connect traefik-public pressograph-dev-workspace
+#
+# NOTE: For Docker/Podman Compose deployments, using labels (as configured
+# in compose.dev.yaml) is the recommended approach for automatic service
+# discovery. This file is provided as a fallback or for pod-based deployments.
+
+http:
+  routers:
+    # HTTP Router (redirect to HTTPS)
+    pressograph-dev-http:
+      rule: "Host(`dev-pressograph.infra4.dev`)"
+      entryPoints:
+        - web
+      middlewares:
+        - pressograph-dev-redirect
+      service: pressograph-dev-service
+
+    # HTTPS Router (main)
+    pressograph-dev:
+      rule: "Host(`dev-pressograph.infra4.dev`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - pressograph-dev-headers
+      service: pressograph-dev-service
+      tls:
+        certResolver: cloudflare
+        # Optional: Specify domains explicitly
+        # domains:
+        #   - main: dev-pressograph.infra4.dev
+
+  services:
+    pressograph-dev-service:
+      loadBalancer:
+        servers:
+          # Use container name or IP address
+          # For compose: pressograph-dev-workspace
+          - url: "http://pressograph-dev-workspace:3000"
+
+        # Health check configuration
+        healthCheck:
+          path: /api/health
+          interval: 30s
+          timeout: 5s
+          scheme: http
+
+        # Sticky sessions (optional, for stateful apps)
+        # sticky:
+        #   cookie:
+        #     name: pressograph_session
+        #     secure: true
+        #     httpOnly: true
+
+  middlewares:
+    # HTTPS Redirect
+    pressograph-dev-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    # Custom headers for development
+    pressograph-dev-headers:
+      headers:
+        # Development-specific headers
+        customResponseHeaders:
+          X-Dev-Mode: "true"
+          X-Frame-Options: "SAMEORIGIN"
+          X-Content-Type-Options: "nosniff"
+
+        # Browser security headers (optional)
+        # browserXssFilter: true
+        # contentTypeNosniff: true
+        # forceSTSHeader: true
+        # stsIncludeSubdomains: true
+        # stsPreload: true
+        # stsSeconds: 31536000
+
+    # Rate limiting (optional)
+    pressograph-dev-ratelimit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1m
+
+    # Compression (optional)
+    pressograph-dev-compress:
+      compress: {}
+
+# ==============================================
+# Alternative Configuration: Multiple Paths
+# ==============================================
+# Uncomment and customize if you need path-based routing
+# (e.g., separate API and frontend routes)
+
+#   routers:
+#     pressograph-dev-api:
+#       rule: "Host(`dev-pressograph.infra4.dev`) && PathPrefix(`/api`)"
+#       priority: 100
+#       entryPoints:
+#         - websecure
+#       service: pressograph-dev-service
+#       middlewares:
+#         - pressograph-dev-api-auth
+#       tls:
+#         certResolver: cloudflare
+#
+#     pressograph-dev-frontend:
+#       rule: "Host(`dev-pressograph.infra4.dev`)"
+#       priority: 1
+#       entryPoints:
+#         - websecure
+#       service: pressograph-dev-service
+#       tls:
+#         certResolver: cloudflare
+#
+#   middlewares:
+#     pressograph-dev-api-auth:
+#       basicAuth:
+#         users:
+#           - "dev:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/"  # dev:dev
+
+# ==============================================
+# TCP/UDP Services (Optional)
+# ==============================================
+# Uncomment if you need to expose non-HTTP services
+
+# tcp:
+#   routers:
+#     pressograph-dev-db:
+#       rule: "HostSNI(`*`)"
+#       entryPoints:
+#         - postgres
+#       service: pressograph-dev-db-service
+#
+#   services:
+#     pressograph-dev-db-service:
+#       loadBalancer:
+#         servers:
+#           - address: "pressograph-dev-db:5432"

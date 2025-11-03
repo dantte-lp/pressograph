@@ -1,207 +1,188 @@
-# Pressograph Task Automation
-# Version: 2.0.0
-# Requires: Task (https://taskfile.dev)
-
 version: '3'
 
 vars:
-  PROJECT_NAME: pressograph
-  CONTAINER_ENGINE: podman
-  COMPOSE_FILE: compose.next.yaml
-  NODE_VERSION: 24
+  COMPOSE_FILE: deploy/compose/compose.dev.yaml
+  CONTAINER: pressograph-dev-workspace
 
-# ═══════════════════════════════════════════════════════════
-# Development Tasks
-# ═══════════════════════════════════════════════════════════
 tasks:
-  dev:
-    desc: "Start Next.js development server"
+  # Environment and secrets management
+  secrets:generate:
+    desc: Generate secure secrets for .env.local
     cmds:
-      - npm run dev
+      - chmod +x deploy/scripts/generate-secrets.sh
+      - ./deploy/scripts/generate-secrets.sh
+
+  secrets:generate:prod:
+    desc: Generate production secrets
+    cmds:
+      - chmod +x deploy/scripts/generate-secrets.sh
+      - ./deploy/scripts/generate-secrets.sh --env prod
+
+  secrets:rotate:
+    desc: Rotate all secrets (regenerate .env.local)
+    cmds:
+      - rm -f .env.local
+      - task: secrets:generate
+
+  env:template:
+    desc: Copy environment template
+    cmds:
+      - |
+        if [ ! -f .env.local ]; then
+          cp .env.dev.example .env.local
+          echo "Created .env.local from template"
+          echo "IMPORTANT: Run 'task secrets:generate' to generate secure secrets"
+        else
+          echo ".env.local already exists. Use 'task secrets:rotate' to regenerate."
+        fi
+
+  # Development environment management
+  dev:setup:
+    desc: Setup development environment
+    cmds:
+      - chmod +x deploy/scripts/*.sh
+      - ./deploy/scripts/dev-setup.sh
+
+  dev:start:
+    desc: Start development containers
+    cmds:
+      - podman-compose -f {{.COMPOSE_FILE}} up -d
+
+  dev:stop:
+    desc: Stop development containers
+    cmds:
+      - podman-compose -f {{.COMPOSE_FILE}} stop
+
+  dev:restart:
+    desc: Restart development containers
+    cmds:
+      - task: dev:stop
+      - task: dev:start
+
+  dev:enter:
+    desc: Enter development container
+    cmds:
+      - ./deploy/scripts/dev-enter.sh
+
+  dev:logs:
+    desc: View development container logs
+    cmds:
+      - ./deploy/scripts/dev-logs.sh {{.CLI_ARGS}}
+
+  dev:destroy:
+    desc: Destroy development environment
+    cmds:
+      - ./deploy/scripts/dev-destroy.sh
+
+  dev:rebuild:
+    desc: Rebuild development environment
+    cmds:
+      - task: dev:destroy
+      - task: dev:setup
+
+  # Container execution
+  exec:
+    desc: Execute command in dev container
+    cmds:
+      - podman exec -it {{.CONTAINER}} {{.CLI_ARGS}}
+
+  exec:root:
+    desc: Execute command as root in dev container
+    cmds:
+      - podman exec -it -u root {{.CONTAINER}} {{.CLI_ARGS}}
+
+  # Next.js commands
+  dev:next:
+    desc: Start Next.js dev server
+    cmds:
+      - podman exec -it {{.CONTAINER}} pnpm dev
 
   build:
-    desc: "Build Next.js production bundle"
+    desc: Build Next.js application
     cmds:
-      - npm run build
+      - podman exec -it {{.CONTAINER}} pnpm build
 
-  lint:
-    desc: "Run ESLint"
+  start:
+    desc: Start production Next.js server
     cmds:
-      - npm run lint
+      - podman exec -it {{.CONTAINER}} pnpm start
 
-  format:
-    desc: "Format code with Prettier"
+  # Package management
+  install:
+    desc: Install dependencies
     cmds:
-      - npm run format
+      - podman exec -it {{.CONTAINER}} pnpm install
 
-  type-check:
-    desc: "Run TypeScript type checking"
+  update:
+    desc: Update dependencies
     cmds:
-      - npx tsc --noEmit
+      - podman exec -it {{.CONTAINER}} pnpm update
 
-  test:
-    desc: "Run all tests"
+  # Database commands
+  db:push:
+    desc: Push database schema
     cmds:
-      - npm test
-
-  test:unit:
-    desc: "Run unit tests only"
-    cmds:
-      - npm run test:unit
-
-  test:integration:
-    desc: "Run integration tests"
-    cmds:
-      - npm run test:integration
-
-  test:e2e:
-    desc: "Run end-to-end tests"
-    cmds:
-      - npm run test:e2e
-
-# ═══════════════════════════════════════════════════════════
-# Database Tasks
-# ═══════════════════════════════════════════════════════════
-  db:generate:
-    desc: "Generate Drizzle migrations"
-    cmds:
-      - npx drizzle-kit generate
-
-  db:migrate:
-    desc: "Run database migrations"
-    cmds:
-      - npx drizzle-kit migrate
+      - podman exec -it {{.CONTAINER}} pnpm db:push
 
   db:studio:
-    desc: "Open Drizzle Studio"
+    desc: Open Drizzle Studio
     cmds:
-      - npx drizzle-kit studio
+      - podman exec -it {{.CONTAINER}} pnpm db:studio
+
+  db:migrate:
+    desc: Generate migrations
+    cmds:
+      - podman exec -it {{.CONTAINER}} pnpm db:generate
 
   db:seed:
-    desc: "Seed database with initial data"
+    desc: Seed database
     cmds:
-      - npm run db:seed
+      - podman exec -it {{.CONTAINER}} pnpm db:seed
 
-# ═══════════════════════════════════════════════════════════
-# Container Tasks (Podman)
-# ═══════════════════════════════════════════════════════════
-  container:build:
-    desc: "Build production container image"
+  # Code quality
+  lint:
+    desc: Run ESLint
     cmds:
-      - {{.CONTAINER_ENGINE}} build -t {{.PROJECT_NAME}}:latest -f Containerfile.next .
+      - podman exec -it {{.CONTAINER}} pnpm lint
 
-  container:run:
-    desc: "Run container locally"
+  lint:fix:
+    desc: Fix ESLint errors
     cmds:
-      - >
-        {{.CONTAINER_ENGINE}} run -d
-        --name {{.PROJECT_NAME}}
-        -p 3000:3000
-        --env-file .env.local
-        {{.PROJECT_NAME}}:latest
+      - podman exec -it {{.CONTAINER}} pnpm lint:fix
 
-  container:stop:
-    desc: "Stop running container"
+  format:
+    desc: Format code with Prettier
     cmds:
-      - {{.CONTAINER_ENGINE}} stop {{.PROJECT_NAME}}
-      - {{.CONTAINER_ENGINE}} rm {{.PROJECT_NAME}}
+      - podman exec -it {{.CONTAINER}} pnpm format
 
-  container:logs:
-    desc: "View container logs"
+  type-check:
+    desc: Run TypeScript type checking
     cmds:
-      - {{.CONTAINER_ENGINE}} logs -f {{.PROJECT_NAME}}
+      - podman exec -it {{.CONTAINER}} pnpm type-check
 
-  compose:up:
-    desc: "Start all services with Podman Compose"
+  # Testing
+  test:
+    desc: Run tests
     cmds:
-      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} up -d
+      - podman exec -it {{.CONTAINER}} pnpm test
 
-  compose:down:
-    desc: "Stop all services"
+  test:watch:
+    desc: Run tests in watch mode
     cmds:
-      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} down
+      - podman exec -it {{.CONTAINER}} pnpm test:watch
 
-  compose:logs:
-    desc: "View compose logs"
+  test:coverage:
+    desc: Generate test coverage
     cmds:
-      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} logs -f
+      - podman exec -it {{.CONTAINER}} pnpm test:coverage
 
-  compose:restart:
-    desc: "Restart all services"
+  # Container status
+  ps:
+    desc: Show container status
     cmds:
-      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} restart
+      - podman-compose -f {{.COMPOSE_FILE}} ps
 
-# ═══════════════════════════════════════════════════════════
-# Security & Validation
-# ═══════════════════════════════════════════════════════════
-  security:scan:
-    desc: "Scan container image for vulnerabilities"
+  stats:
+    desc: Show container resource usage
     cmds:
-      - trivy image {{.PROJECT_NAME}}:latest
-
-  validate:compose:
-    desc: "Validate Compose Spec compliance"
-    cmds:
-      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} config
-
-  validate:stack:
-    desc: "Validate tech stack compliance"
-    cmds:
-      - ../project-genesis/scripts/validate-tech-stack.sh
-
-# ═══════════════════════════════════════════════════════════
-# Utility Tasks
-# ═══════════════════════════════════════════════════════════
-  clean:
-    desc: "Clean build artifacts and caches"
-    cmds:
-      - rm -rf .next
-      - rm -rf node_modules/.cache
-      - rm -rf dist
-
-  clean:all:
-    desc: "Deep clean (including node_modules)"
-    cmds:
-      - rm -rf .next
-      - rm -rf node_modules
-      - rm -rf dist
-      - rm -f package-lock.json
-
-  install:
-    desc: "Install dependencies"
-    cmds:
-      - npm ci
-
-  update:deps:
-    desc: "Check for dependency updates"
-    cmds:
-      - npx npm-check-updates
-
-# ═══════════════════════════════════════════════════════════
-# Documentation
-# ═══════════════════════════════════════════════════════════
-  docs:serve:
-    desc: "Serve documentation locally"
-    cmds:
-      - npx serve docs -p 8000
-
-# ═══════════════════════════════════════════════════════════
-# GitHub Integration
-# ═══════════════════════════════════════════════════════════
-  gh:issues:
-    desc: "List Sprint 1 issues"
-    cmds:
-      - gh issue list --milestone "Sprint 1: Foundation Setup"
-
-  gh:pr:create:
-    desc: "Create pull request"
-    cmds:
-      - gh pr create --fill
-
-# ═══════════════════════════════════════════════════════════
-# Help (default task)
-# ═══════════════════════════════════════════════════════════
-  default:
-    desc: "Show available tasks"
-    cmds:
-      - task --list
+      - podman stats pressograph-dev-workspace pressograph-dev-db pressograph-dev-cache

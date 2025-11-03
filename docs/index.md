@@ -48,16 +48,18 @@ Pressograph is a comprehensive solution for creating, managing, and sharing pres
 ## Technology Stack
 
 - **Frontend**: React 19.2.0, TypeScript 5.9, Vite 7.1.12, HeroUI 2.8.5, Tailwind CSS 4.1.16
-- **Backend**: Node.js 22, Express.js 4.18.2, TypeScript 5.3, PostgreSQL 18.0
+- **Backend**: Node.js 24 LTS, Next.js 16.0, TypeScript 5.9, PostgreSQL 18.0, Valkey 9
 - **Deployment**: Podman, Docker-compatible compose
 - **Documentation**: MkDocs Material
 
 ## System Requirements
 
-- Node.js 22+ (Frontend/Backend)
+- Node.js 24+ (Container Runtime - provided by node:lts-trixie base image)
 - PostgreSQL 18+ (Database)
-- Podman or Docker (Deployment)
+- Valkey 9+ (Cache)
+- Podman or Docker (Container Runtime)
 - Modern web browser with ES2020 support
+- **Note**: All development happens inside the container via `task dev:enter`
 
 ## Support
 
