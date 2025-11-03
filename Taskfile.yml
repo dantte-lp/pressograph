@@ -182,9 +182,10 @@ tasks:
     cmds:
       - podman-compose -f deploy/compose/compose.victoria.yaml up -d
       - echo "VictoriaMetrics stack started"
-      - echo "  Grafana: https://grafana-pressograph.infra4.dev (admin/admin)"
-      - echo "  VictoriaMetrics: http://localhost:8428"
-      - echo "  VictoriaLogs: http://localhost:9428"
+      - echo "  Grafana - https://dev-grafana.infra4.dev (admin/admin)"
+      - echo "  VictoriaMetrics - https://dev-vm.infra4.dev"
+      - echo "  VictoriaLogs - https://dev-vl.infra4.dev"
+      - echo "  VictoriaTraces - https://dev-vt.infra4.dev"
 
   metrics:stop:
     desc: Stop VictoriaMetrics observability stack
@@ -210,7 +211,7 @@ tasks:
   grafana:open:
     desc: Open Grafana in browser
     cmds:
-      - open https://grafana-pressograph.infra4.dev || xdg-open https://grafana-pressograph.infra4.dev || echo "Open https://grafana-pressograph.infra4.dev manually"
+      - open https://dev-grafana.infra4.dev || xdg-open https://dev-grafana.infra4.dev || echo "Open https://dev-grafana.infra4.dev manually"
 
   # Container status
   ps:
