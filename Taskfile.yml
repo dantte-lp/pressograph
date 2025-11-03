@@ -1,0 +1,207 @@
+# Pressograph Task Automation
+# Version: 2.0.0
+# Requires: Task (https://taskfile.dev)
+
+version: '3'
+
+vars:
+  PROJECT_NAME: pressograph
+  CONTAINER_ENGINE: podman
+  COMPOSE_FILE: compose.next.yaml
+  NODE_VERSION: 24
+
+# ═══════════════════════════════════════════════════════════
+# Development Tasks
+# ═══════════════════════════════════════════════════════════
+tasks:
+  dev:
+    desc: "Start Next.js development server"
+    cmds:
+      - npm run dev
+
+  build:
+    desc: "Build Next.js production bundle"
+    cmds:
+      - npm run build
+
+  lint:
+    desc: "Run ESLint"
+    cmds:
+      - npm run lint
+
+  format:
+    desc: "Format code with Prettier"
+    cmds:
+      - npm run format
+
+  type-check:
+    desc: "Run TypeScript type checking"
+    cmds:
+      - npx tsc --noEmit
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - npm test
+
+  test:unit:
+    desc: "Run unit tests only"
+    cmds:
+      - npm run test:unit
+
+  test:integration:
+    desc: "Run integration tests"
+    cmds:
+      - npm run test:integration
+
+  test:e2e:
+    desc: "Run end-to-end tests"
+    cmds:
+      - npm run test:e2e
+
+# ═══════════════════════════════════════════════════════════
+# Database Tasks
+# ═══════════════════════════════════════════════════════════
+  db:generate:
+    desc: "Generate Drizzle migrations"
+    cmds:
+      - npx drizzle-kit generate
+
+  db:migrate:
+    desc: "Run database migrations"
+    cmds:
+      - npx drizzle-kit migrate
+
+  db:studio:
+    desc: "Open Drizzle Studio"
+    cmds:
+      - npx drizzle-kit studio
+
+  db:seed:
+    desc: "Seed database with initial data"
+    cmds:
+      - npm run db:seed
+
+# ═══════════════════════════════════════════════════════════
+# Container Tasks (Podman)
+# ═══════════════════════════════════════════════════════════
+  container:build:
+    desc: "Build production container image"
+    cmds:
+      - {{.CONTAINER_ENGINE}} build -t {{.PROJECT_NAME}}:latest -f Containerfile.next .
+
+  container:run:
+    desc: "Run container locally"
+    cmds:
+      - >
+        {{.CONTAINER_ENGINE}} run -d
+        --name {{.PROJECT_NAME}}
+        -p 3000:3000
+        --env-file .env.local
+        {{.PROJECT_NAME}}:latest
+
+  container:stop:
+    desc: "Stop running container"
+    cmds:
+      - {{.CONTAINER_ENGINE}} stop {{.PROJECT_NAME}}
+      - {{.CONTAINER_ENGINE}} rm {{.PROJECT_NAME}}
+
+  container:logs:
+    desc: "View container logs"
+    cmds:
+      - {{.CONTAINER_ENGINE}} logs -f {{.PROJECT_NAME}}
+
+  compose:up:
+    desc: "Start all services with Podman Compose"
+    cmds:
+      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} up -d
+
+  compose:down:
+    desc: "Stop all services"
+    cmds:
+      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} down
+
+  compose:logs:
+    desc: "View compose logs"
+    cmds:
+      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} logs -f
+
+  compose:restart:
+    desc: "Restart all services"
+    cmds:
+      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} restart
+
+# ═══════════════════════════════════════════════════════════
+# Security & Validation
+# ═══════════════════════════════════════════════════════════
+  security:scan:
+    desc: "Scan container image for vulnerabilities"
+    cmds:
+      - trivy image {{.PROJECT_NAME}}:latest
+
+  validate:compose:
+    desc: "Validate Compose Spec compliance"
+    cmds:
+      - {{.CONTAINER_ENGINE}}-compose -f {{.COMPOSE_FILE}} config
+
+  validate:stack:
+    desc: "Validate tech stack compliance"
+    cmds:
+      - ../project-genesis/scripts/validate-tech-stack.sh
+
+# ═══════════════════════════════════════════════════════════
+# Utility Tasks
+# ═══════════════════════════════════════════════════════════
+  clean:
+    desc: "Clean build artifacts and caches"
+    cmds:
+      - rm -rf .next
+      - rm -rf node_modules/.cache
+      - rm -rf dist
+
+  clean:all:
+    desc: "Deep clean (including node_modules)"
+    cmds:
+      - rm -rf .next
+      - rm -rf node_modules
+      - rm -rf dist
+      - rm -f package-lock.json
+
+  install:
+    desc: "Install dependencies"
+    cmds:
+      - npm ci
+
+  update:deps:
+    desc: "Check for dependency updates"
+    cmds:
+      - npx npm-check-updates
+
+# ═══════════════════════════════════════════════════════════
+# Documentation
+# ═══════════════════════════════════════════════════════════
+  docs:serve:
+    desc: "Serve documentation locally"
+    cmds:
+      - npx serve docs -p 8000
+
+# ═══════════════════════════════════════════════════════════
+# GitHub Integration
+# ═══════════════════════════════════════════════════════════
+  gh:issues:
+    desc: "List Sprint 1 issues"
+    cmds:
+      - gh issue list --milestone "Sprint 1: Foundation Setup"
+
+  gh:pr:create:
+    desc: "Create pull request"
+    cmds:
+      - gh pr create --fill
+
+# ═══════════════════════════════════════════════════════════
+# Help (default task)
+# ═══════════════════════════════════════════════════════════
+  default:
+    desc: "Show available tasks"
+    cmds:
+      - task --list

@@ -1,0 +1,137 @@
+# Pressograph Next.js Production Deployment
+# Compose Spec 2025 Compliant
+# Stack: Next.js 16 + PostgreSQL 18 on Debian Trixie
+
+name: pressograph
+
+# ═══════════════════════════════════════════════════════════
+# YAML Anchors (DRY configuration)
+# ═══════════════════════════════════════════════════════════
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart-policy: &default-restart
+  restart: unless-stopped
+
+# ═══════════════════════════════════════════════════════════
+# Services
+# ═══════════════════════════════════════════════════════════
+services:
+  # Next.js Application
+  app:
+    <<: *default-restart
+    build:
+      context: .
+      dockerfile: Containerfile.next
+      target: runtime
+    image: pressograph-next:2.0.0
+    container_name: pressograph-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://pressograph:${DB_PASSWORD:-changeme}@db:5432/pressograph
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pressograph-network
+    volumes:
+      - app-data:/app/data:z
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,mode=1777
+      - /app/.next/cache:size=256M,mode=0755
+    labels:
+      com.pressograph.service: "app"
+      com.pressograph.version: "2.0.0"
+
+  # PostgreSQL Database
+  db:
+    <<: *default-restart
+    image: docker.io/library/postgres:18-trixie
+    container_name: pressograph-db
+    environment:
+      - POSTGRES_DB=pressograph
+      - POSTGRES_USER=pressograph
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=en_US.UTF-8
+    networks:
+      - pressograph-network
+    volumes:
+      - db-data:/var/lib/postgresql/data:z
+      - ./server/migrations:/docker-entrypoint-initdb.d:ro,z
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pressograph -d pressograph"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    labels:
+      com.pressograph.service: "database"
+      com.pressograph.version: "18"
+
+# ═══════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════
+networks:
+  pressograph-network:
+    driver: bridge
+    internal: false
+    labels:
+      com.pressograph.network: "main"
+
+# ═══════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════
+volumes:
+  db-data:
+    driver: local
+    labels:
+      com.pressograph.volume: "database"
+  app-data:
+    driver: local
+    labels:
+      com.pressograph.volume: "app-data"

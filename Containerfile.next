@@ -1,0 +1,95 @@
+# Pressograph Next.js Production Containerfile
+# Base: Node.js 24 LTS on Debian Trixie (NO Alpine)
+# Compliant with: Project Genesis TECHNOLOGY_STACK.md
+
+# ═══════════════════════════════════════════════════════════
+# Stage 1: Dependencies
+# ═══════════════════════════════════════════════════════════
+FROM docker.io/library/node:24-trixie-slim AS deps
+
+WORKDIR /app
+
+# Install dependencies for production
+COPY package.json package-lock.json ./
+RUN npm ci --only=production --ignore-scripts
+
+# ═══════════════════════════════════════════════════════════
+# Stage 2: Builder
+# ═══════════════════════════════════════════════════════════
+FROM docker.io/library/node:24-trixie-slim AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci --ignore-scripts
+
+# Copy source code
+COPY . .
+
+# Build Next.js application
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+RUN npm run build
+
+# ═══════════════════════════════════════════════════════════
+# Stage 3: Runtime
+# ═══════════════════════════════════════════════════════════
+FROM docker.io/library/node:24-trixie-slim AS runtime
+
+# Install runtime dependencies for Canvas (if using node-canvas)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libcairo2 \
+    libpango-1.0-0 \
+    libjpeg62-turbo \
+    fontconfig \
+    fonts-dejavu-core && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create non-root user
+RUN groupadd -r nodejs && \
+    useradd -r -g nodejs -u 1001 nodejs
+
+# Copy production dependencies from deps stage
+COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nodejs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nodejs:nodejs /app/public ./public
+
+# Environment variables
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
+
+# Start application
+CMD ["node", "server.js"]
+
+# ═══════════════════════════════════════════════════════════
+# Labels (OCI annotations)
+# ═══════════════════════════════════════════════════════════
+LABEL org.opencontainers.image.title="Pressograph"
+LABEL org.opencontainers.image.description="Pressure Test Graph Generation System - Next.js 16"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.authors="Pressograph Team"
+LABEL org.opencontainers.image.vendor="Promneft"
+LABEL org.opencontainers.image.base.name="docker.io/library/node:24-trixie-slim"
+LABEL org.opencontainers.image.source="https://github.com/dantte-lp/pressograph"
