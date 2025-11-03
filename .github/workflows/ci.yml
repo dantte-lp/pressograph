@@ -1,5 +1,24 @@
 name: CI/CD
 
+# ═══════════════════════════════════════════════════════════════════
+# CI/CD Pipeline for Pressograph
+# ═══════════════════════════════════════════════════════════════════
+# NOTE: This CI/CD pipeline uses Docker (GitHub Actions default)
+#       For local development, we recommend Podman (see README.md)
+#
+# Why Docker in CI/CD:
+#   - GitHub Actions provides Docker by default
+#   - Docker is acceptable for CI/CD environments
+#   - Local development uses Podman for security benefits
+#
+# Container Strategy:
+#   - CI/CD: Docker (GitHub Actions native support)
+#   - Local Dev: Podman (rootless, daemonless, secure)
+#   - Production: Podman (deployed via Podman Compose)
+#
+# See: ../project-genesis/docs/guides/CONTAINERIZATION_GUIDE.md
+# ═══════════════════════════════════════════════════════════════════
+
 on:
   push:
     branches: [master, main, develop]

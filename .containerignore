@@ -1,0 +1,221 @@
+# ═══════════════════════════════════════════════════════════════════
+# Pressograph .containerignore
+# ═══════════════════════════════════════════════════════════════════
+# Optimizes container build context by excluding unnecessary files
+# Reduces build time and image size
+# Compatible with Podman, Buildah, and Docker
+# ═══════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════
+# Dependencies (installed during build)
+# ═══════════════════════════════════════════════════════════════════
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm-cache/
+
+# ═══════════════════════════════════════════════════════════════════
+# Build Outputs (generated during build)
+# ═══════════════════════════════════════════════════════════════════
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ═══════════════════════════════════════════════════════════════════
+# Testing
+# ═══════════════════════════════════════════════════════════════════
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+__tests__/__snapshots__/
+
+# ═══════════════════════════════════════════════════════════════════
+# IDE and Editor Files
+# ═══════════════════════════════════════════════════════════════════
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ═══════════════════════════════════════════════════════════════════
+# OS Files
+# ═══════════════════════════════════════════════════════════════════
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ═══════════════════════════════════════════════════════════════════
+# Version Control
+# ═══════════════════════════════════════════════════════════════════
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+.svn/
+.hg/
+
+# ═══════════════════════════════════════════════════════════════════
+# CI/CD
+# ═══════════════════════════════════════════════════════════════════
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+.jenkins/
+
+# ═══════════════════════════════════════════════════════════════════
+# Documentation (except essential README)
+# ═══════════════════════════════════════════════════════════════════
+*.md
+!README.md
+docs/
+.docs/
+LICENSE
+CHANGELOG.md
+CONTRIBUTING.md
+
+# ═══════════════════════════════════════════════════════════════════
+# Environment and Configuration
+# ═══════════════════════════════════════════════════════════════════
+.env
+.env.*
+!.env.example
+.envrc
+config.local.js
+config.local.json
+
+# ═══════════════════════════════════════════════════════════════════
+# Container and Deployment Files
+# ═══════════════════════════════════════════════════════════════════
+Dockerfile
+Containerfile
+docker-compose.yml
+docker-compose.yaml
+compose.yaml
+compose.yml
+.dockerignore
+.containerignore
+deploy/
+pods/
+k8s/
+kubernetes/
+
+# ═══════════════════════════════════════════════════════════════════
+# Logs
+# ═══════════════════════════════════════════════════════════════════
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# ═══════════════════════════════════════════════════════════════════
+# Temporary Files
+# ═══════════════════════════════════════════════════════════════════
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# ═══════════════════════════════════════════════════════════════════
+# Scrum and Project Management
+# ═══════════════════════════════════════════════════════════════════
+.scrum-config
+HANDOFF_REPORT_*.md
+DEVELOPMENT_PLAN.md
+SESSION_REPORT.md
+DOCUMENTATION_ANALYSIS.md
+INFRASTRUCTURE_ANALYSIS.md
+PERFORMANCE_ANALYSIS.md
+CLEANUP_ANALYSIS.md
+
+# ═══════════════════════════════════════════════════════════════════
+# Development Tools
+# ═══════════════════════════════════════════════════════════════════
+.husky/
+.prettierrc*
+.prettierignore
+.eslintrc*
+.eslintignore
+eslint.config.js
+.editorconfig
+tsconfig.*.json
+vite.config.ts
+vitest.config.ts
+postcss.config.js
+tailwind.config.js
+
+# ═══════════════════════════════════════════════════════════════════
+# Database
+# ═══════════════════════════════════════════════════════════════════
+*.sqlite
+*.sqlite3
+*.db
+postgres.conf
+
+# ═══════════════════════════════════════════════════════════════════
+# Backups and Archives
+# ═══════════════════════════════════════════════════════════════════
+*.bak
+*.backup
+*.old
+*.orig
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# ═══════════════════════════════════════════════════════════════════
+# Makefile (deployment scripts)
+# ═══════════════════════════════════════════════════════════════════
+Makefile
+*.mk
+
+# ═══════════════════════════════════════════════════════════════════
+# OpenAPI and API Documentation
+# ═══════════════════════════════════════════════════════════════════
+openapi.yaml
+swagger.json
+mkdocs.yml
+
+# ═══════════════════════════════════════════════════════════════════
+# Server Directory (for frontend build)
+# ═══════════════════════════════════════════════════════════════════
+# Only exclude when building frontend
+server/
+
+# ═══════════════════════════════════════════════════════════════════
+# Notes:
+# ═══════════════════════════════════════════════════════════════════
+# 1. This file optimizes build context size
+# 2. Reduces build time by excluding unnecessary files
+# 3. Smaller build context = faster builds
+# 4. Compatible with Podman, Buildah, and Docker
+# 5. Add project-specific exclusions as needed
+# 6. Remember: package.json and source code MUST be included
+# ═══════════════════════════════════════════════════════════════════

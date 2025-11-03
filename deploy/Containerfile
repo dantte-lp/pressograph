@@ -15,7 +15,7 @@
 
 # Build arguments (can be overridden at build time)
 ARG NODE_VERSION=lts-trixie
-ARG NGINX_VERSION=1.29-trixie-perl
+ARG NGINX_VERSION=1.29-trixie-otel
 ARG VERSION=1.2.0
 ARG BUILD_DATE
 ARG VCS_REF

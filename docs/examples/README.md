@@ -1,14 +1,26 @@
 # Examples
 
-This directory contains example test configurations for Pressograph.
+Example code, configurations, and templates for AI agent onboarding and test data.
 
 ## Files
+
+### AI Agent Onboarding
+
+- `AI_AGENT_ONBOARDING_EXAMPLE.md` - Complete AI agent onboarding conversation example
+- `FIRST_ISSUE_FOR_AI_AGENT.md` - First issue template for AI agents
+
+### Test Data
+
+- `example_complex_test.json` - Example complex test configuration
+
+## Test Data Examples
 
 ### example_complex_test.json
 
 Complex 24-hour pressure test example with multiple intermediate pressure checks.
 
 **Features demonstrated:**
+
 - 24.25 hour test duration (multi-day test)
 - 5 pressure test stages with varying parameters
 - Initial pressurization (0→32 MPa)
@@ -20,12 +32,14 @@ Complex 24-hour pressure test example with multiple intermediate pressure checks
 **Usage:**
 
 Import this configuration via the UI:
+
 1. Click "Import Settings" button
 2. Select `example_complex_test.json`
 3. Review and adjust parameters
 4. Generate graph
 
 Or use via API:
+
 ```bash
 curl -X POST http://localhost:3001/api/v1/graph/generate \
   -H "Content-Type: application/json" \
@@ -36,6 +50,7 @@ curl -X POST http://localhost:3001/api/v1/graph/generate \
 ## Creating Your Own Examples
 
 Example JSON structure:
+
 ```json
 {
   "testNumber": "YYYYMMDD-XX",

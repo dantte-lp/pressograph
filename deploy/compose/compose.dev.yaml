@@ -16,7 +16,7 @@
 # - SELinux compatible volume mounts (:z suffix)
 #
 # Usage:
-#   cd /opt/projects/repositories/pressure-test-visualizer
+#   cd /opt/projects/repositories/pressograph
 #   make dev-compose
 #   # или напрямую:
 #   podman-compose -f deploy/compose/compose.dev.yaml --env-file deploy/compose/.env.dev up -d
@@ -40,7 +40,7 @@
 # Общие OCI labels для всех сервисов
 x-common-labels: &common-labels
   org.opencontainers.image.vendor: "Pressograph"
-  org.opencontainers.image.source: "https://github.com/your-org/pressure-test-visualizer"
+  org.opencontainers.image.source: "https://github.com/dantte-lp/pressograph"
   org.opencontainers.image.version: "${VERSION:-1.0.0-dev}"
   org.opencontainers.image.created: "${BUILD_DATE:-2025-10-29}"
   com.pressograph.environment: "development"

@@ -45,7 +45,7 @@
 # Общие OCI labels
 x-common-labels: &common-labels
   org.opencontainers.image.vendor: "Pressograph"
-  org.opencontainers.image.source: "https://github.com/your-org/pressure-test-visualizer"
+  org.opencontainers.image.source: "https://github.com/dantte-lp/pressograph"
   org.opencontainers.image.version: "${VERSION:-1.0.0}"
   org.opencontainers.image.created: "${BUILD_DATE:-2025-10-29}"
   org.opencontainers.image.authors: "Pressograph Team"
