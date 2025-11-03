@@ -1,0 +1,154 @@
+version: '3.8'
+
+# ==============================================================================
+# Pressograph - VictoriaMetrics Observability Stack
+# ==============================================================================
+# Provides complete observability with metrics, logs, and traces
+#
+# Components:
+# - VictoriaMetrics: Time-series database for metrics
+# - VictoriaLogs: Log aggregation and search
+# - Grafana: Visualization and dashboards
+#
+# Usage:
+#   task metrics:start  # Start the stack
+#   task metrics:stop   # Stop the stack
+#   task metrics:logs   # View logs
+#
+# Access:
+#   - Grafana: https://grafana-pressograph.infra4.dev (admin/admin)
+#   - VictoriaMetrics: http://localhost:8428
+#   - VictoriaLogs: http://localhost:9428
+
+services:
+  # ----------------------------------------------------------------------------
+  # VictoriaMetrics - Metrics Storage
+  # ----------------------------------------------------------------------------
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: pressograph-victoria-metrics
+    ports:
+      - "8428:8428"
+    volumes:
+      - victoria-metrics-data:/victoria-metrics-data
+    command:
+      - '--storageDataPath=/victoria-metrics-data'
+      - '--httpListenAddr=:8428'
+      - '--retentionPeriod=12'  # Keep data for 12 months
+      - '--search.maxQueryDuration=120s'
+      - '--search.maxConcurrentRequests=8'
+    networks:
+      - pressograph-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8428/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ----------------------------------------------------------------------------
+  # VictoriaLogs - Log Storage
+  # ----------------------------------------------------------------------------
+  victoria-logs:
+    image: victoriametrics/victoria-logs:latest
+    container_name: pressograph-victoria-logs
+    ports:
+      - "9428:9428"
+    volumes:
+      - victoria-logs-data:/victoria-logs-data
+    command:
+      - '--storageDataPath=/victoria-logs-data'
+      - '--httpListenAddr=:9428'
+      - '--retentionPeriod=3'  # Keep logs for 3 months
+    networks:
+      - pressograph-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9428/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ----------------------------------------------------------------------------
+  # Grafana - Visualization Platform
+  # ----------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pressograph-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      # Security
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+
+      # Server settings
+      - GF_SERVER_ROOT_URL=https://grafana-pressograph.infra4.dev
+      - GF_SERVER_DOMAIN=grafana-pressograph.infra4.dev
+
+      # Plugins
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+
+      # Analytics (disable for privacy)
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+
+      # Anonymous access (optional - enable for public dashboards)
+      # - GF_AUTH_ANONYMOUS_ENABLED=true
+      # - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      # - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - pressograph-dev
+      - traefik-public
+    labels:
+      # Traefik configuration
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+
+      # HTTPS router
+      - "traefik.http.routers.grafana-dev.rule=Host(`grafana-pressograph.infra4.dev`)"
+      - "traefik.http.routers.grafana-dev.entrypoints=https"
+      - "traefik.http.routers.grafana-dev.tls=true"
+      - "traefik.http.routers.grafana-dev.tls.certresolver=cloudflare"
+
+      # Service configuration
+      - "traefik.http.services.grafana-dev.loadbalancer.server.port=3000"
+
+      # Middleware (optional - add basic auth for extra security)
+      # - "traefik.http.routers.grafana-dev.middlewares=grafana-auth"
+      # - "traefik.http.middlewares.grafana-auth.basicauth.users=admin:$$apr1$$..."
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - victoria-metrics
+      - victoria-logs
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+volumes:
+  victoria-metrics-data:
+    name: pressograph-victoria-metrics-data
+  victoria-logs-data:
+    name: pressograph-victoria-logs-data
+  grafana-data:
+    name: pressograph-grafana-data
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+networks:
+  pressograph-dev:
+    external: true
+  traefik-public:
+    external: true
