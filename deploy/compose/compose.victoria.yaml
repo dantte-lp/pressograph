@@ -34,8 +34,9 @@ services:
   victoria-metrics:
     image: victoriametrics/victoria-metrics:latest
     container_name: pressograph-victoria-metrics
-    ports:
-      - "8428:8428"
+    expose:
+      - "8428"
+    # NO public port mapping
     volumes:
       - victoria-metrics-data:/victoria-metrics-data
     command:
@@ -46,11 +47,21 @@ services:
       - '--search.maxConcurrentRequests=8'
       - '--memory.allowedPercent=60'  # Limit memory usage
     networks:
-      - pressograph-dev
-      - traefik-public
+      observability:
+      traefik-public:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8428/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:8428/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -64,11 +75,12 @@ services:
       traefik.enable: "true"
       traefik.docker.network: traefik-public
 
-      # HTTPS Router
+      # HTTPS Router (Certificate from Cloudflare Origin CA)
       traefik.http.routers.victoria-metrics-dev.rule: Host(`dev-vm.infra4.dev`)
       traefik.http.routers.victoria-metrics-dev.entrypoints: https
       traefik.http.routers.victoria-metrics-dev.tls: "true"
-      traefik.http.routers.victoria-metrics-dev.tls.certresolver: cloudflare
+      traefik.http.routers.victoria-metrics-dev.tls.domains[0].main: infra4.dev
+      traefik.http.routers.victoria-metrics-dev.tls.domains[0].sans: "*.infra4.dev"
       traefik.http.routers.victoria-metrics-dev.middlewares: web-development@file
       traefik.http.routers.victoria-metrics-dev.service: victoria-metrics-dev
 
@@ -81,8 +93,8 @@ services:
   victoria-logs:
     image: victoriametrics/victoria-logs:latest
     container_name: pressograph-victoria-logs
-    ports:
-      - "9428:9428"
+    expose:
+      - "9428"
     volumes:
       - victoria-logs-data:/victoria-logs-data
     command:
@@ -90,11 +102,21 @@ services:
       - '--httpListenAddr=:9428'
       - '--retentionPeriod=3'  # Keep logs for 3 months
     networks:
-      - pressograph-dev
-      - traefik-public
+      observability:
+      traefik-public:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9428/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:9428/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -108,11 +130,12 @@ services:
       traefik.enable: "true"
       traefik.docker.network: traefik-public
 
-      # HTTPS Router
+      # HTTPS Router (Certificate from Cloudflare Origin CA)
       traefik.http.routers.victoria-logs-dev.rule: Host(`dev-vl.infra4.dev`)
       traefik.http.routers.victoria-logs-dev.entrypoints: https
       traefik.http.routers.victoria-logs-dev.tls: "true"
-      traefik.http.routers.victoria-logs-dev.tls.certresolver: cloudflare
+      traefik.http.routers.victoria-logs-dev.tls.domains[0].main: infra4.dev
+      traefik.http.routers.victoria-logs-dev.tls.domains[0].sans: "*.infra4.dev"
       traefik.http.routers.victoria-logs-dev.middlewares: web-development@file
       traefik.http.routers.victoria-logs-dev.service: victoria-logs-dev
 
@@ -125,27 +148,32 @@ services:
   victoria-traces:
     image: victoriametrics/victoria-traces:latest
     container_name: pressograph-victoria-traces
-    ports:
-      - "4318:4318"  # OTLP HTTP receiver
-      - "4317:4317"  # OTLP gRPC receiver
-      - "9411:9411"  # Zipkin receiver
-      - "14268:14268"  # Jaeger receiver
+    expose:
+      - "8428"  # HTTP interface
+      - "4318"  # OTLP HTTP receiver
+      - "4317"  # OTLP gRPC receiver
     volumes:
       - victoria-traces-data:/victoria-traces-data
     command:
       - '--storageDataPath=/victoria-traces-data'
       - '--httpListenAddr=:8428'
-      - '--otlpHTTPListenAddr=:4318'
-      - '--otlpGRPCListenAddr=:4317'
-      - '--zipkinListenAddr=:9411'
-      - '--jaegerListenAddr=:14268'
       - '--retentionPeriod=1'  # Keep traces for 1 month
     networks:
-      - pressograph-dev
-      - traefik-public
+      observability:
+      traefik-public:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8428/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:8428/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -157,13 +185,13 @@ services:
 
       # Traefik configuration
       traefik.enable: "true"
-      traefik.docker.network: traefik-public
 
-      # HTTPS Router for UI
+      # HTTPS Router for UI (Certificate from Cloudflare Origin CA)
       traefik.http.routers.victoria-traces-dev.rule: Host(`dev-vt.infra4.dev`)
       traefik.http.routers.victoria-traces-dev.entrypoints: https
       traefik.http.routers.victoria-traces-dev.tls: "true"
-      traefik.http.routers.victoria-traces-dev.tls.certresolver: cloudflare
+      traefik.http.routers.victoria-traces-dev.tls.domains[0].main: infra4.dev
+      traefik.http.routers.victoria-traces-dev.tls.domains[0].sans: "*.infra4.dev"
       traefik.http.routers.victoria-traces-dev.middlewares: web-development@file
       traefik.http.routers.victoria-traces-dev.service: victoria-traces-dev
 
@@ -176,22 +204,51 @@ services:
   vmagent:
     image: victoriametrics/vmagent:latest
     container_name: pressograph-vmagent
-    ports:
-      - "8429:8429"
+    expose:
+      - "8429"
     volumes:
       - vmagent-data:/vmagentdata
       - ./victoria/vmagent-config.yml:/etc/vmagent/vmagent.yml:ro
     command:
+      # Scrape configuration file
       - '--promscrape.config=/etc/vmagent/vmagent.yml'
+
+      # Remote write endpoint
       - '--remoteWrite.url=http://victoria-metrics:8428/api/v1/write'
+      - '--remoteWrite.maxDiskUsagePerURL=1GB'
+      - '--remoteWrite.tmpDataPath=/vmagentdata/remotewrite-data'
+
+      # Global scrape settings (override defaults)
+      - '--promscrape.config.global.scrape_interval=15s'
+      - '--promscrape.config.global.scrape_timeout=10s'
+
+      # External labels (added to all metrics)
+      - '--remoteWrite.label=cluster=pressograph-dev'
+      - '--remoteWrite.label=environment=development'
+
+      # HTTP API listen address
       - '--httpListenAddr=:8429'
+
+      # Memory limits
+      - '--memory.allowedPercent=80'
     networks:
-      - pressograph-dev
+      observability:
+      backend:  # Connect to backend to scrape exporters
     restart: unless-stopped
     depends_on:
       - victoria-metrics
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8429/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:8429/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -206,8 +263,8 @@ services:
   vmalert:
     image: victoriametrics/vmalert:latest
     container_name: pressograph-vmalert
-    ports:
-      - "8880:8880"
+    expose:
+      - "8880"
     volumes:
       - ./victoria/vmalert-rules.yml:/etc/vmalert/rules.yml:ro
     command:
@@ -217,13 +274,24 @@ services:
       - '--rule=/etc/vmalert/rules.yml'
       - '--httpListenAddr=:8880'
       - '--evaluationInterval=15s'
+      - '--notifier.blackhole=true'  # Disable alerting for now
     networks:
-      - pressograph-dev
+      observability:
     restart: unless-stopped
     depends_on:
       - victoria-metrics
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8880/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:8880/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -239,8 +307,9 @@ services:
     image: grafana/grafana:latest
     container_name: pressograph-grafana
     user: "472:472"  # Non-root user (grafana:grafana)
-    ports:
-      - "3001:3000"
+    expose:
+      - "3000"
+    # NO public port mapping
     environment:
       # Security
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -280,11 +349,21 @@ services:
       - grafana-data:/var/lib/grafana
       - ./victoria/grafana/provisioning:/etc/grafana/provisioning:ro
     networks:
-      - pressograph-dev
-      - traefik-public
+      observability:
+      traefik-public:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -302,11 +381,12 @@ services:
       traefik.enable: "true"
       traefik.docker.network: traefik-public
 
-      # HTTPS Router
+      # HTTPS Router (Certificate from Cloudflare Origin CA)
       traefik.http.routers.grafana-dev.rule: Host(`dev-grafana.infra4.dev`)
       traefik.http.routers.grafana-dev.entrypoints: https
       traefik.http.routers.grafana-dev.tls: "true"
-      traefik.http.routers.grafana-dev.tls.certresolver: cloudflare
+      traefik.http.routers.grafana-dev.tls.domains[0].main: infra4.dev
+      traefik.http.routers.grafana-dev.tls.domains[0].sans: "*.infra4.dev"
       traefik.http.routers.grafana-dev.middlewares: web-development@file
       traefik.http.routers.grafana-dev.service: grafana-dev
 
@@ -337,9 +417,19 @@ volumes:
 # Networks
 # ==============================================================================
 networks:
-  pressograph-dev:
+  observability:
+    name: pressograph-observability-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.89.20.0/24
+          gateway: 10.89.20.1
+
+  backend:
     external: true
-    name: pressograph-dev-network
+    name: pressograph-backend-network
+
   traefik-public:
     external: true
     name: traefik-public

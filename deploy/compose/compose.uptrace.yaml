@@ -48,13 +48,14 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - ./uptrace/clickhouse-config.xml:/etc/clickhouse-server/config.d/logging.xml:ro
-    ports:
-      - "9000:9000"   # Native protocol (internal use)
-      - "8123:8123"   # HTTP interface (internal use)
+    expose:
+      - "9000"   # Native protocol (internal use)
+      - "8123"   # HTTP interface (internal use)
+    # NO public port mapping
     networks:
-      - pressograph-dev
+      uptrace-net:
     healthcheck:
-      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:8123/ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -67,6 +68,15 @@ services:
         reservations:
           memory: 2G
           cpus: '1.0'
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - SYS_NICE
     labels:
       io.podman.compose.project: pressograph-uptrace
       com.pressograph.service: clickhouse
@@ -79,7 +89,6 @@ services:
     container_name: pressograph-uptrace-postgres
     hostname: uptrace-postgres
     restart: unless-stopped
-    user: "70:70"  # Non-root user (postgres:postgres in Alpine)
     environment:
       - POSTGRES_DB=uptrace
       - POSTGRES_USER=uptrace
@@ -87,10 +96,11 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres-uptrace-data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"  # Different port to avoid conflict with main PostgreSQL
+    expose:
+      - "5432"
+    # NO public port mapping
     networks:
-      - pressograph-dev
+      uptrace-net:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U uptrace -d uptrace"]
       interval: 10s
@@ -105,9 +115,60 @@ services:
         reservations:
           memory: 512M
           cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     labels:
       io.podman.compose.project: pressograph-uptrace
       com.pressograph.service: postgres-uptrace
+
+  # ----------------------------------------------------------------------------
+  # Valkey (Redis-compatible) - Task Queue + Cache Backend
+  # ----------------------------------------------------------------------------
+  valkey:
+    image: docker.io/valkey/valkey:9-trixie
+    container_name: pressograph-uptrace-valkey
+    hostname: uptrace-valkey
+    restart: unless-stopped
+    command: valkey-server /etc/valkey/valkey.conf
+    volumes:
+      - valkey-data:/data
+      - ./redis/valkey.conf:/etc/valkey/valkey.conf:ro
+    expose:
+      - "6379"
+    networks:
+      uptrace-net:
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-h", "127.0.0.1", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    labels:
+      io.podman.compose.project: pressograph-uptrace
+      com.pressograph.service: valkey
 
   # ----------------------------------------------------------------------------
   # Uptrace - OpenTelemetry APM Platform
@@ -118,48 +179,29 @@ services:
     hostname: uptrace
     restart: unless-stopped
     volumes:
-      - ./uptrace/uptrace.yml:/etc/uptrace/uptrace.yml:ro
+      - ./uptrace/uptrace.yml:/etc/uptrace/config.yml:ro
+    # Note: Configuration values are in config.yml
+    # Override secrets via environment variables if needed
     environment:
-      # Uptrace configuration
-      - UPTRACE_CONFIG=/etc/uptrace/uptrace.yml
-
-      # ClickHouse connection
-      - CLICKHOUSE_ADDR=clickhouse:9000
-      - CLICKHOUSE_USER=uptrace
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-uptracepassword}
-      - CLICKHOUSE_DATABASE=uptrace
-
-      # PostgreSQL connection
-      - POSTGRES_ADDR=postgres-uptrace:5432
-      - POSTGRES_USER=uptrace
       - POSTGRES_PASSWORD=${UPTRACE_POSTGRES_PASSWORD:-uptracepassword}
-      - POSTGRES_DATABASE=uptrace
-
-      # Uptrace project configuration
-      - UPTRACE_PROJECT_ID=${UPTRACE_PROJECT_ID:-1}
-      - UPTRACE_PROJECT_TOKEN=${UPTRACE_PROJECT_TOKEN:-project1_secret_token}
-
-      # Admin credentials
-      - UPTRACE_ADMIN_EMAIL=${UPTRACE_ADMIN_EMAIL:-admin@pressograph.local}
-      - UPTRACE_ADMIN_PASSWORD=${UPTRACE_ADMIN_PASSWORD:-changeme}
-
-      # Server configuration
-      - UPTRACE_LISTEN_ADDR=:14318
-      - UPTRACE_SITE_ADDR=https://dev-uptrace.infra4.dev
-    ports:
-      - "14317:14317"  # OTLP gRPC
-      - "14318:14318"  # OTLP HTTP + Web UI
+    expose:
+      - "4317"   # OTLP gRPC (internal)
+      - "80"     # HTTP UI + OTLP HTTP (internal)
+    # NO public port mapping - accessed via Traefik
     networks:
-      - pressograph-dev
-      - traefik-public
+      uptrace-net:
+      traefik-public:
     restart: unless-stopped
     depends_on:
       clickhouse:
         condition: service_healthy
       postgres-uptrace:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:14318/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -172,6 +214,8 @@ services:
         reservations:
           memory: 512M
           cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
     labels:
       # Podman Compose metadata
       io.podman.compose.project: pressograph-uptrace
@@ -181,16 +225,17 @@ services:
       traefik.enable: "true"
       traefik.docker.network: traefik-public
 
-      # HTTPS Router for Web UI
+      # HTTPS Router for Web UI (Certificate from Cloudflare Origin CA)
       traefik.http.routers.uptrace-dev.rule: Host(`dev-uptrace.infra4.dev`)
       traefik.http.routers.uptrace-dev.entrypoints: https
       traefik.http.routers.uptrace-dev.tls: "true"
-      traefik.http.routers.uptrace-dev.tls.certresolver: cloudflare
+      traefik.http.routers.uptrace-dev.tls.domains[0].main: infra4.dev
+      traefik.http.routers.uptrace-dev.tls.domains[0].sans: "*.infra4.dev"
       traefik.http.routers.uptrace-dev.middlewares: web-development@file
       traefik.http.routers.uptrace-dev.service: uptrace-dev
 
-      # Service configuration (Web UI port)
-      traefik.http.services.uptrace-dev.loadbalancer.server.port: "14318"
+      # Service configuration (Web UI port - internal container port)
+      traefik.http.services.uptrace-dev.loadbalancer.server.port: "80"
 
 # ==============================================================================
 # Volumes
@@ -202,14 +247,24 @@ volumes:
   postgres-uptrace-data:
     name: pressograph-uptrace-postgres-data
     driver: local
+  valkey-data:
+    name: pressograph-uptrace-valkey-data
+    driver: local
 
 # ==============================================================================
 # Networks
 # ==============================================================================
 networks:
-  pressograph-dev:
-    external: true
-    name: pressograph-dev-network
+  uptrace-net:
+    name: pressograph-uptrace-network
+    driver: bridge
+    internal: true  # No external access - isolated backend
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.89.30.0/24
+          gateway: 10.89.30.1
+
   traefik-public:
     external: true
     name: traefik-public

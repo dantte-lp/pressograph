@@ -13,7 +13,7 @@ services:
     hostname: pressograph-dev
     ports:
       - "3000:3000"      # Next.js dev server (keep for local access)
-      # Port 5555 removed - Traefik accesses Drizzle Studio via internal network
+      - "5555:5555"      # Drizzle Studio direct access
     volumes:
       # Bind mount весь проект (используем абсолютный путь)
       - type: bind
@@ -56,9 +56,20 @@ services:
       cache:
         condition: service_started
     networks:
-      - pressograph-dev
-      - traefik-public
+      frontend:
+      backend:
+      traefik-public:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    security_opt:
+      - no-new-privileges:true
     labels:
       # Podman Compose metadata
       io.podman.compose.project: pressograph-dev
@@ -74,11 +85,10 @@ services:
       traefik.http.routers.pressograph-dev-http.middlewares: pressograph-dev-redirect
       traefik.http.routers.pressograph-dev-http.service: pressograph-dev
 
-      # Next.js HTTPS Router
+      # Next.js HTTPS Router (Certificate from Cloudflare Origin CA)
       traefik.http.routers.pressograph-dev.rule: Host(`dev-pressograph.infra4.dev`)
       traefik.http.routers.pressograph-dev.entrypoints: https
       traefik.http.routers.pressograph-dev.tls: "true"
-      traefik.http.routers.pressograph-dev.tls.certresolver: cloudflare
       traefik.http.routers.pressograph-dev.middlewares: web-development@file
       traefik.http.routers.pressograph-dev.service: pressograph-dev
 
@@ -95,11 +105,10 @@ services:
       traefik.http.routers.drizzle-studio-http.middlewares: drizzle-studio-redirect
       traefik.http.routers.drizzle-studio-http.service: drizzle-studio
 
-      # Drizzle Studio HTTPS Router
+      # Drizzle Studio HTTPS Router (Certificate from Cloudflare Origin CA)
       traefik.http.routers.drizzle-studio.rule: Host(`dbdev-pressograph.infra4.dev`)
       traefik.http.routers.drizzle-studio.entrypoints: https
       traefik.http.routers.drizzle-studio.tls: "true"
-      traefik.http.routers.drizzle-studio.tls.certresolver: cloudflare
       traefik.http.routers.drizzle-studio.middlewares: web-development@file
       traefik.http.routers.drizzle-studio.service: drizzle-studio
 
@@ -122,8 +131,11 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    expose:
+      - "5432"
+    # NO public port mapping for security
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d pressograph"]
       interval: 5s
@@ -131,28 +143,60 @@ services:
       retries: 10
       start_period: 10s
     networks:
-      - pressograph-dev
+      backend:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     labels:
       io.podman.compose.project: pressograph-dev
       com.pressograph.service: database
-    shm_size: 128mb
+    shm_size: 256mb
 
   cache:
     container_name: pressograph-dev-cache
     image: docker.io/valkey/valkey:9-trixie
     hostname: pressograph-cache
-    command: >
-      valkey-server
-      --save 60 1
-      --loglevel warning
     volumes:
       - cache_data:/data
-    ports:
-      - "6379:6379"
+      - ./redis/valkey.conf:/etc/valkey/valkey.conf:ro
+    command: valkey-server /etc/valkey/valkey.conf
+    expose:
+      - "6379"
+    # NO public port mapping for security
     networks:
-      - pressograph-dev
+      backend:
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
     labels:
       io.podman.compose.project: pressograph-dev
       com.pressograph.service: cache
@@ -176,28 +220,34 @@ services:
       PG_EXPORTER_DISABLE_DEFAULT_METRICS: "false"
       # Enable extended query metrics
       PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yaml
-    ports:
-      - "9187:9187"
+    expose:
+      - "9187"
+    # NO public port mapping
     networks:
-      - pressograph-dev
+      backend:
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9187/metrics"]
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:9187/metrics"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
-    labels:
-      io.podman.compose.project: pressograph-dev
-      com.pressograph.service: postgres-exporter
     deploy:
       resources:
         limits:
           memory: 100M
           cpus: '0.2'
+        reservations:
+          memory: 50M
+          cpus: '0.1'
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      io.podman.compose.project: pressograph-dev
+      com.pressograph.service: postgres-exporter
 
   # ----------------------------------------------------------------------------
   # Redis/Valkey Exporter - Metrics for VictoriaMetrics
@@ -213,28 +263,28 @@ services:
       # REDIS_PASSWORD: ""
       # Include Go runtime metrics
       REDIS_EXPORTER_INCLUDE_GO_RUNTIME_METRICS: "true"
-    ports:
-      - "9121:9121"
+    expose:
+      - "9121"
+    # NO public port mapping
     networks:
-      - pressograph-dev
+      backend:
     restart: unless-stopped
     depends_on:
       cache:
         condition: service_started
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9121/metrics"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-    labels:
-      io.podman.compose.project: pressograph-dev
-      com.pressograph.service: redis-exporter
     deploy:
       resources:
         limits:
           memory: 50M
           cpus: '0.1'
+        reservations:
+          memory: 25M
+          cpus: '0.05'
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      io.podman.compose.project: pressograph-dev
+      com.pressograph.service: redis-exporter
 
 volumes:
   postgres_data:
@@ -254,12 +304,24 @@ volumes:
     driver: local
 
 networks:
-  pressograph-dev:
-    name: pressograph-dev-network
+  frontend:
+    name: pressograph-frontend-network
     driver: bridge
     ipam:
+      driver: default
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 10.89.0.0/24
+          gateway: 10.89.0.1
+
+  backend:
+    name: pressograph-backend-network
+    driver: bridge
+    internal: true  # No external access - isolated backend
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.89.10.0/24
+          gateway: 10.89.10.1
 
   traefik-public:
     external: true

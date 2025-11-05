@@ -1,0 +1,112 @@
+# VictoriaLogs Configuration
+#
+# Log aggregation and querying system optimized for large-scale logging.
+# Provides fast search and analysis of log data.
+#
+# Documentation: https://docs.victoriametrics.com/victorialogs/
+#
+# This file is mounted to the VictoriaLogs container and used
+# via command-line flags in docker-compose.victoria.yml
+
+---
+# Storage Configuration
+storage:
+  # Log retention period (90 days = 3 months)
+  retentionPeriod: "90d"
+
+  # Storage path inside container
+  dataPath: "/victoria-logs-data"
+
+  # Minimum free disk space before rejecting new data
+  minFreeDiskSpaceBytes: "10GB"
+
+# HTTP Server Configuration
+http:
+  # Listen address (0.0.0.0:9428 in container)
+  listenAddr: ":9428"
+
+  # Maximum concurrent insert requests
+  insert.maxConcurrentRequests: 32
+
+  # Maximum insert queue duration
+  insert.maxQueueDuration: "30s"
+
+# Query Performance
+query:
+  # Maximum concurrent search requests
+  maxConcurrentRequests: 16
+
+  # Maximum memory per query (1GB)
+  maxMemoryPerQuery: "1GB"
+
+  # Maximum query duration
+  maxQueryDuration: "1m"
+
+  # Maximum number of hits to return
+  maxHits: 10000
+
+# Performance Tuning
+performance:
+  # Memory usage limit
+  memory.allowedPercent: 70
+
+  # Cache configuration
+  cache:
+    index: "256MB"
+    filter: "128MB"
+
+# Logging (VictoriaLogs own logs)
+logging:
+  level: "INFO"  # DEBUG | INFO | WARN | ERROR
+  format: "json"
+
+# Data Ingestion
+ingestion:
+  # Maximum log message size (default 256KB)
+  maxLogMessageSize: "256KB"
+
+  # Maximum number of fields per log entry
+  maxFieldsPerLog: 1000
+
+  # Time precision (nanosecond | microsecond | millisecond)
+  timePrecision: "millisecond"
+
+# LogsQL Query Language
+# VictoriaLogs uses LogsQL for querying:
+# - Supports filtering by time range, fields, and text
+# - Stream aggregation and grouping
+# - Statistical functions
+#
+# Examples:
+# - _stream:{app="pressograph"} | stats by (level) count() as total
+# - error | stats count() as error_count
+
+# Log Streams
+# Logs are organized into streams based on labels
+# Each unique set of labels creates a new stream
+streams:
+  # Maximum number of streams
+  maxStreams: 100000
+
+  # Stream fields to index
+  indexedFields:
+    - "level"
+    - "app"
+    - "service"
+    - "environment"
+    - "host"
+
+# Integration with VictoriaMetrics
+# VictoriaLogs can work alongside VictoriaMetrics:
+# - Logs provide detailed event data
+# - Metrics provide aggregated time-series data
+# - Use Grafana to correlate logs and metrics
+
+# Example command-line flags for reference:
+# -retentionPeriod=90d
+# -storageDataPath=/victoria-logs-data
+# -httpListenAddr=:9428
+# -memory.allowedPercent=70
+# -insert.maxConcurrentRequests=32
+# -select.maxConcurrentRequests=16
+# -select.maxMemoryPerQuery=1GB

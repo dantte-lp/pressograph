@@ -46,7 +46,7 @@ tasks:
   dev:start:
     desc: Start development containers
     cmds:
-      - podman-compose -f {{.COMPOSE_FILE}} up -d
+      - podman-compose -f {{.COMPOSE_FILE}} up -d --force-recreate
 
   dev:stop:
     desc: Stop development containers

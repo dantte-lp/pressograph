@@ -7,23 +7,30 @@ datasources:
     access: proxy
     url: http://victoria-metrics:8428
     isDefault: true
-    editable: true
+    editable: false
     jsonData:
       httpMethod: POST
-      timeInterval: 15s
-      customQueryParameters: ''
+      timeInterval: 30s
+      queryTimeout: 300s
+      customQueryParameters: "extra_label=source:grafana"
+      incrementalQuerying: true
+      cacheLevel: "High"
     version: 1
 
-  # VictoriaLogs datasource
+  # VictoriaLogs datasource (using Loki type for LogQL compatibility)
   - name: VictoriaLogs
-    type: prometheus
+    type: loki
     access: proxy
     url: http://victoria-logs:9428
-    editable: true
+    editable: false
     jsonData:
-      httpMethod: POST
-      timeInterval: 15s
-      # VictoriaLogs uses LogsQL, but can be queried via Prometheus API
+      maxLines: 10000
+      timeout: 300
+      derivedFields:
+        - datasourceUid: VictoriaMetrics
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
     version: 1
 
   # VictoriaTraces as Jaeger-compatible datasource
@@ -31,10 +38,48 @@ datasources:
     type: jaeger
     access: proxy
     url: http://victoria-traces:14268
-    editable: true
+    editable: false
     jsonData:
-      # Jaeger UI endpoint
       tracesToLogs:
         datasourceUid: VictoriaLogs
-        tags: ['trace_id']
+        tags: ['trace_id', 'traceID']
+      tracesToMetrics:
+        datasourceUid: VictoriaMetrics
+        tags:
+          - key: service.name
+            value: service
+    version: 1
+
+  # PostgreSQL - Direct database access
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: pressograph-dev-db:5432
+    database: pressograph
+    user: ${POSTGRES_USER}
+    editable: false
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1800
+      maxOpenConns: 10
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    version: 1
+
+  # Uptrace - Distributed tracing via Tempo
+  - name: Uptrace
+    type: tempo
+    access: proxy
+    url: http://uptrace:14318
+    editable: false
+    jsonData:
+      httpMethod: GET
+      tracesToLogs:
+        datasourceUid: VictoriaLogs
+      tracesToMetrics:
+        datasourceUid: VictoriaMetrics
+      nodeGraph:
+        enabled: true
     version: 1

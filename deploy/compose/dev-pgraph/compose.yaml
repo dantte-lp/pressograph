@@ -1,0 +1,29 @@
+services:
+  dev-pgraph:
+    image: docker.io/nginx:mainline-otel
+    container_name: dev-pgraph
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /opt/backup/pressograph_first_edition/pressograph_1st_edition_recharts.html
+        target: /usr/share/nginx/html/index.html
+        read_only: true
+      - type: bind
+        source: /opt/projects/repositories/pressograph/deploy/compose/dev-pgraph/nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+    networks:
+      - traefik-public
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: traefik-public
+      traefik.http.routers.dev-pgraph.rule: Host(`dev-pgraph.infra4.dev`)
+      traefik.http.routers.dev-pgraph.entrypoints: https
+      traefik.http.routers.dev-pgraph.tls: "true"
+      traefik.http.routers.dev-pgraph.service: dev-pgraph
+      traefik.http.services.dev-pgraph.loadbalancer.server.port: "80"
+
+networks:
+  traefik-public:
+    external: true
+    name: traefik-public

@@ -1,0 +1,101 @@
+# VictoriaMetrics Configuration
+#
+# Time-series database for metrics storage and querying.
+# Compatible with Prometheus query language (PromQL).
+#
+# Documentation: https://docs.victoriametrics.com/
+#
+# This file is mounted to the VictoriaMetrics container and used
+# via command-line flags in docker-compose.victoria.yml
+
+# Note: VictoriaMetrics primarily uses command-line flags.
+# This YAML file documents the configuration for reference.
+# Actual configuration is in docker-compose.victoria.yml
+
+---
+# Storage Configuration
+storage:
+  # Data retention period (365 days = 1 year)
+  retentionPeriod: "365d"
+
+  # Storage path inside container
+  dataPath: "/victoria-metrics-data"
+
+  # Deduplication interval
+  # Removes duplicate samples within this interval
+  dedup.minScrapeInterval: "1m"
+
+# HTTP Server Configuration
+http:
+  # Listen address (0.0.0.0:8428 in container)
+  listenAddr: ":8428"
+
+  # Maximum concurrent insert requests
+  maxConcurrentInserts: 32
+
+  # Maximum query duration
+  search.maxQueryDuration: "30s"
+
+# Performance Tuning
+performance:
+  # Memory usage limit (80% of available)
+  memory.allowedPercent: 80
+
+  # Cache configuration
+  cache:
+    indexdb: "512MB"
+    storage: "1GB"
+
+  # Search optimization
+  search:
+    maxConcurrentRequests: 64
+    maxQueueDuration: "30s"
+    maxSamplesPerQuery: 1000000
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG | INFO | WARN | ERROR
+  format: "json"
+
+# Metrics Export
+# VictoriaMetrics exposes its own metrics at /metrics endpoint
+
+# Query Optimization
+query:
+  # Enable query tracing for debugging
+  enableTracing: false
+
+  # Maximum number of time series per query
+  maxSeries: 30000
+
+  # Maximum number of data points per timeseries
+  maxPointsPerTimeseries: 30000
+
+# Data Ingestion
+ingestion:
+  # Maximum label value length
+  maxLabelsPerTimeseries: 30
+
+  # Maximum number of unique time series
+  maxUniqueTimeseries: 1000000
+
+# High Availability (for future multi-node setup)
+ha:
+  # Enable deduplication for HA setups
+  deduplication: true
+
+  # Cluster mode (disabled for single-node)
+  clusterMode: false
+
+# Backup & Restore
+# Use vmbackup/vmrestore tools for backup operations
+# https://docs.victoriametrics.com/vmbackup.html
+
+# Example command-line flags for reference:
+# -retentionPeriod=365d
+# -storageDataPath=/victoria-metrics-data
+# -httpListenAddr=:8428
+# -memory.allowedPercent=80
+# -dedup.minScrapeInterval=1m
+# -search.maxQueryDuration=30s
+# -search.maxConcurrentRequests=64

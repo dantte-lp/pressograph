@@ -21,3 +21,6 @@ export * from "./notifications";
 
 // NextAuth tables
 export * from "./nextauth";
+
+// Relations (for relational queries)
+export * from "./relations";

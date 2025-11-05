@@ -1,93 +1,225 @@
-##
-## Uptrace configuration file for Pressograph
-## https://uptrace.dev/get/config.html
-##
+# =============================================================================
+# Uptrace Configuration for Pressograph
+# =============================================================================
+# Complete reference: https://uptrace.dev/get/hosted/config
+#
+# This configuration file uses the official Uptrace YAML format.
+# Environment-specific values are hardcoded here, while secrets are passed
+# via docker-compose environment variables to the Uptrace container itself.
+# =============================================================================
 
-# listen address for HTTP and gRPC APIs
+# -----------------------------------------------------------------------------
+# Service Configuration
+# -----------------------------------------------------------------------------
+service:
+  env: development      # Environment: development, production, hosted
+  secret: changeme-in-production  # Cryptographic secret key (OVERRIDE VIA ENV)
+
+# -----------------------------------------------------------------------------
+# Site Configuration
+# -----------------------------------------------------------------------------
+site:
+  # Primary URL where users access the Uptrace UI and API
+  url: https://dev-uptrace.infra4.dev
+
+  # Dedicated URL for telemetry data ingestion (OTLP endpoints)
+  # Format: url?grpc=port
+  ingest_url: https://dev-uptrace.infra4.dev?grpc=14317
+
+# -----------------------------------------------------------------------------
+# Network Listeners
+# -----------------------------------------------------------------------------
 listen:
-  # OTLP/gRPC API
-  grpc: :14317
-  # OTLP/HTTP API and Uptrace UI
-  http: :14318
+  # HTTP server (OTLP/HTTP API, REST API, Web UI)
+  http:
+    addr: :80  # Internal port (mapped to 14318 in compose)
 
-# PostgreSQL database for storing metadata
+  # gRPC server (OTLP/gRPC API)
+  grpc:
+    addr: :4317  # Internal port (mapped to 14317 in compose)
+
+# -----------------------------------------------------------------------------
+# Bootstrap Data (Initial Setup)
+# -----------------------------------------------------------------------------
+seed_data:
+  update: true  # Update existing resources
+  delete: false # Don't delete resources
+
+  # Default admin user
+  users:
+    - key: admin_user
+      name: Pressograph Admin
+      email: admin@pressograph.local
+      password: admin  # CHANGE THIS IMMEDIATELY
+      email_confirmed: true
+
+  # API tokens for programmatic access
+  user_tokens:
+    - key: admin_token
+      user_key: admin_user
+      token: admin_secret_token  # CHANGE THIS
+
+  # Default organization
+  orgs:
+    - key: pressograph_org
+      name: Pressograph
+
+  # Organization membership
+  org_users:
+    - key: admin_org_user
+      org_key: pressograph_org
+      user_key: admin_user
+      role: owner
+
+  # Default project
+  projects:
+    - key: pressograph_dev
+      name: Pressograph Development
+      org_key: pressograph_org
+
+  # Project tokens for OTLP ingestion
+  project_tokens:
+    - key: dev_token
+      project_key: pressograph_dev
+      token: project1_secret_token  # CHANGE THIS - used in OTLP DSN
+
+  # Project user permissions
+  project_users:
+    - key: admin_project_user
+      project_key: pressograph_dev
+      org_user_key: admin_org_user
+      perm_level: admin
+
+# -----------------------------------------------------------------------------
+# ClickHouse Database Configuration
+# -----------------------------------------------------------------------------
+ch_cluster:
+  cluster: uptrace1
+  replicated: false
+  distributed: false
+
+  shards:
+    - replicas:
+        - addr: clickhouse:9000
+          database: uptrace
+          user: uptrace
+          password: uptracepassword  # OVERRIDE VIA ENV: CLICKHOUSE_PASSWORD
+
+          dial_timeout: 3s
+          write_timeout: 5s
+          max_retries: 3
+          max_execution_time: 30s
+
+# -----------------------------------------------------------------------------
+# PostgreSQL Database Configuration
+# -----------------------------------------------------------------------------
 pg:
   addr: postgres-uptrace:5432
   user: uptrace
-  password: ${POSTGRES_PASSWORD}
+  password: uptracepassword  # OVERRIDE VIA ENV: POSTGRES_PASSWORD
   database: uptrace
 
-# ClickHouse database for storing telemetry data
-ch:
-  addr: clickhouse:9000
-  user: uptrace
-  password: ${CLICKHOUSE_PASSWORD}
-  database: uptrace
+# -----------------------------------------------------------------------------
+# Redis Cache / Task Queue Backend
+# -----------------------------------------------------------------------------
+redis_cache:
+  addrs:
+    1: uptrace-valkey:6379
+  username: ""  # OVERRIDE VIA ENV if auth enabled
+  password: ""
+  db: 0
 
-  # ClickHouse is awesome, but it can be slow when running queries over large time ranges.
-  # This setting helps by splitting large queries into smaller ones.
-  max_execution_time: 30s
+# -----------------------------------------------------------------------------
+# ClickHouse Schema Configuration
+# -----------------------------------------------------------------------------
+ch_schema:
+  compression: ZSTD(1)
 
-# A list of pre-configured projects
-projects:
-  # Default project for development
-  - id: 1
-    name: Pressograph Development
-    token: ${UPTRACE_PROJECT_TOKEN}
-    pinned_attrs:
-      - service_name
-      - host_name
-      - deployment_environment
-    # Create group attributes to organize spans and metrics
-    group_by_env: true
-    group_funcs:
-      - quantile(0.5)
-      - quantile(0.9)
-      - quantile(0.99)
+  # Storage policies (use default for single-node setup)
+  spans_index: { storage_policy: default }
+  spans_data: { storage_policy: default }
+  span_links: { storage_policy: default }
+  logs_index: { storage_policy: default }
+  logs_data: { storage_policy: default }
+  events_index: { storage_policy: default }
+  events_data: { storage_policy: default }
+  metrics: { storage_policy: default }
 
-# Admin credentials for initial setup
-auth:
-  users:
-    - username: ${UPTRACE_ADMIN_EMAIL}
-      password: ${UPTRACE_ADMIN_PASSWORD}
-      # User can edit all projects
-      notify_by_email: true
-
-# Site configuration
-site:
-  # Public URL for Uptrace
-  addr: ${UPTRACE_SITE_ADDR}
-
-# Metrics configuration
-metrics:
-  # Disable some metrics to reduce storage usage
-  drop_attrs:
-    - telemetry_sdk_*
-    - process_runtime_*
-
-# Spans (traces) configuration
+# -----------------------------------------------------------------------------
+# Telemetry Data Processing
+# -----------------------------------------------------------------------------
+# Performance tuning for spans, logs, and metrics ingestion
 spans:
-  # Buffer configuration for ingesting spans
-  buffer_size: 100000
-  batch_size: 10000
+  # Uncomment to customize performance parameters
+  # max_threads: 10
+  # max_insert_size: 10000
+  # max_buffered_records: 100000
 
-# Logging
+span_links:
+  # Uncomment to disable span links if not needed
+  # disabled: true
+
+logs:
+  # Uncomment to customize performance parameters
+  # max_threads: 10
+  # max_insert_size: 10000
+  # max_buffered_records: 100000
+
+events:
+  # Uncomment to customize performance parameters
+  # max_threads: 10
+  # max_insert_size: 10000
+  # max_buffered_records: 100000
+
+metrics:
+  # Uncomment to customize performance parameters
+  # max_threads: 10
+  # max_insert_size: 10000
+  # max_buffered_records: 100000
+  # max_cumulative_timeseries: 1000000
+
+# -----------------------------------------------------------------------------
+# Query & Performance Limits
+# -----------------------------------------------------------------------------
+trace:
+  # Maximum number of spans returned per query
+  # query_limit: 200000
+  # max_memory_usage_bytes: 200000000
+
+# -----------------------------------------------------------------------------
+# Feature Modules
+# -----------------------------------------------------------------------------
+alerting:
+  # Uncomment to disable alerting system
+  # disabled: true
+
+service_graph:
+  # Uncomment to disable service graph generation
+  # disabled: true
+
+sourcemaps:
+  # Uncomment to disable JavaScript sourcemap processing
+  # disabled: true
+
+# -----------------------------------------------------------------------------
+# External Services
+# -----------------------------------------------------------------------------
+self_monitoring:
+  # Uptrace monitors itself and sends telemetry to this DSN
+  # disabled: true
+  dsn: http://project1_secret_token@uptrace:80?grpc=4317
+
+telegram:
+  # Telegram bot token for notifications
+  bot_token: ''
+
+# -----------------------------------------------------------------------------
+# System Configuration
+# -----------------------------------------------------------------------------
 logging:
-  # Log level: debug, info, warn, error
-  level: info
+  # Log level: DEBUG, INFO, WARN, ERROR
+  level: INFO
 
-# SMTP configuration for email alerts (optional)
-# smtp:
-#   enabled: false
-#   host: smtp.gmail.com
-#   port: 587
-#   username: your-email@gmail.com
-#   password: your-app-password
-#   from: uptrace@pressograph.local
-
-# Alerting configuration (optional)
-# alerting:
-#   enabled: true
-
-# Secret key for encryption (generate with: openssl rand -hex 32)
-secret_key: ${UPTRACE_SECRET_KEY:-please-change-this-secret-key-in-production}
+license:
+  # Premium license key (optional)
+  key: ''

@@ -6,6 +6,7 @@ LABEL description="Pressograph Development Container"
 LABEL org.pressograph.observability="OpenTelemetry instrumentation configured at application level"
 
 # Установка системных зависимостей
+# Step 1: Install base packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     vim \
@@ -14,11 +15,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     zsh \
     sudo \
-    postgresql-client \
     redis-tools \
     build-essential \
     python3 \
     ca-certificates \
+    gnupg \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+# Step 2: Add PostgreSQL official repository for version 18
+RUN install -d /usr/share/postgresql-common/pgdg && \
+    curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+        https://www.postgresql.org/media/keys/ACCC4CF8.asc && \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+        https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > \
+        /etc/apt/sources.list.d/pgdg.list
+
+# Step 3: Install PostgreSQL 18 client
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        postgresql-client-18 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Установка oh-my-zsh для удобства разработки
@@ -57,15 +74,15 @@ RUN pnpm setup && \
 # Копирование кастомной .zshrc конфигурации
 COPY --chown=developer:developer .devcontainer/.zshrc /home/developer/.zshrc
 
-# Копирование PM2 ecosystem конфигурации и startup скрипта
+# Копирование PM2 ecosystem конфигурации и entrypoint скрипта
 COPY --chown=developer:developer ecosystem.config.js /workspace/ecosystem.config.js
-COPY --chown=developer:developer deploy/scripts/startup.sh /usr/local/bin/startup.sh
-RUN chmod +x /usr/local/bin/startup.sh
+COPY --chown=developer:developer deploy/containerfiles/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /workspace
 
 # Ports
 EXPOSE 3000 5555
 
-# Start services with PM2
-CMD ["/usr/local/bin/startup.sh"]
+# Start services with entrypoint script
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

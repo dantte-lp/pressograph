@@ -1,12 +1,12 @@
 /**
  * NextAuth Configuration
  *
- * Authentication configuration using NextAuth v4 with Prisma adapter.
+ * Authentication configuration using NextAuth v4 with Drizzle adapter.
  * Supports OAuth providers and database session storage.
  */
 
 import { NextAuthOptions } from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
 // import CredentialsProvider from 'next-auth/providers/credentials';
@@ -38,7 +38,7 @@ declare module 'next-auth/jwt' {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db) as any,
+  adapter: DrizzleAdapter(db) as any,
 
   providers: [
     // GitHub OAuth
