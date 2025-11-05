@@ -119,7 +119,7 @@ services:
       traefik.http.middlewares.drizzle-studio-redirect.redirectscheme.scheme: https
       traefik.http.middlewares.drizzle-studio-redirect.redirectscheme.permanent: "true"
       traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.regex: "^https?://dbdev-pressograph\\.infra4\\.dev/?(.*)"
-      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.replacement: "https://local.drizzle.studio/?port=5555&host=dbdev-pressograph.infra4.dev&secure=1"
+      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.replacement: "https://local.drizzle.studio/?port=443&host=dbdev-pressograph.infra4.dev&secure=1"
       traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.permanent: "false"
 
   db:
