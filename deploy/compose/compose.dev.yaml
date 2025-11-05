@@ -102,14 +102,14 @@ services:
       # Drizzle Studio HTTP Router (redirect to HTTPS)
       traefik.http.routers.drizzle-studio-http.rule: Host(`dbdev-pressograph.infra4.dev`)
       traefik.http.routers.drizzle-studio-http.entrypoints: http
-      traefik.http.routers.drizzle-studio-http.middlewares: drizzle-studio-redirect
+      traefik.http.routers.drizzle-studio-http.middlewares: drizzle-studio-redirect,drizzle-studio-cors
       traefik.http.routers.drizzle-studio-http.service: drizzle-studio
 
       # Drizzle Studio HTTPS Router (Certificate from Cloudflare Origin CA)
       traefik.http.routers.drizzle-studio.rule: Host(`dbdev-pressograph.infra4.dev`)
       traefik.http.routers.drizzle-studio.entrypoints: https
       traefik.http.routers.drizzle-studio.tls: "true"
-      traefik.http.routers.drizzle-studio.middlewares: web-development@file,drizzle-studio-external-redirect
+      traefik.http.routers.drizzle-studio.middlewares: web-development@file,drizzle-studio-cors
       traefik.http.routers.drizzle-studio.service: drizzle-studio
 
       # Drizzle Studio Service (port 5555)
@@ -118,9 +118,11 @@ services:
       # Drizzle Studio Redirect Middleware
       traefik.http.middlewares.drizzle-studio-redirect.redirectscheme.scheme: https
       traefik.http.middlewares.drizzle-studio-redirect.redirectscheme.permanent: "true"
-      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.regex: "^https?://dbdev-pressograph\\.infra4\\.dev/?(.*)"
-      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.replacement: "https://local.drizzle.studio/?port=443&host=dbdev-pressograph.infra4.dev&secure=1"
-      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.permanent: "false"
+      traefik.http.middlewares.drizzle-studio-cors.headers.accesscontrolalloworiginlist: "https://local.drizzle.studio,https://dbdev-pressograph.infra4.dev"
+      traefik.http.middlewares.drizzle-studio-cors.headers.accesscontrolallowcredentials: "true"
+      traefik.http.middlewares.drizzle-studio-cors.headers.accesscontrolallowheaders: "*"
+      traefik.http.middlewares.drizzle-studio-cors.headers.accesscontrolallowmethods: "GET,POST,OPTIONS"
+      traefik.http.middlewares.drizzle-studio-cors.headers.addvaryheader: "true"
 
   db:
     container_name: pressograph-dev-db
