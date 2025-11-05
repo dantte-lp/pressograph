@@ -109,7 +109,7 @@ services:
       traefik.http.routers.drizzle-studio.rule: Host(`dbdev-pressograph.infra4.dev`)
       traefik.http.routers.drizzle-studio.entrypoints: https
       traefik.http.routers.drizzle-studio.tls: "true"
-      traefik.http.routers.drizzle-studio.middlewares: web-development@file
+      traefik.http.routers.drizzle-studio.middlewares: web-development@file,drizzle-studio-external-redirect
       traefik.http.routers.drizzle-studio.service: drizzle-studio
 
       # Drizzle Studio Service (port 5555)
@@ -118,6 +118,9 @@ services:
       # Drizzle Studio Redirect Middleware
       traefik.http.middlewares.drizzle-studio-redirect.redirectscheme.scheme: https
       traefik.http.middlewares.drizzle-studio-redirect.redirectscheme.permanent: "true"
+      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.regex: "^https?://dbdev-pressograph\\.infra4\\.dev/?(.*)"
+      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.replacement: "https://local.drizzle.studio/?port=5555&host=dbdev-pressograph.infra4.dev&secure=1"
+      traefik.http.middlewares.drizzle-studio-external-redirect.redirectregex.permanent: "false"
 
   db:
     container_name: pressograph-dev-db
