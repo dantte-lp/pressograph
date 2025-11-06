@@ -24,6 +24,7 @@ import {
   ChevronLeftIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  UserIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,11 @@ const navItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
+  {
+    href: '/profile',
+    label: 'Profile',
+    icon: UserIcon,
+  },
   {
     href: '/settings',
     label: 'Settings',

@@ -19,17 +19,21 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
-      username?: string | null;
-      email?: string | null;
+      username: string;
+      email: string;
       name?: string | null;
       image?: string | null;
       role: string;
+      createdAt?: string | null;
+      lastLoginAt?: string | null;
     };
   }
 
   interface User {
     username?: string | null;
     role: string;
+    createdAt?: Date;
+    lastLoginAt?: Date | null;
   }
 }
 
@@ -38,6 +42,8 @@ declare module 'next-auth/jwt' {
     id: string;
     username?: string | null;
     role: string;
+    createdAt?: string | null;
+    lastLoginAt?: string | null;
   }
 }
 
@@ -108,6 +114,8 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             image: user.image,
             role: user.role,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt,
           };
         } catch (error) {
           console.error('[Auth Error]', error);
@@ -149,8 +157,10 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id;
-        session.user.username = token.username;
+        session.user.username = token.username as string;
         session.user.role = token.role;
+        session.user.createdAt = token.createdAt;
+        session.user.lastLoginAt = token.lastLoginAt;
       }
       return session;
     },
@@ -160,6 +170,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.username = user.username;
         token.role = user.role || 'user';
+        token.createdAt = user.createdAt?.toISOString();
+        token.lastLoginAt = user.lastLoginAt?.toISOString();
       }
       return token;
     },

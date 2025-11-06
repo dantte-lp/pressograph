@@ -81,6 +81,7 @@ export const PROTECTED_ROUTES = [
   '/dashboard',
   '/projects',
   '/tests',
+  '/profile',
   '/settings',
   '/admin',
 ] as const;
