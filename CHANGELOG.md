@@ -1,17 +1,17 @@
 # Changelog
 
-Все значимые изменения в проекте Pressograph будут документированы в этом файле.
+All notable changes to the Pressograph project will be documented in this file.
 
-Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
-и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### В разработке
-- Завершение Sprint 1: Foundation Setup
-- Миграция на Next.js 15.5.6 + React 19
-- Полная интеграция NextAuth v4 с Drizzle ORM
-- Theme Provider с server-side рендерингом
+### In Development
+- Completing Sprint 1: Foundation Setup
+- Migration to Next.js 15.5.6 + React 19
+- Full NextAuth v4 integration with Drizzle ORM
+- Theme Provider with server-side rendering
 
 ### Added
 - ✨ Valkey cache integration with Redis client (Issue #36)
@@ -34,54 +34,54 @@
 
 ## [2.0.0-alpha] - 2025-11-05
 
-Крупный архитектурный редизайн. Полная миграция с Vite на Next.js 15.5.6 + React 19.
+Major architectural redesign. Complete migration from Vite to Next.js 15.5.6 + React 19.
 
 ### Added
-- ✨ **Next.js 15.5.6** архитектура с App Router
-- ✨ **React 19.2.0** с новыми возможностями
-- ✨ **Drizzle ORM 0.44.7** вместо Prisma
-- ✨ **NextAuth v4.24** для аутентификации
-- ✨ **TanStack Query 5.90** для data fetching
-- ✨ **Zustand 5.0** для state management с Immer middleware
-- ✨ **OpenTelemetry** интеграция с VictoriaMetrics stack
+- ✨ **Next.js 15.5.6** architecture with App Router
+- ✨ **React 19.2.0** with new features
+- ✨ **Drizzle ORM 0.44.7** instead of Prisma
+- ✨ **NextAuth v4.24** for authentication
+- ✨ **TanStack Query 5.90** for data fetching
+- ✨ **Zustand 5.0** for state management with Immer middleware
+- ✨ **OpenTelemetry** integration with VictoriaMetrics stack
 - ✨ **VictoriaMetrics** observability stack (metrics, logs, traces)
-- ✨ **Valkey 9** (Redis-compatible) для кеширования
-- ✨ **PostgreSQL 18** с оптимизированной конфигурацией
-- ✨ Drizzle Studio UI на https://dbdev-pressograph.infra4.dev
-- ✨ Полная схема БД с 13 таблицами (users, projects, tests, audit_logs и др.)
-- ✨ **Recharts 3.3** для графиков давления
-- ✨ Server-side theme management с cookies
-- ✨ RBAC (Role-Based Access Control) в схеме БД
+- ✨ **Valkey 9** (Redis-compatible) for caching
+- ✨ **PostgreSQL 18** with optimized configuration
+- ✨ Drizzle Studio UI at https://dbdev-pressograph.infra4.dev
+- ✨ Full database schema with 13 tables (users, projects, tests, audit_logs, etc.)
+- ✨ **Recharts 3.3** for pressure graphs
+- ✨ Server-side theme management with cookies
+- ✨ RBAC (Role-Based Access Control) in database schema
 - ✨ Comprehensive sprint tracking structure
 
 ### Changed
-- 🔄 **BREAKING**: Полная переделка архитектуры с Vite на Next.js
-- 🔄 Миграция с Prisma на Drizzle ORM
-- 🔄 Container-based development с Podman
-- 🔄 Улучшенная Traefik конфигурация с HTTPS routing
-- 🔄 Network isolation с IPAM для всех сервисов
-- 🔄 Resource limits (CPU/RAM) для всех контейнеров
-- 🔄 Node.js 24 LTS в development container
-- 🔄 TypeScript 5.9.3 с strict mode
+- 🔄 **BREAKING**: Complete architecture overhaul from Vite to Next.js
+- 🔄 Migration from Prisma to Drizzle ORM
+- 🔄 Container-based development with Podman
+- 🔄 Enhanced Traefik configuration with HTTPS routing
+- 🔄 Network isolation with IPAM for all services
+- 🔄 Resource limits (CPU/RAM) for all containers
+- 🔄 Node.js 24 LTS in development container
+- 🔄 TypeScript 5.9.3 with strict mode
 
 ### Fixed
 - 🐛 SSR build issues resolved
-- 🐛 Theme switching теперь работает на server-side
-- 🐛 Healthcheck IPv6 issues во всех контейнерах
+- 🐛 Theme switching now works on server-side
+- 🐛 Healthcheck IPv6 issues in all containers
 
 ### Security
-- 🔒 Secure secrets generation с `task secrets:generate`
-- 🔒 Network isolation между dev/uptrace/victoria stacks
-- 🔒 PostgreSQL и Valkey не exposed в traefik-public network
-- 🔒 CORS configuration для Drizzle Studio API
+- 🔒 Secure secrets generation with `task secrets:generate`
+- 🔒 Network isolation between dev/uptrace/victoria stacks
+- 🔒 PostgreSQL and Valkey not exposed in traefik-public network
+- 🔒 CORS configuration for Drizzle Studio API
 
 ### Documentation
-- 📚 Sprint tracking structure в `/sprints/`
-- 📚 Architecture decisions документированы
+- 📚 Sprint tracking structure in `/sprints/`
+- 📚 Architecture decisions documented
 - 📚 Migration session reports
 - 📚 Comprehensive handoff reports
 
-**Migration Notes**: Старый Vite+React стек архивирован в git history (commit `8d48f03a`). Для возврата к старой версии: `git checkout 8d48f03a`.
+**Migration Notes**: Old Vite+React stack archived in git history (commit `8d48f03a`). To revert to old version: `git checkout 8d48f03a`.
 
 **GitHub Issues**: #35, #37, #40-#54
 
@@ -89,20 +89,20 @@
 
 ## [1.1.0] - 2025-10-29
 
-Infrastructure modernization и observability stack.
+Infrastructure modernization and observability stack.
 
 ### Added
-- ✨ Observability stack с Grafana, VictoriaMetrics, Tempo
-- ✨ Podman Compose для development окружения
+- ✨ Observability stack with Grafana, VictoriaMetrics, Tempo
+- ✨ Podman Compose for development environment
 - ✨ Traefik reverse proxy integration
-- ✨ Health check endpoints для всех сервисов
-- ✨ Development environment с hot reload
-- ✨ Comprehensive Makefile для common tasks
+- ✨ Health check endpoints for all services
+- ✨ Development environment with hot reload
+- ✨ Comprehensive Makefile for common tasks
 
 ### Changed
-- 🔄 Миграция на Podman от Docker
-- 🔄 Улучшенная Compose configuration
-- 🔄 Node.js 22 LTS в контейнерах
+- 🔄 Migration to Podman from Docker
+- 🔄 Improved Compose configuration
+- 🔄 Node.js 22 LTS in containers
 
 ### Fixed
 - 🐛 Healthcheck IPv6 issues
@@ -118,11 +118,11 @@ Infrastructure modernization и observability stack.
 
 ## [1.0.2] - 2025-10-31
 
-Критические исправления и улучшения производительности.
+Critical fixes and performance improvements.
 
 ### Added
-- ✨ Comment field в Test Parameters section ([#6](https://github.com/dantte-lp/pressograph/issues/6))
-- ✨ Date column в History table ([#5](https://github.com/dantte-lp/pressograph/issues/5))
+- ✨ Comment field in Test Parameters section ([#6](https://github.com/dantte-lp/pressograph/issues/6))
+- ✨ Date column in History table ([#5](https://github.com/dantte-lp/pressograph/issues/5))
 - ✨ Download JSON button ([#4](https://github.com/dantte-lp/pressograph/issues/4))
 - ✨ PDF export endpoint ([#3](https://github.com/dantte-lp/pressograph/issues/3))
 - ✨ Component tests (Phase 1.1)
@@ -148,8 +148,8 @@ Infrastructure modernization и observability stack.
 - 🔒 Fix Traefik routing with /api prefix
 
 ### Performance
-- ⚡ Theme switching optimized с useShallow
-- ⚡ GraphCanvas optimization с React.memo
+- ⚡ Theme switching optimized with useShallow
+- ⚡ GraphCanvas optimization with React.memo
 - ⚡ ExportButtons re-render optimization
 
 **GitHub Issues**: #3, #4, #5, #6
@@ -175,16 +175,16 @@ Infrastructure modernization и observability stack.
 - ✨ Sprint 2: Backend PNG export
   - US-008: PNG export endpoint
   - US-007: File storage service
-  - US-006: Canvas renderer на backend
+  - US-006: Canvas renderer on backend
   - US-005: node-canvas setup
 - ✨ Sprint 1: Backend type definitions
   - US-001: Shared type definitions
-  - US-002: Graph generator на backend
+  - US-002: Graph generator on backend
   - US-003: Validation service
   - US-004: Graph controller endpoints
 
 ### Documentation
-- 📚 Sprint completion reports для Sprint 2, 5, 6, 7
+- 📚 Sprint completion reports for Sprint 2, 5, 6, 7
 - 📚 Progress reports
 - 📚 Release notes
 
@@ -192,24 +192,24 @@ Infrastructure modernization и observability stack.
 
 ## [1.0.0] - 2025-10-28
 
-Первый production release! 🎉
+First production release! 🎉
 
 ### Added
 - ✨ Pressure test visualization
-- ✨ Graph generation с customizable parameters
-- ✨ Export в PNG формат
-- ✨ User authentication и authorization
-- ✨ History страница с saved tests
-- ✨ Setup страница для initial configuration
-- ✨ Database schema с Prisma
-- ✨ Admin panel с user management
-- ✨ i18n support (Русский/English)
+- ✨ Graph generation with customizable parameters
+- ✨ Export to PNG format
+- ✨ User authentication and authorization
+- ✨ History page with saved tests
+- ✨ Setup page for initial configuration
+- ✨ Database schema with Prisma
+- ✨ Admin panel with user management
+- ✨ i18n support (Russian/English)
 - ✨ Theme switching (Light/Dark)
 - ✨ Zustand state management
 - ✨ Comprehensive Makefile
 
 ### Features
-- 🎨 Modern React 19 UI с HeroUI components
+- 🎨 Modern React 19 UI with HeroUI components
 - 🎨 Responsive design
 - 🎨 Dark/Light theme support
 - 🔐 JWT-based authentication
@@ -223,7 +223,7 @@ Infrastructure modernization и observability stack.
 - 🐳 Nginx reverse proxy
 - 🐳 Docker Compose setup
 - 🐳 Production-ready configuration
-- 📈 Monitoring и logging
+- 📈 Monitoring and logging
 
 ### Documentation
 - 📚 Setup guide
@@ -240,22 +240,22 @@ Infrastructure modernization и observability stack.
 
 ---
 
-## Типы изменений
+## Change Types
 
-Этот changelog использует следующие типы изменений:
+This changelog uses the following change types:
 
-- `Added` ✨ - новые возможности
-- `Changed` 🔄 - изменения в существующей функциональности
-- `Deprecated` ⚠️ - функции, которые скоро будут удалены
-- `Removed` 🗑️ - удалённые функции
-- `Fixed` 🐛 - исправления багов
-- `Security` 🔒 - исправления уязвимостей
-- `Performance` ⚡ - улучшения производительности
-- `Documentation` 📚 - изменения в документации
+- `Added` ✨ - new features
+- `Changed` 🔄 - changes in existing functionality
+- `Deprecated` ⚠️ - features to be removed soon
+- `Removed` 🗑️ - removed features
+- `Fixed` 🐛 - bug fixes
+- `Security` 🔒 - vulnerability fixes
+- `Performance` ⚡ - performance improvements
+- `Documentation` 📚 - documentation changes
 
 ---
 
-## Ссылки
+## Links
 
 - [Unreleased]: https://github.com/dantte-lp/pressograph/compare/v2.0.0-alpha...HEAD
 - [2.0.0-alpha]: https://github.com/dantte-lp/pressograph/compare/v1.1.0...v2.0.0-alpha
@@ -305,11 +305,11 @@ Infrastructure modernization и observability stack.
 - [#8](https://github.com/dantte-lp/pressograph/issues/8) - ExportButtons Optimization
 
 ### Documentation & Quality
-- [#9](https://github.com/dantte-lp/pressograph/issues/9) - Create CHANGELOG.md 🎯 (этот файл!)
+- [#9](https://github.com/dantte-lp/pressograph/issues/9) - Create CHANGELOG.md 🎯 (this file!)
 - [#10](https://github.com/dantte-lp/pressograph/issues/10) - Link Swagger UI
 
 ✅ = Closed | 🎯 = In Progress
 
 ---
 
-**Примечание**: Для полной истории изменений см. [Git commit log](https://github.com/dantte-lp/pressograph/commits/main).
+**Note**: For complete change history, see [Git commit log](https://github.com/dantte-lp/pressograph/commits/main).
