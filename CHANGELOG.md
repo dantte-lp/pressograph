@@ -19,6 +19,13 @@
 - ✨ Connection pooling and error handling for cache operations
 - ✨ Three-tier caching support (Cookie → Valkey → Database)
 - ✨ Comprehensive integration tests for cache operations
+- ✨ Three-tier theme management system (Issue #38)
+- ✨ Advanced theme provider with SSR support
+- ✨ Theme toggle UI components
+- ✨ Middleware for authentication and theme injection
+- 📚 Technology stack analysis and documentation (Issue #39)
+- 📚 Architecture Decision Records (ADRs)
+- 📚 Technology comparison matrices
 
 ### Changed
 - 🔄 Authentication approach: Removed Traefik-level BasicAuth in favor of application-level NextAuth authentication (Issue #45 closed)
