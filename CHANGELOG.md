@@ -61,6 +61,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Header Menu - Authentication and Layout Issues (2025-11-07)
+- **Fixed:** Header menu visibility and layout issues on landing page
+  - **Issue 1:** Navigation menu (Projects, Tests, Dashboard) visible to unauthenticated users
+    - **Problem:** Protected routes were exposed in UI without authentication check
+    - **Security Risk:** UI elements visible without proper authentication state verification
+    - **Root Cause:** Navigation rendering not conditional on session state
+  - **Issue 2:** Header layout and spacing issues
+    - **Problem:** Navigation positioned incorrectly causing visual issues
+    - **Layout Issues:** Inconsistent spacing, improper flexbox alignment
+    - **Mobile Issues:** Mobile menu button visible to unauthenticated users
+  - **Solution Applied:**
+    - **Component:** `/opt/projects/repositories/pressograph/src/components/layout/header.tsx`
+    - **Changes Made:**
+      1. Added authentication check: `const isAuthenticated = !!session`
+      2. Wrapped desktop navigation in conditional: `{isAuthenticated && <nav>...</nav>}`
+      3. Wrapped mobile menu in conditional: `{isAuthenticated && mobileMenuOpen && ...}`
+      4. Wrapped mobile menu button in conditional: `{isAuthenticated && <button>...`
+      5. Improved layout structure: Removed nested flex containers
+      6. Fixed spacing: Changed from `gap-6` to `gap-3`, added proper padding
+      7. Improved loading state: Changed skeleton from circle to rectangular button shape
+      8. Added sign out callback URL: `signOut({ callbackUrl: '/' })`
+      9. Enhanced responsive design: Added `mx-auto` and responsive padding
+      10. Improved mobile menu styling: Added `bg-background` for better contrast
+  - **Rendering Logic:**
+    - **Unauthenticated Users See:**
+      - Pressograph logo (clickable, links to home)
+      - Theme toggle (sun/moon icon)
+      - Sign In button
+      - NO navigation menu
+      - NO mobile menu button
+    - **Authenticated Users See:**
+      - Pressograph logo
+      - Desktop navigation: Projects, Tests, Dashboard (hidden on mobile)
+      - Theme toggle
+      - User name (hidden on smaller screens, visible on lg+)
+      - Sign Out button
+      - Mobile menu button (shows hamburger icon on mobile)
+      - Mobile navigation drawer (when menu button clicked)
+  - **CSS Improvements:**
+    - Simplified header structure: 3-column layout (Logo | Navigation | Actions)
+    - Added `container mx-auto` for proper centering
+    - Added responsive padding: `px-4 sm:px-6 lg:px-8`
+    - Improved gap consistency: `gap-3` throughout
+    - Better mobile menu styling: Added padding, proper spacing
+  - **Security Notes:**
+    - This is UI-level hiding only
+    - Server-side route protection still required via middleware
+    - NextAuth session check provides authentication state
+  - **Testing Performed:**
+    - Verified unauthenticated view: No navigation visible
+    - Verified authenticated view: Full navigation visible
+    - Tested mobile responsiveness
+    - Tested theme toggle functionality
+  - **Status:** ✅ Fixed - Header menu properly respects authentication state and layout improved
+
 #### Bad Gateway Error - File Permission Issues (2025-11-07)
 - **Fixed:** Second Bad Gateway error on dev-pressograph.infra4.dev during Sprint 2 session
   - **Issue:** Turbopack crash with "Permission denied (os error 13)" on `/workspace/src/app/api/profile`

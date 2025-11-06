@@ -5,10 +5,14 @@
  *
  * Features:
  * - Logo and branding
- * - Navigation menu
+ * - Navigation menu (only for authenticated users)
  * - User authentication menu
  * - Theme toggle
  * - Responsive mobile menu
+ *
+ * Authentication-based rendering:
+ * - Unauthenticated: Logo, Theme Toggle, Sign In button
+ * - Authenticated: Logo, Navigation (Projects/Tests/Dashboard), Theme Toggle, User Menu, Sign Out
  */
 
 import Link from 'next/link';
@@ -31,16 +35,18 @@ export function Header() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  const isAuthenticated = !!session;
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">Pressograph</span>
-          </Link>
+        <Link href="/" className="flex items-center space-x-2">
+          <span className="text-xl font-bold">Pressograph</span>
+        </Link>
 
-          {/* Desktop Navigation */}
+        {/* Desktop Navigation - Only for authenticated users */}
+        {isAuthenticated && (
           <nav className="hidden md:flex items-center gap-6">
             <Link
               href="/projects"
@@ -61,10 +67,10 @@ export function Header() {
               Dashboard
             </Link>
           </nav>
-        </div>
+        )}
 
         {/* Right side actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Theme Toggle */}
           {mounted && (
             <button
@@ -108,19 +114,21 @@ export function Header() {
 
           {/* Auth Menu */}
           {status === 'loading' ? (
-            <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+            <div className="h-10 w-20 animate-pulse rounded-md bg-muted" />
           ) : session ? (
-            <div className="flex items-center gap-3">
-              <span className="hidden md:inline text-sm font-medium">
+            <>
+              {/* User name - desktop only */}
+              <span className="hidden lg:inline-block text-sm font-medium text-muted-foreground">
                 {session.user?.name || session.user?.email}
               </span>
+              {/* Sign Out button */}
               <button
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
               >
                 Sign Out
               </button>
-            </div>
+            </>
           ) : (
             <button
               onClick={() => signIn()}
@@ -130,59 +138,61 @@ export function Header() {
             </button>
           )}
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10"
-            aria-label="Toggle menu"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="h-6 w-6"
+          {/* Mobile Menu Button - Only for authenticated users */}
+          {isAuthenticated && (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10"
+              aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                />
-              )}
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="h-6 w-6"
+              >
+                {mobileMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                  />
+                )}
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t">
-          <nav className="container flex flex-col gap-4 py-4">
+      {/* Mobile Menu - Only for authenticated users */}
+      {isAuthenticated && mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background">
+          <nav className="container mx-auto flex flex-col gap-3 px-4 py-4">
             <Link
               href="/projects"
-              className="text-sm font-medium transition-colors hover:text-primary"
+              className="text-sm font-medium transition-colors hover:text-primary py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               Projects
             </Link>
             <Link
               href="/tests"
-              className="text-sm font-medium transition-colors hover:text-primary"
+              className="text-sm font-medium transition-colors hover:text-primary py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               Tests
             </Link>
             <Link
               href="/dashboard"
-              className="text-sm font-medium transition-colors hover:text-primary"
+              className="text-sm font-medium transition-colors hover:text-primary py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               Dashboard
