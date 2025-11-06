@@ -30,6 +30,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preparing Sprint 2: Authentication & Core UI
 - Sprint 1 Foundation Setup complete (73% - 16/22 SP)
 
+### Planned Features from v1.0 Migration
+- Graph History Page route (planned for Sprint 2 or Sprint 3)
+  - Comprehensive table view with pagination and search
+  - Filter by format (PNG, PDF, JSON), test number, date
+  - Actions: view, download, regenerate, share, delete
+  - Edit comments on graphs
+  - Preview modal with test settings
+  - Status indicators (success, failed, pending)
+  - Public share links with clipboard copy
+- Admin Dashboard (planned for Sprints 3-4)
+  - Backend API endpoints (Sprint 3 - December 2-15, 2025)
+  - Frontend UI with tabs (Sprint 4 - December 16-29, 2025)
+  - User management CRUD
+  - Graph management
+  - Analytics and reporting
+  - System health monitoring
+  - Admin role middleware with RBAC
+
 ### Added
 - ✨ Valkey cache integration with Redis client (Issue #36)
 - ✨ Cache utility functions for user preferences and themes
