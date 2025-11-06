@@ -146,8 +146,8 @@ export const authOptions: NextAuthOptions = {
   },
 
   pages: {
-    signIn: '/login',
-    signOut: '/logout',
+    signIn: '/auth/signin',
+    signOut: '/auth/signout',
     error: '/auth/error',
     verifyRequest: '/auth/verify',
     newUser: '/onboarding',

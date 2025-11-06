@@ -1,8 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FolderIcon, FlaskConicalIcon, BarChart3Icon } from 'lucide-react';
-import { ToastDemo } from '@/components/toast-demo';
-import { LoadingDemo } from '@/components/loading-demo';
 
 /**
  * Dashboard Home Page
@@ -12,8 +10,6 @@ import { LoadingDemo } from '@/components/loading-demo';
  * - Recent projects
  * - Recent tests
  * - Quick actions
- * - Toast notifications demo
- * - Loading states demo
  */
 
 export default function DashboardPage() {
@@ -26,12 +22,6 @@ export default function DashboardPage() {
           Welcome back! Here's an overview of your pressure testing projects.
         </p>
       </div>
-
-      {/* Toast Notifications Demo */}
-      <ToastDemo />
-
-      {/* Loading States Demo */}
-      <LoadingDemo />
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-3">

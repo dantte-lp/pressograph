@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Authentication Pages (2025-11-07)
+- **Created:** Complete authentication flow with sign-in and error pages
+  - **Sign-in Page:** `/opt/projects/repositories/pressograph/src/app/auth/signin/page.tsx`
+    - Clean, centered layout with Pressograph branding
+    - Credentials-based authentication (username/password)
+    - Dynamic rendering with Suspense support
+    - Callback URL support for post-login redirects
+    - Footer with terms and privacy policy links
+    - Test credentials hint in development mode
+  - **Sign-in Form Component:** `/opt/projects/repositories/pressograph/src/components/auth/signin-form.tsx`
+    - Client-side form with React state management
+    - NextAuth.js credentials provider integration
+    - Real-time validation and error handling
+    - Toast notifications for success/error states
+    - Loading state with spinner during authentication
+    - Accessible form with proper labels and ARIA attributes
+    - Test credentials display in development
+  - **Error Page:** `/opt/projects/repositories/pressograph/src/app/auth/error/page.tsx`
+    - Comprehensive error handling for all NextAuth error types
+    - User-friendly error messages for 12+ error scenarios
+    - Call-to-action buttons (Try Again, Return to Home)
+    - Professional error display with shadcn/ui Card components
+    - Support contact information
+  - **Technical Features:**
+    - Suspense boundary for useSearchParams hook
+    - Dynamic rendering (force-dynamic) to prevent static generation issues
+    - Window.location.href for post-auth redirects (TypeScript strict routing)
+    - Session management with NextAuth React hooks
+    - Sonner toast notifications integration
+    - Lucide icons for visual feedback
+  - **Status:** ✅ Authentication pages complete and tested
+
 #### shadcn/ui Integration Strategy Documentation (2025-11-07)
 - **Created:** Comprehensive shadcn/ui integration strategy document
   - **Document:** `docs/development/SHADCN_INTEGRATION_STRATEGY.md` (800+ lines)
@@ -60,6 +92,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Next Steps:** Use document as team reference for future component additions
 
 ### Fixed
+
+#### Critical Authentication and Routing Issues (2025-11-07)
+- **Fixed:** Three critical authentication issues preventing proper access control
+  - **Issue 1: Unauthenticated Dashboard Access** (неавторизованный пользователь может увидеть /dashboard)
+    - **Problem:** Dashboard was accessible without authentication
+    - **Security Risk:** Critical - anyone could view protected dashboard content
+    - **Root Cause:** No server-side authentication check in dashboard layout
+    - **Solution Applied:**
+      - **File:** `/opt/projects/repositories/pressograph/src/app/(dashboard)/layout.tsx`
+      - Added `getServerSession(authOptions)` to check authentication
+      - Added redirect to `/auth/signin?callbackUrl=/dashboard` for unauthenticated users
+      - Session check runs on every page load (server-side)
+      - Protects all routes under (dashboard) group: /dashboard, /projects, /tests, /profile, /settings
+    - **Status:** ✅ Dashboard now requires authentication
+
+  - **Issue 2: Test Blocks Visible on Dashboard** (на странице /dashboard видны различные тестовые блоки)
+    - **Problem:** Dashboard showed ToastDemo and LoadingDemo components
+    - **Issue:** Test/demo components not suitable for production
+    - **User Experience:** Confusing interface with non-functional test elements
+    - **Solution Applied:**
+      - **File:** `/opt/projects/repositories/pressograph/src/app/(dashboard)/dashboard/page.tsx`
+      - Removed `<ToastDemo />` component
+      - Removed `<LoadingDemo />` component
+      - Removed imports for both demo components
+      - Kept production-ready content: Quick Stats, Quick Actions, Recent Activity
+      - Clean dashboard with only functional elements
+    - **Status:** ✅ Dashboard shows only production content
+
+  - **Issue 3: Sign In Redirect Error** (при переходе на 'Sign in' вижу переход на localhost:3000 и 404)
+    - **Problem:** Sign In button redirected to `http://localhost:3000/login` causing 404
+    - **Root Causes:**
+      - NEXTAUTH_URL was set to `http://localhost:3000` instead of production domain
+      - NextAuth config pointed to `/login` page that didn't exist
+      - No sign-in page was created
+    - **Solution Applied:**
+      1. **Environment Configuration:**
+         - **File:** `/opt/projects/repositories/pressograph/.env.local`
+         - Changed `NEXTAUTH_URL=http://localhost:3000` to `NEXTAUTH_URL=https://dev-pressograph.infra4.dev`
+         - Fixed domain to match production environment
+      2. **NextAuth Configuration:**
+         - **File:** `/opt/projects/repositories/pressograph/src/lib/auth/config.ts`
+         - Changed `signIn: '/login'` to `signIn: '/auth/signin'`
+         - Changed `signOut: '/logout'` to `signOut: '/auth/signout'`
+         - Updated pages configuration to match new routes
+      3. **Created Authentication Pages:**
+         - Created `/src/app/auth/signin/page.tsx` (sign-in page)
+         - Created `/src/components/auth/signin-form.tsx` (sign-in form)
+         - Created `/src/app/auth/error/page.tsx` (error handling)
+         - All pages use shadcn/ui components for consistency
+    - **Status:** ✅ Sign In redirects correctly to production domain
+
+#### Build Fixes (2025-11-07)
+- **Fixed:** Build errors preventing successful compilation
+  - **Issue 1: bcryptjs Import Error**
+    - **Problem:** `/src/app/api/profile/password/route.ts` imported `bcryptjs` instead of `bcrypt`
+    - **Error:** Module not found: Can't resolve 'bcryptjs'
+    - **Solution:** Changed all `bcrypt` references from `bcryptjs` to `bcrypt` package
+      - Changed import: `import { compare, hash } from 'bcrypt'`
+      - Updated function calls: `bcrypt.compare` → `compare`, `bcrypt.hash` → `hash`
+    - **Status:** ✅ Password API route now builds successfully
+
+  - **Issue 2: .env.local Permission Error**
+    - **Problem:** `.env.local` owned by root, unreadable by developer user
+    - **Error:** EACCES: permission denied, open '/workspace/.env.local'
+    - **Solution:** Fixed ownership and permissions
+      - `chown developer:developer .env.local`
+      - `chmod 644 .env.local`
+    - **Status:** ✅ Environment variables now load correctly
+
+  - **Issue 3: useSearchParams SSR Error**
+    - **Problem:** Sign-in page failed static generation due to useSearchParams
+    - **Error:** useSearchParams() should be wrapped in a suspense boundary
+    - **Solution:** Added Suspense and dynamic rendering
+      - Added `export const dynamic = 'force-dynamic'` to signin page
+      - Wrapped `<SignInForm />` in `<Suspense>` boundary
+      - Changed redirect to `window.location.href` for TypeScript strict routing
+    - **Status:** ✅ Sign-in page builds and renders correctly
 
 #### Header Menu - Authentication and Layout Issues (2025-11-07)
 - **Fixed:** Header menu visibility and layout issues on landing page
