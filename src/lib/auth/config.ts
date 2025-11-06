@@ -187,11 +187,36 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      // Get production URL from environment or use baseUrl
+      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+
+      // If starts with /, make it absolute with production URL
+      if (url.startsWith('/')) return `${productionUrl}${url}`;
+
+      // If contains localhost, extract path and use production URL
+      if (url.includes('localhost')) {
+        try {
+          const urlObj = new URL(url);
+          return `${productionUrl}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+        } catch {
+          return productionUrl;
+        }
+      }
+
+      // If same origin as baseUrl or productionUrl, allow
+      try {
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(baseUrl);
+        const prodUrlObj = new URL(productionUrl);
+
+        if (urlObj.origin === baseUrlObj.origin || urlObj.origin === prodUrlObj.origin) {
+          return url;
+        }
+      } catch {
+        // Invalid URL, return production URL
+      }
+
+      return productionUrl;
     },
   },
 

@@ -30,7 +30,7 @@ export default async function ProfilePage() {
   const session = await requireAuth();
 
   return (
-    <div className="container max-w-3xl py-8">
+    <div className="container mx-auto max-w-3xl px-4 py-6 lg:px-8 lg:py-8">
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">

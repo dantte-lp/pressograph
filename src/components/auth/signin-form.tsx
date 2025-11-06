@@ -24,7 +24,34 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 
 export function SignInForm() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
+  // Extract callback URL and strip localhost if present
+  const getCallbackUrl = () => {
+    const urlParam = searchParams.get('callbackUrl');
+    if (!urlParam) return '/dashboard';
+
+    // If it contains localhost, extract just the path
+    if (urlParam.includes('localhost')) {
+      try {
+        const url = new URL(urlParam);
+        return url.pathname + url.search + url.hash;
+      } catch {
+        return '/dashboard';
+      }
+    }
+
+    // If it's a full URL with production domain, extract path
+    try {
+      const url = new URL(urlParam);
+      // Only return the path part to prevent open redirects
+      return url.pathname + url.search + url.hash;
+    } catch {
+      // It's already a relative path
+      return urlParam;
+    }
+  };
+
+  const callbackUrl = getCallbackUrl();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

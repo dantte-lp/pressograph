@@ -32,7 +32,7 @@ export default async function SettingsPage() {
   await requireAuth();
 
   return (
-    <div className="container max-w-4xl py-8">
+    <div className="container mx-auto max-w-4xl px-4 py-6 lg:px-8 lg:py-8">
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
