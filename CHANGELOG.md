@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Next.js 16 Proxy Migration (2025-11-06)
+- 🔄 Migrated from middleware.ts to proxy.ts following Next.js 16 deprecation
+- ⚠️ Edge Runtime not supported in proxy.ts - authentication moved to Server Components
+- ✨ Created server-side auth utilities (src/lib/auth/server-auth.ts)
+- 📚 Added comprehensive migration documentation (docs/development/NEXT16_PROXY_MIGRATION.md)
+- 🔧 Simplified proxy.ts to handle theme injection and request logging only
+- ✅ Authentication now handled via requireAuth() in Server Components and layouts
+- ✅ Removed middleware.ts deprecation warning from build output
+- 📝 Preserved middleware.ts.backup for reference during transition period
+- 🚀 Ready for Sprint 2 authentication implementation (2025-11-17)
+
 ### Next.js 16 Upgrade & Build Fix (2025-11-06)
 - ⬆️ Upgraded Next.js from 15.5.6 to 16.0.1 to fix production build error (Issue #69)
 - 🔧 Migrated webpack externals configuration to Turbopack resolveAlias pattern
