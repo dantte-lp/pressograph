@@ -10,6 +10,9 @@ import { authOptions } from './config';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
+// Re-export authOptions for use in other modules
+export { authOptions };
+
 /**
  * Get the current user session (cached per request)
  */
