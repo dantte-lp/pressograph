@@ -190,6 +190,26 @@ Pressograph is undergoing a major architectural transformation from a Vite-based
 
 ---
 
+## Page Structure Architecture
+
+For detailed information about page responsibilities, functionality mapping, and the decision to replace `/history` with `/dashboard`, `/projects`, and `/tests`, see:
+
+**[Pages Structure and Functionality](../development/PAGES_STRUCTURE_AND_FUNCTIONALITY.md)** ⭐ **CRITICAL REFERENCE**
+
+### Quick Reference: Page Mapping
+
+| Page | Primary Function | Replaces v1.0 Route | Implementation Sprint |
+|------|-----------------|---------------------|----------------------|
+| `/dashboard` | Overview, statistics, quick access | ❌ New feature | Sprint 2 |
+| `/projects` | Project management (CRUD) | ❌ New feature | Sprint 3 |
+| `/tests` | Test history and graph management | ✅ `/history` | Sprint 4 |
+| `/profile` | User settings and preferences | `/profile` | Sprint 5 |
+| `/admin` | Admin dashboard (users, system) | `/admin` (stub) | Sprints 3-4 |
+
+**Key Decision:** The old `/history` route (1,224 lines) is functionally replaced by the combination of `/dashboard` + `/projects` + `/tests`, with `/tests` containing all the core history functionality plus significant enhancements.
+
+---
+
 ## Sprint Overview
 
 | Sprint | Dates | Goal | Milestone | Status | Issues | Story Points |
@@ -197,8 +217,8 @@ Pressograph is undergoing a major architectural transformation from a Vite-based
 | **Sprint 01** | 2025-11-03 to 2025-11-17 | Foundation Setup | [Milestone #9](https://github.com/dantte-lp/pressograph/milestone/9) | 🚧 In Progress | #35, #36, #37, #38, #39, #40-#48 | 22 SP |
 | **Sprint 02** | 2025-11-17 to 2025-12-01 | Authentication & Core UI | [Milestone #10](https://github.com/dantte-lp/pressograph/milestone/10) | ⏸️ Planned | TBD | 40 SP |
 | **Infrastructure** | 2025-11-03 to 2025-11-10 | Security Hardening | [Milestone #17](https://github.com/dantte-lp/pressograph/milestone/17) | ⏸️ Partial | #51-#58 | 21 SP (15 complete) |
-| **Sprint 03** | 2025-12-02 to 2025-12-15 | Admin Dashboard Backend | Planned | ⏸️ Not Started | TBD | 40 SP |
-| **Sprint 04** | 2025-12-16 to 2025-12-29 | Admin Dashboard Frontend | Planned | ⏸️ Not Started | TBD | 42 SP |
+| **Sprint 03** | 2025-12-02 to 2025-12-15 | Projects Page + Tests API | Planned | ⏸️ Not Started | TBD | 31 SP |
+| **Sprint 04** | 2025-12-16 to 2025-12-29 | Tests Page (History Replacement) | Planned | ⏸️ Not Started | TBD | 34 SP |
 | **Sprint 05** | 2025-12-30 to 2026-01-12 | Profile & Testing | Planned | ⏸️ Not Started | TBD | 40 SP |
 | **Sprint 06** | 2026-01-13 to 2026-01-26 | CI/CD & Documentation | Planned | ⏸️ Not Started | TBD | 40 SP |
 
@@ -528,48 +548,89 @@ Configure Traefik routing for Drizzle Studio with secure HTTPS access at dbdev-p
 
 ---
 
-### Sprint 03: Admin Dashboard Backend
+### Sprint 03: Projects Page + Tests API
 **Duration:** 2025-12-02 to 2025-12-15 (2 weeks)
 **Milestone:** To be created
-**Sprint Goal:** Complete admin dashboard backend API endpoints
+**Sprint Goal:** Implement project management and test history backend API
 **Status:** ⏸️ Not Started
+
+**See:** [Pages Structure and Functionality](../development/PAGES_STRUCTURE_AND_FUNCTIONALITY.md) - Sprint 3 section
 
 #### Planned Tasks
 
+**Projects Page (13 SP):**
+
 | ID | Task | Priority | Estimate | Status |
 |----|------|----------|----------|--------|
-| S03-T001 | Dashboard statistics endpoint | P1 | 5 SP | 📝 Need to create issue |
-| S03-T002 | User management CRUD endpoints | P0 | 8 SP | 📝 Need to create issue |
-| S03-T003 | Graph management endpoints | P1 | 5 SP | 📝 Need to create issue |
-| S03-T004 | Analytics endpoints | P1 | 8 SP | 📝 Need to create issue |
-| S03-T005 | System health endpoints | P1 | 5 SP | 📝 Need to create issue |
-| S03-T006 | Integration tests for admin API | P1 | 5 SP | 📝 Need to create issue |
-| S03-T007 | Admin role middleware | P0 | 2 SP | 📝 Need to create issue |
-| S03-T008 | OpenAPI documentation | P2 | 2 SP | 📝 Need to create issue |
+| S03-T001 | Project list/grid view | P1 | 5 SP | 📝 Need to create issue |
+| S03-T002 | Create project modal | P1 | 3 SP | 📝 Need to create issue |
+| S03-T003 | Edit project modal | P1 | 2 SP | 📝 Need to create issue |
+| S03-T004 | Delete/archive project | P1 | 2 SP | 📝 Need to create issue |
+| S03-T005 | Project settings | P2 | 1 SP | 📝 Need to create issue |
 
-**Total:** 40 SP
+**Tests Backend API (13 SP):**
+
+| ID | Task | Priority | Estimate | Status |
+|----|------|----------|----------|--------|
+| S03-T006 | List tests endpoint with filters | P0 | 5 SP | 📝 Need to create issue |
+| S03-T007 | Get test detail endpoint | P1 | 2 SP | 📝 Need to create issue |
+| S03-T008 | Create/update test endpoints | P0 | 3 SP | 📝 Need to create issue |
+| S03-T009 | Delete test endpoint | P1 | 1 SP | 📝 Need to create issue |
+| S03-T010 | Search tests endpoint | P1 | 2 SP | 📝 Need to create issue |
+
+**File Upload API (5 SP):**
+
+| ID | Task | Priority | Estimate | Status |
+|----|------|----------|----------|--------|
+| S03-T011 | Upload graph file endpoint | P1 | 2 SP | 📝 Need to create issue |
+| S03-T012 | Download graph endpoint | P0 | 2 SP | 📝 Need to create issue |
+| S03-T013 | Delete file endpoint | P1 | 1 SP | 📝 Need to create issue |
+
+**Total:** 31 SP
 
 ---
 
-### Sprint 04: Admin Dashboard Frontend
+### Sprint 04: Tests Page (History Replacement)
 **Duration:** 2025-12-16 to 2025-12-29 (2 weeks)
 **Milestone:** To be created
-**Sprint Goal:** Build admin dashboard UI with charts and tables
+**Sprint Goal:** Complete `/tests` page to replace v1.0 `/history` functionality
 **Status:** ⏸️ Not Started
+
+**See:** [Pages Structure and Functionality](../development/PAGES_STRUCTURE_AND_FUNCTIONALITY.md) - Sprint 4 section
+
+**Note:** This sprint implements the replacement for the old 1,224-line History page from v1.0.
 
 #### Planned Tasks
 
+**Tests List Page (13 SP):**
+
 | ID | Task | Priority | Estimate | Status |
 |----|------|----------|----------|--------|
-| S04-T001 | Admin dashboard layout with tabs | P1 | 5 SP | 📝 Need to create issue |
-| S04-T002 | Overview tab (stats, charts) | P1 | 8 SP | 📝 Need to create issue |
-| S04-T003 | Users management tab | P0 | 8 SP | 📝 Need to create issue |
-| S04-T004 | Graphs management tab | P1 | 5 SP | 📝 Need to create issue |
-| S04-T005 | Analytics tab | P1 | 8 SP | 📝 Need to create issue |
-| S04-T006 | System tab (health, logs) | P1 | 5 SP | 📝 Need to create issue |
-| S04-T007 | Real-time updates (polling) | P2 | 3 SP | 📝 Need to create issue |
+| S04-T001 | Table view with all columns | P0 | 5 SP | 📝 Need to create issue |
+| S04-T002 | Pagination component | P1 | 2 SP | 📝 Need to create issue |
+| S04-T003 | Search and filter sidebar | P0 | 4 SP | 📝 Need to create issue |
+| S04-T004 | Empty states (no data, no results) | P1 | 1 SP | 📝 Need to create issue |
+| S04-T005 | Batch selection checkboxes | P2 | 1 SP | 📝 Need to create issue |
 
-**Total:** 42 SP (slightly over capacity, may defer S04-T007)
+**Test Actions (13 SP):**
+
+| ID | Task | Priority | Estimate | Status |
+|----|------|----------|----------|--------|
+| S04-T006 | Preview modal (test details) | P0 | 3 SP | 📝 Need to create issue |
+| S04-T007 | Download graph action | P0 | 2 SP | 📝 Need to create issue |
+| S04-T008 | Regenerate graph modal | P1 | 4 SP | 📝 Need to create issue |
+| S04-T009 | Share link modal (with expiry) | P1 | 3 SP | 📝 Need to create issue |
+| S04-T010 | Delete confirmation dialog | P1 | 1 SP | 📝 Need to create issue |
+
+**Test Runs (8 SP):**
+
+| ID | Task | Priority | Estimate | Status |
+|----|------|----------|----------|--------|
+| S04-T011 | Test runs list page | P1 | 4 SP | 📝 Need to create issue |
+| S04-T012 | Run detail page | P2 | 3 SP | 📝 Need to create issue |
+| S04-T013 | Run test action (execute) | P1 | 1 SP | 📝 Need to create issue |
+
+**Total:** 34 SP
 
 ---
 

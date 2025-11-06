@@ -417,6 +417,72 @@ The migration from v1.0 to v2.0 is well-planned for most features, but the **His
 
 ---
 
-**Document Version:** 1.0
+## Final Decision (2025-11-06)
+
+After comprehensive analysis of the old v1.0 `/history` page (1,224 lines) and the new v2.0 database schema, the team has made the following architectural decision:
+
+### Decision Summary
+
+**The `/history` route is functionally replaced by the combination of three pages:**
+
+1. **`/dashboard`** (Sprint 2) - Overview, statistics, quick access
+2. **`/projects`** (Sprint 3) - Project management and organization
+3. **`/tests`** (Sprint 4) - Complete test history and graph management
+
+**Key Points:**
+
+- **`/tests` is the spiritual successor to `/history`** - It contains all core functionality plus significant enhancements
+- **Project-based organization** - Tests are now grouped by projects for better scalability
+- **Enhanced capabilities** - Batch operations, tags, advanced search, share analytics, QR codes
+- **Database alignment** - The new schema (organizations → projects → tests → runs → files) naturally maps to this three-tier structure
+
+### What We Preserve from v1.0 `/history`
+
+✅ All search and filter capabilities (test number, format, date)
+✅ All per-graph actions (view, download, regenerate, share, delete)
+✅ Comment editing with enhanced Markdown support
+✅ Modal previews with test settings
+✅ Status indicators (expanded from 3 to 6 statuses)
+✅ Empty state handling
+✅ Pagination and sorting
+
+### What We Enhance in v2.0 `/tests`
+
+🆕 Project-based filtering and organization
+🆕 Batch operations (download as ZIP, batch delete, bulk tagging)
+🆕 Advanced search with date range picker
+🆕 Tags system for categorization
+🆕 Share links with expiration dates
+🆕 QR code generation for sharing
+🆕 Share analytics (views, downloads)
+🆕 Test runs tracking (multiple executions per test)
+🆕 Duplicate test functionality
+🆕 Edit test configuration after creation
+
+### Implementation Schedule
+
+| Sprint | Page | Story Points | Status |
+|--------|------|--------------|--------|
+| Sprint 2 (Nov 17 - Dec 1) | `/dashboard` | 17 SP | Planned |
+| Sprint 3 (Dec 2 - Dec 15) | `/projects` + Tests API | 31 SP | Planned |
+| Sprint 4 (Dec 16 - Dec 29) | `/tests` (History replacement) | 34 SP | Planned |
+
+### Documentation
+
+For complete details on the page structure, functionality mapping, user journeys, and implementation roadmap, see:
+
+**[Pages Structure and Functionality](../development/PAGES_STRUCTURE_AND_FUNCTIONALITY.md)** ⭐
+
+This document provides:
+- Detailed functional comparison matrix (v1.0 vs v2.0)
+- User journey analysis for common scenarios
+- Database schema alignment
+- Component reusability strategy
+- Migration notes from v1.0 to v2.0
+
+---
+
+**Document Version:** 2.0
 **Last Updated:** 2025-11-06
+**Status:** Decision Finalized
 **Next Review:** Sprint 2 planning (2025-11-17)
