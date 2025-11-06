@@ -58,38 +58,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Authentication Best Practices Study (2025-11-07)
 - **Completed:** Comprehensive study of Next.js 16 authentication patterns
-  - **Resources Reviewed:**
+  - **Resources Reviewed (Initial Study):**
     1. Next.js Official Authentication Guide (App Router patterns)
     2. NextAuth.js Secure Authentication Guide (Strapi)
     3. NextAuth Issue #13302 (Next.js 16 compatibility)
     4. PeerDB PR #3634 (Real-world Next.js 16 + React 19 upgrade)
     5. PeerDB Authentication Implementation Commit
+  - **Additional Resources Reviewed:**
+    6. Next.js Server and Client Components Guide (Component boundaries)
+    7. NextAuth Issue #7760 (SessionProvider unnecessary in App Router)
+    8. NextAuth Issue #5647 Comment (Component separation pattern)
+    9. NextAuth Discussion #11093 (Next.js 15/16 + React 19 compatibility)
   - **Key Findings:**
     - Server Components preferred for auth logic
     - Client Components limited to UI interactions
     - Data Access Layer (DAL) pattern recommended
     - NextAuth 4.24.13 works with Next.js 16 (unofficial support)
     - React 19 requires async params handling with `React.use()`
+    - **CRITICAL:** SessionProvider should be unnecessary in most App Router cases
+    - **CRITICAL:** Prefer `getServerSession()` in Server Components over SessionProvider
+    - **CRITICAL:** Next.js 15/16 has stricter RSC enforcement (prevents context during prerender)
+  - **Updated Understanding:**
+    - SessionProvider only needed for client components using `useSession()` hook
+    - Server Components should use `getServerSession(authOptions)` directly
+    - Must separate SessionProvider into dedicated client boundary wrapper
+    - Props passed to Client Components must be serializable
+    - Context providers cannot run during server prerendering (architectural change)
   - **Current Implementation Assessment:**
     - ✅ Strong: Type safety, bcrypt hashing, JWT strategy
     - ✅ Strong: Custom session types, callback implementations
     - ⚠️ Improvement: Need Data Access Layer (DAL)
     - ⚠️ Improvement: Need middleware for route protection
     - ⚠️ Improvement: Consider React 19 async patterns
+    - ⚠️ Improvement: Replace useSession() with getServerSession() in Server Components
+    - ⚠️ Improvement: Audit all client/server component boundaries
   - **Recommendations:**
-    - Priority 1: Implement `verifySession()` utility in DAL
-    - Priority 2: Add middleware for protected routes
-    - Priority 3: Review async params in Server Components
-    - Priority 4: Consider OAuth providers (GitHub, Google)
+    - Priority 1: Implement `verifySession()` utility in DAL using `getServerSession()`
+    - Priority 2: Create separate AuthProvider.tsx with "use client" directive
+    - Priority 3: Replace useSession() with getServerSession() in Server Components
+    - Priority 4: Add middleware for protected routes
+    - Priority 5: Audit all components for proper client/server boundaries
+    - Priority 6: Add server-only package to auth utilities
+    - Priority 7: Review async params in Server Components
+    - Priority 8: Consider OAuth providers (GitHub, Google)
   - **Documentation:**
-    - Created comprehensive study findings document
+    - Created comprehensive study findings document (318 lines)
+    - **Updated:** Added "Additional Resources Study" section (335+ new lines)
     - Includes security best practices
-    - Provides implementation examples
+    - Provides implementation examples with updated patterns
     - Lists action items with priorities
-  - **Files Created:**
-    - `/opt/projects/repositories/pressograph/docs/authentication/AUTH_STUDY_FINDINGS.md`
-  - **Status:** ✅ Study completed, implementation recommendations documented
-  - **Next Steps:** Implement Data Access Layer and middleware (future sprint)
+    - **NEW:** Migration checklist for proper Server/Client boundaries
+    - **NEW:** Updated SessionProvider pattern for Next.js 15/16 + React 19
+  - **Files Created/Updated:**
+    - `/opt/projects/repositories/pressograph/docs/authentication/AUTH_STUDY_FINDINGS.md` (653 lines)
+  - **Status:** ✅ Study completed with additional resources, comprehensive recommendations documented
+  - **Next Steps:** Implement Data Access Layer and proper component boundaries (future sprint)
 
 ### Bug Fixes
 
