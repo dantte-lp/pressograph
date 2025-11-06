@@ -310,9 +310,344 @@ const params = await context.params;
 
 ---
 
+## Additional Resources Study (2025-11-07)
+
+### Resource 1: Next.js Server and Client Components Guide
+
+**URL:** https://nextjs.org/docs/app/getting-started/server-and-client-components
+
+#### Key Findings
+
+**Component Type Selection:**
+- **Server Components (default):** Render on server only, can access databases/APIs directly, reduce client JS bundle
+- **Client Components (`'use client'`):** Required for state/hooks (useState, useEffect), event handlers (onClick), browser APIs
+
+**Critical Authentication Implications:**
+- Server Components can fetch data directly, ideal for session verification
+- Props passed to Client Components must be serializable by React (no functions, class instances)
+- Context providers (like SessionProvider) must be Client Components
+
+**Composition Patterns:**
+1. **Interleaving Pattern:** Pass Server Components as children to Client Components using slots
+   - Example: Wrapping server-rendered content inside client-controlled Modal
+   - Useful for SessionProvider wrapping server-rendered protected pages
+
+2. **Context Provider Pattern:**
+   - Create Client Component wrapper for context providers
+   - Import wrapper into Server Components
+   - Allows Server Components to render providers while Client Components consume context
+
+**Best Practices for Authentication:**
+- Mark only interactive components with `'use client'`, keep auth logic in Server Components
+- Use `server-only` package to prevent accidental server code (secrets, DB) execution on client
+- Place providers as deep as possible in component tree to optimize static parts
+
+**Common Pitfall:**
+"JavaScript modules can be shared between both Server and Client Components. This means it's possible to accidentally import server-only code into the client."
+
+**Recommendation:** Use separate files for server-side auth utilities (with `server-only` import) vs client-side hooks.
+
+---
+
+### Resource 2: NextAuth Issue #7760
+
+**URL:** https://github.com/nextauthjs/next-auth/issues/7760
+
+#### Problem Description
+Developers migrating from Pages Router to App Router encountered difficulty implementing `SessionProvider` in `/app/layout.js`. The approach of extracting session from `params` failed.
+
+#### Official Maintainer Response
+**Critical Finding:** "Using SessionProvider should be unnecessary in most cases in App Router"
+- Maintainers directed users to PR #7443 for future direction
+- App Router patterns differ significantly from Pages Router
+
+#### Recommended Solutions
+
+**1. Server-Side Approach (Preferred):**
+```typescript
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth/config'
+
+// In Server Component
+const session = await getServerSession(authOptions)
+```
+This approach retrieves session server-side for use in Server Components.
+
+**2. Client Component Pattern (When Needed):**
+For interactive components requiring session access:
+```typescript
+// Wrapper component with 'use client'
+'use client'
+import { SessionProvider } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+
+export function ClientWrapper({ children }) {
+  return <SessionProvider>{children}</SessionProvider>
+}
+```
+
+**Implementation Example:**
+Working pattern for Material UI `AccountMenu` (client component):
+- Mark parent as client component
+- Import SessionProvider
+- Use useSession() hook in child components to access user data
+
+**Status:** Issue resolved/closed. SessionProvider is optional in App Router.
+
+**Our Implementation Impact:**
+- We should prioritize `getServerSession()` in Server Components
+- Only use SessionProvider wrapper for client components that need `useSession()` hook
+- Consider removing SessionProvider from root layout if not needed
+
+---
+
+### Resource 3: NextAuth Issue #5647 (Comment #1291898265)
+
+**URL:** https://github.com/nextauthjs/next-auth/issues/5647#issuecomment-1291898265
+
+#### Context
+Issue requested support for Next.js 13's `app` directory with NextAuth.js, specifically a hook pattern like `const session = use(getSession())`.
+
+#### Recommended Pattern (Component Separation)
+
+**Problem:** Marking layout itself as client component loses Server Component benefits.
+
+**Solution:** Wrap `SessionProvider` in separate client component:
+
+**AuthContext.tsx (Client Component):**
+```typescript
+"use client";
+import { SessionProvider } from "next-auth/react";
+
+export default function AuthContext({ children }: { children: React.ReactNode }) {
+  return <SessionProvider>{children}</SessionProvider>;
+}
+```
+
+**layout.tsx (Server Component):**
+```typescript
+import AuthContext from "./AuthContext";
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <AuthContext>{children}</AuthContext>;
+}
+```
+
+#### Key Recommendations
+
+1. **Component Separation:** Keep layouts as Server Components; isolate client-side context providers
+2. **Use Standard Hooks:** Leverage `useSession()` in client components instead of `use(getSession())`
+3. **Avoid Re-renders:** Direct `use(getSession())` causes multiple re-renders due to internal fetch calls
+
+**Next.js Integration:**
+This pattern aligns with Next.js 13 guidance on "Importing Server Components into Client Components," maintaining SSR benefits while properly scoping React Context to client boundaries.
+
+**Limitation:**
+The original `use(getSession())` pattern proved problematic due to unnecessary re-renders from internal fetch operations.
+
+**Our Implementation Status:**
+- ✅ We already use similar pattern with separate provider components
+- ⚠️ Should verify we're not causing unnecessary re-renders
+- ✅ Layouts remain Server Components
+
+---
+
+### Resource 4: NextAuth Discussion #11093
+
+**URL:** https://github.com/nextauthjs/next-auth/discussions/11093
+
+#### Main Topic
+Error "React Context is unavailable in Server Components" when using NextAuth's `SessionProvider` in Next.js root layouts, particularly with **Next.js 15 and React 19**.
+
+**Critical:** This is highly relevant to our Next.js 16 + React 19 stack.
+
+#### Best Practices
+
+1. **Separate client-side providers into dedicated wrapper components**
+2. **Mark provider components explicitly with `"use client"` directive**
+3. **Keep server components (root layout) free from context providers**
+4. **Structure hierarchy to isolate client-specific functionality**
+
+#### Recommended Pattern
+
+**Most Effective Approach:**
+```typescript
+// components/SessionProvider.tsx
+"use client";
+import { SessionProvider as Provider } from "next-auth/react";
+
+export function SessionProvider({ children }: { children: React.ReactNode }) {
+  return <Provider>{children}</Provider>;
+}
+```
+
+Then import this wrapper into root layout as a Server Component wrapper.
+
+#### Common Pitfalls
+
+1. **Placing SessionProvider directly in server-side root layouts**
+2. **Mixing server and client component contexts without proper boundaries**
+3. **Using context hooks in components that render during server prerendering**
+4. **Not accounting for Next.js 15's stricter server component enforcement**
+
+#### Recommended Solutions
+
+1. **Create `ClientProviders` wrapper marked with `"use client"`**
+2. **Wrap children with provider component in root layout**
+3. **Consider downgrading to Next.js 14.2 with next-auth beta as interim solution** (not recommended for us)
+4. **Ensure all context-dependent hooks remain within properly marked client components**
+
+#### Next.js 15 / React 19 Relation
+
+**Critical Finding:** This error became prominent with Next.js 15's stricter React Server Component (RSC) enforcement, which **prevents context usage during server prerendering**.
+
+This is a fundamental architectural change affecting authentication provider patterns.
+
+**Impact on Pressograph (Next.js 16 + React 19):**
+- We MUST use the client provider wrapper pattern
+- Direct SessionProvider in layout.tsx will fail
+- React 19 continues Next.js 15's strict RSC enforcement
+
+---
+
+## Updated Recommendations Based on Additional Study
+
+### 1. SessionProvider Pattern (CRITICAL UPDATE)
+
+**Previous Understanding:** Use SessionProvider in layouts with client component boundary.
+
+**New Understanding (Based on Additional Resources):**
+- SessionProvider should be **unnecessary in most App Router cases**
+- Prefer `getServerSession()` in Server Components
+- Only use SessionProvider wrapper for specific client components needing `useSession()` hook
+
+**Updated Pattern:**
+
+```typescript
+// src/components/providers/AuthProvider.tsx
+"use client";
+import { SessionProvider } from "next-auth/react";
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return <SessionProvider>{children}</SessionProvider>;
+}
+
+// src/app/layout.tsx (Server Component)
+import { AuthProvider } from '@/components/providers/AuthProvider';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
+    </html>
+  );
+}
+
+// src/app/dashboard/page.tsx (Server Component)
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config';
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect('/auth/login');
+  }
+
+  return <div>Welcome {session.user.name}</div>;
+}
+
+// src/components/UserMenu.tsx (Client Component - only when needed)
+'use client';
+import { useSession } from 'next-auth/react';
+
+export function UserMenu() {
+  const { data: session } = useSession();
+  return <div>{session?.user?.name}</div>;
+}
+```
+
+### 2. Component Boundary Strategy (NEW)
+
+**Server Components Should:**
+- Handle session verification with `getServerSession()`
+- Perform role-based access control
+- Fetch data with authentication checks
+- Implement Data Access Layer (DAL) logic
+
+**Client Components Should:**
+- Be limited to UI interactions requiring `useSession()` hook
+- Use SessionProvider context ONLY where absolutely necessary
+- Handle user-triggered events (logout, profile updates)
+
+**Critical Rule:** Keep layouts as Server Components, isolate providers in separate client boundary files.
+
+### 3. Next.js 15/16 + React 19 Compatibility (CRITICAL)
+
+**New Finding:** Next.js 15 introduced stricter RSC enforcement that continues in Next.js 16:
+- Context providers CANNOT run during server prerendering
+- SessionProvider in root layout will fail without proper client boundary
+- This is an architectural change, not a bug
+
+**Action Required:**
+1. ✅ Verify all provider wrappers have explicit `"use client"` directive
+2. ✅ Ensure root layout remains a Server Component
+3. ✅ Test with React 19 strict mode enabled
+4. ⚠️ Audit all components using `useSession()` to ensure they're client components
+
+### 4. Data Fetching Pattern (UPDATED)
+
+**Previous Pattern:** Use SessionProvider everywhere.
+
+**New Pattern (More Efficient):**
+
+```typescript
+// Server Component (Preferred)
+async function ProtectedPage() {
+  const session = await getServerSession(authOptions);
+  // Direct database/API access with session
+  const data = await fetchUserData(session.user.id);
+  return <DataDisplay data={data} />;
+}
+
+// Client Component (Only when interactive)
+'use client';
+function InteractiveWidget() {
+  const { data: session } = useSession();
+  // Client-side interactivity
+  return <button onClick={handleClick}>{session?.user?.name}</button>;
+}
+```
+
+**Benefits:**
+- Reduces client-side JavaScript bundle
+- Improves performance (no client-side session fetch)
+- Maintains Server Component benefits (SEO, streaming)
+
+### 5. Migration Checklist (NEW)
+
+Based on additional resources, our authentication implementation should:
+
+- [ ] **Create separate AuthProvider.tsx with "use client"**
+- [ ] **Keep root layout.tsx as Server Component**
+- [ ] **Replace useSession() with getServerSession() in Server Components**
+- [ ] **Audit all components for proper client/server boundaries**
+- [ ] **Add server-only package to auth utilities**
+- [ ] **Implement DAL with getServerSession() pattern**
+- [ ] **Test with React 19 strict mode**
+- [ ] **Verify no context providers in server component tree**
+
+---
+
 ## References
 
 - [Next.js Authentication Guide](https://nextjs.org/docs/app/guides/authentication)
 - [NextAuth.js Documentation](https://next-auth.js.org/)
 - [NextAuth Issue #13302](https://github.com/nextauthjs/next-auth/issues/13302)
 - [PeerDB PR #3634](https://github.com/PeerDB-io/peerdb/pull/3634)
+- [Next.js Server and Client Components Guide](https://nextjs.org/docs/app/getting-started/server-and-client-components)
+- [NextAuth Issue #7760](https://github.com/nextauthjs/next-auth/issues/7760)
+- [NextAuth Issue #5647 (Comment #1291898265)](https://github.com/nextauthjs/next-auth/issues/5647#issuecomment-1291898265)
+- [NextAuth Discussion #11093](https://github.com/nextauthjs/next-auth/discussions/11093)
