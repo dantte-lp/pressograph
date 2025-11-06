@@ -13,6 +13,13 @@
 - Полная интеграция NextAuth v4 с Drizzle ORM
 - Theme Provider с server-side рендерингом
 
+### Added
+- ✨ Valkey cache integration with Redis client (Issue #36)
+- ✨ Cache utility functions for user preferences and themes
+- ✨ Connection pooling and error handling for cache operations
+- ✨ Three-tier caching support (Cookie → Valkey → Database)
+- ✨ Comprehensive integration tests for cache operations
+
 ### Changed
 - 🔄 Authentication approach: Removed Traefik-level BasicAuth in favor of application-level NextAuth authentication (Issue #45 closed)
 
