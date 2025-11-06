@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🐛 Theme toggle dropdown rendering issue
 - 🐛 Test theme page 500 error
+- 🐛 TypeScript JSX compilation error in theme script
+
+### Documentation
+- 📚 Sprint 1 completion status updated with retrospective
+- 📚 Sprint 2 planning document created
 
 ---
 
