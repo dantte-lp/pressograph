@@ -9,6 +9,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### User Profile Page (Issue #78) - 2025-11-07
+- **Implemented:** Comprehensive user profile management with security features
+  - **Components Created:**
+    - `ProfileForm` - Edit name and email with validation (`src/components/profile/profile-form.tsx`)
+    - `PasswordChangeForm` - Secure password change with requirements (`src/components/profile/password-change-form.tsx`)
+    - Profile page with both forms (`src/app/(dashboard)/profile/page.tsx`)
+  - **API Routes:**
+    - `GET/PATCH /api/profile` - Profile information management
+    - `POST /api/profile/password` - Secure password change endpoint
+  - **Features:**
+    - Display user information (username, email, name, role, dates)
+    - Edit profile form with client/server validation
+    - Password change with security requirements:
+      - Minimum 8 characters
+      - Uppercase, lowercase, and numbers required
+      - Current password verification
+      - Password confirmation matching
+      - Visual strength indicators
+    - Password visibility toggles
+    - Email uniqueness validation
+    - Toast notifications for all actions
+    - Loading states during operations
+    - Dark mode support throughout
+    - Accessible forms with ARIA attributes
+  - **Security:**
+    - Server-side authentication checks
+    - Password hashing with bcryptjs
+    - Current password verification before change
+    - Prevention of password reuse
+    - Email validation and uniqueness check
+  - **Integration:**
+    - Profile link added to sidebar navigation
+    - Protected route configuration updated
+    - NextAuth types extended (createdAt, lastLoginAt)
+    - bcryptjs dependency added
+  - **Files Created:**
+    - `src/app/(dashboard)/profile/page.tsx`
+    - `src/app/api/profile/route.ts`
+    - `src/app/api/profile/password/route.ts`
+    - `src/components/profile/profile-form.tsx`
+    - `src/components/profile/password-change-form.tsx`
+  - **Files Modified:**
+    - `src/components/layout/sidebar.tsx` - Added profile link
+    - `src/lib/auth/config.ts` - Extended session types
+    - `src/lib/auth/server-auth.ts` - Added to protected routes
+    - `package.json` - Added bcryptjs
+  - **Status:** ✅ Completed (Issue #78 closed - 5 SP)
+
+#### Settings Page (Issue #79) - 2025-11-07
+- **Implemented:** Comprehensive application settings with tabbed interface
+  - **Components Created:**
+    - `AppearanceSettings` - Theme and language preferences (`src/components/settings/appearance-settings.tsx`)
+    - `NotificationSettings` - Email and in-app notifications (`src/components/settings/notification-settings.tsx`)
+    - `DisplaySettings` - Graph and UI preferences (`src/components/settings/display-settings.tsx`)
+    - `Tabs` - Radix UI tabs component (`src/components/ui/tabs.tsx`)
+    - Settings page with three tabs (`src/app/(dashboard)/settings/page.tsx`)
+  - **API Routes:**
+    - `GET/PATCH /api/preferences` - User preferences management
+  - **Appearance Settings:**
+    - Visual theme selector (Light/Dark/System) with icons
+    - Language selection (English/Russian)
+    - Instant theme application with SSR cookie support
+  - **Notification Settings:**
+    - Email notifications toggle
+    - In-app notifications toggle
+    - Clear descriptions for each type
+    - ARIA-compliant toggle switches
+  - **Display Settings:**
+    - Graph export format selection (PNG/SVG/PDF)
+    - Graph resolution slider (1x-4x)
+    - Sidebar collapse preference
+    - Visual format cards with icons
+  - **Features:**
+    - Auto-save on every change
+    - Toast notifications for confirmations
+    - Loading states while fetching/saving
+    - Default preferences for new users
+    - Database persistence via userPreferences table
+    - Responsive design for all screens
+    - Dark mode support throughout
+    - Accessible with ARIA attributes
+  - **Database Integration:**
+    - Uses existing `userPreferences` table
+    - Fields: themePreference, languagePreference, sidebarCollapsed, graphDefaultFormat, graphDefaultResolution, emailNotifications, inAppNotifications
+  - **Files Created:**
+    - `src/app/(dashboard)/settings/page.tsx`
+    - `src/app/api/preferences/route.ts`
+    - `src/components/settings/appearance-settings.tsx`
+    - `src/components/settings/notification-settings.tsx`
+    - `src/components/settings/display-settings.tsx`
+    - `src/components/ui/tabs.tsx`
+  - **Status:** ✅ Completed (Issue #79 closed - 4 SP)
+
 #### Toast Notification System (Issue #80) - 2025-11-07
 - **Implemented:** Professional toast notification system using sonner@2.0.7
   - **Components Created:**
