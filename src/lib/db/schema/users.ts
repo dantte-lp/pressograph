@@ -17,6 +17,7 @@ export const users = pgTable(
     image: varchar("image", { length: 512 }),
 
     // Credentials authentication
+    username: varchar("username", { length: 50 }).notNull().unique(), // For login authentication
     password: varchar("password", { length: 255 }), // Nullable for OAuth-only users (future migration)
 
     // Role-based access control
@@ -37,6 +38,7 @@ export const users = pgTable(
   },
   (table) => ({
     emailIdx: index("users_email_idx").on(table.email),
+    usernameIdx: index("users_username_idx").on(table.username),
     orgIdIdx: index("users_org_id_idx").on(table.organizationId),
     roleIdx: index("users_role_idx").on(table.role),
     isActiveIdx: index("users_is_active_idx").on(table.isActive),

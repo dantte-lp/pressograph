@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Authentication - Username-based Login Implementation (2025-11-07)
+- **BREAKING CHANGE:** Authentication now uses username instead of email for login
+  - **Added:** Username field to users table (varchar 50, NOT NULL, UNIQUE)
+  - **Migration:** Existing users automatically assigned usernames from email prefix
+  - **Updated:** CredentialsProvider now accepts username + password (not email)
+  - **Updated:** NextAuth session types to include username field
+  - **Updated:** JWT token to include username
+  - **Updated:** Test credentials script to set username
+  - **Updated:** Database seed script to include username
+  - **Test credentials:**
+    - Username: `testuser` (use this to login)
+    - Password: `Test1234!`
+    - Email: `test@pressograph.dev` (for recovery/notifications only)
+  - **Rationale:** Email should be used only for recovery and notifications, not as login identifier
+  - **Security:** Username stored in lowercase for case-insensitive login
+  - **UX:** Login form now shows "Username" field instead of "Email"
+  - **Database:** Added index on username field for query performance
+  - **Breaking:** Users must now login with username, not email
+
 ### Authentication Strategy Change (2025-11-06)
 - **BREAKING CHANGE:** Migrated from OAuth-only to Credentials Provider authentication
   - **Removed:** GitHub OAuth and Google OAuth providers
@@ -18,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Security:** Last login timestamp tracking
   - **Updated:** Environment variables (.env.local) with Keycloak examples
   - **Created:** Test password script (scripts/set-test-password.ts)
-  - **Test credentials:** test@pressograph.dev / Test1234!
   - **Rationale:** Changed from OAuth-only to support internal authentication with option for future enterprise SSO via Keycloak
   - **Breaking:** Existing OAuth users will need password-based credentials
   - **Issue:** Modified #70 implementation from OAuth to Credentials-based authentication

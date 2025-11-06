@@ -28,6 +28,7 @@ async function seed() {
     // Create test user
     const [user] = await db.insert(users).values({
       id: randomUUID(),
+      username: 'testuser',
       name: 'Test User',
       email: 'test@pressograph.dev',
       emailVerified: new Date(),
@@ -39,7 +40,7 @@ async function seed() {
       updatedAt: new Date(),
     }).returning();
 
-    console.log('✅ Created user:', user.email);
+    console.log('✅ Created user:', user.username, '(' + user.email + ')');
 
     // Create test project
     const [project] = await db.insert(projects).values({
@@ -150,7 +151,9 @@ async function seed() {
     console.log('  - 1 project created');
     console.log('  - 3 pressure tests created');
     console.log('\n🔑 Test Credentials:');
-    console.log('  Email: test@pressograph.dev');
+    console.log('  Username: testuser (use this to log in!)');
+    console.log('  Email: test@pressograph.dev (for recovery only)');
+    console.log('  Password: Use scripts/set-test-password.ts to set');
     console.log('  Organization: test-org');
 
   } catch (error) {

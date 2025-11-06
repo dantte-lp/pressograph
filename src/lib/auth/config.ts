@@ -19,6 +19,7 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
+      username?: string | null;
       email?: string | null;
       name?: string | null;
       image?: string | null;
@@ -27,6 +28,7 @@ declare module 'next-auth' {
   }
 
   interface User {
+    username?: string | null;
     role: string;
   }
 }
@@ -34,6 +36,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
+    username?: string | null;
     role: string;
   }
 }
@@ -47,10 +50,10 @@ export const authOptions: NextAuthOptions = {
       id: 'credentials',
       name: 'Credentials',
       credentials: {
-        email: {
-          label: 'Email',
-          type: 'email',
-          placeholder: 'user@example.com',
+        username: {
+          label: 'Username',
+          type: 'text',
+          placeholder: 'username',
         },
         password: {
           label: 'Password',
@@ -59,21 +62,21 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         // Validate input
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required');
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error('Username and password are required');
         }
 
         try {
-          // Find user in database
+          // Find user in database by username
           const [user] = await db
             .select()
             .from(users)
-            .where(eq(users.email, credentials.email.toLowerCase()))
+            .where(eq(users.username, credentials.username.toLowerCase()))
             .limit(1);
 
           // Check if user exists and has a password
           if (!user || !user.password) {
-            throw new Error('Invalid email or password');
+            throw new Error('Invalid username or password');
           }
 
           // Check if user is active
@@ -88,7 +91,7 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isPasswordValid) {
-            throw new Error('Invalid email or password');
+            throw new Error('Invalid username or password');
           }
 
           // Update last login timestamp
@@ -100,6 +103,7 @@ export const authOptions: NextAuthOptions = {
           // Return user object (password excluded)
           return {
             id: user.id,
+            username: user.username,
             email: user.email,
             name: user.name,
             image: user.image,
@@ -145,6 +149,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id;
+        session.user.username = token.username;
         session.user.role = token.role;
       }
       return session;
@@ -153,6 +158,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.username = user.username;
         token.role = user.role || 'user';
       }
       return token;
