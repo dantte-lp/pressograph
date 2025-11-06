@@ -10,6 +10,9 @@
  */
 
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -23,31 +26,72 @@ export default function Error({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="max-w-md text-center">
-        <h1 className="text-4xl font-bold mb-4">Something went wrong!</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-          An error occurred while processing your request.
-        </p>
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-left">
-            <p className="font-mono text-sm text-red-600 dark:text-red-400">
-              {error.message}
-            </p>
-            {error.digest && (
-              <p className="font-mono text-xs text-gray-500 mt-2">
-                Error ID: {error.digest}
-              </p>
-            )}
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <CardTitle>Application Error</CardTitle>
           </div>
-        )}
-        <button
-          onClick={reset}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Try again
-        </button>
-      </div>
+          <CardDescription>
+            The application encountered an unexpected error
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Error Details (only in development) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="rounded-lg bg-muted p-4">
+              <p className="mb-2 text-sm font-semibold">Error Details:</p>
+              <p className="text-sm text-destructive">{error.message}</p>
+              {error.digest && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Error ID: {error.digest}
+                </p>
+              )}
+              {error.stack && (
+                <pre className="mt-2 max-h-40 overflow-auto text-xs text-muted-foreground">
+                  {error.stack}
+                </pre>
+              )}
+            </div>
+          )}
+
+          {/* Production Error Message */}
+          {process.env.NODE_ENV === 'production' && (
+            <div className="rounded-lg bg-muted p-4">
+              <p className="text-sm">
+                An unexpected error occurred. Our team has been notified.
+              </p>
+              {error.digest && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Reference ID: {error.digest}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={reset} variant="default">
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Try Again
+            </Button>
+            <Button onClick={() => (window.location.href = '/')} variant="outline">
+              <Home className="mr-2 h-4 w-4" />
+              Go Home
+            </Button>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Reload Page
+            </Button>
+          </div>
+
+          {/* Help Text */}
+          <p className="text-sm text-muted-foreground">
+            If this problem persists, please contact support or try again later.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
