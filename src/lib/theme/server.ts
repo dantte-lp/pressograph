@@ -63,8 +63,8 @@ export async function getServerTheme(userId?: string): Promise<Theme> {
       .where(eq(userPreferences.userId, userId))
       .limit(1);
 
-    if (preferences.length > 0 && preferences[0].theme) {
-      const theme = preferences[0].theme as Theme;
+    if (preferences.length > 0 && preferences[0].themePreference) {
+      const theme = preferences[0].themePreference as Theme;
 
       // Update cache and cookie for next time
       await Promise.allSettled([
@@ -132,7 +132,7 @@ export async function initializeUserTheme(
       // Tier 3: Database
       db.insert(userPreferences).values({
         userId,
-        theme,
+        themePreference: theme,
       }).onConflictDoNothing(),
     ]);
   } catch (error) {
@@ -152,7 +152,7 @@ export async function syncTheme(userId: string): Promise<Theme> {
     .where(eq(userPreferences.userId, userId))
     .limit(1);
 
-  const theme = (preferences[0]?.theme as Theme) || 'system';
+  const theme = (preferences[0]?.themePreference as Theme) || 'system';
 
   // Update other tiers
   await Promise.allSettled([

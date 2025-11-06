@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
       .where(eq(userPreferences.userId, userId))
       .limit(1);
 
-    if (preferences.length > 0 && preferences[0].theme) {
-      const theme = preferences[0].theme as Theme;
+    if (preferences.length > 0 && preferences[0].themePreference) {
+      const theme = preferences[0].themePreference as Theme;
 
       // Update cache for next time
       await ThemeCache.set(userId, theme);
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Create default preferences
     await db.insert(userPreferences).values({
       userId,
-      theme: defaultTheme,
+      themePreference: defaultTheme,
     }).onConflictDoNothing();
 
     await ThemeCache.set(userId, defaultTheme);
@@ -127,13 +127,13 @@ export async function POST(request: NextRequest) {
         .insert(userPreferences)
         .values({
           userId,
-          theme,
+          themePreference: theme,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: userPreferences.userId,
           set: {
-            theme,
+            themePreference: theme,
             updatedAt: new Date(),
           },
         }),
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
  * DELETE /api/preferences/theme
  * Reset theme to system default
  */
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -196,7 +196,7 @@ export async function DELETE(request: NextRequest) {
       PreferencesCache.delete(userId),
       db
         .update(userPreferences)
-        .set({ theme: 'system', updatedAt: new Date() })
+        .set({ themePreference: 'system', updatedAt: new Date() })
         .where(eq(userPreferences.userId, userId)),
     ]);
 

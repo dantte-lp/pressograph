@@ -10,9 +10,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-// Theme type definition
-type Theme = 'light' | 'dark' | 'system';
-
 // Protected routes that require authentication
 const PROTECTED_ROUTES = [
   '/dashboard',

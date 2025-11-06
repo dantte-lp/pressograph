@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(gh api:*)",
+      "Bash(pnpm list:*)",
+      "Bash(npm view:*)",
+      "Bash(podman exec pressograph-dev-workspace git log:*)",
+      "Bash(podman exec pressograph-dev-workspace gh issue list:*)",
+      "Bash(podman exec:*)",
+      "Bash(pnpm db:push:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(podman network:*)",
+      "Bash(podman ps:*)",
+      "Bash(podman inspect:*)",
+      "Bash(podman restart:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue comment:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

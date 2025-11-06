@@ -15,6 +15,7 @@
 - **Planned:** 40 SP
 - **Completed:** 0
 - **Remaining:** 40
+- **Additional Tech Debt:** 2 SP (Issue #83 - TypeScript errors)
 
 ## Prerequisites from Sprint 1
 - [x] Next.js 15.5.6 build working
@@ -27,22 +28,23 @@
 ## Sprint Backlog
 
 ### High Priority (Must Have)
-- [ ] Fix Html import build error (1 SP)
-- [ ] Implement Drizzle-compatible auth queries (3 SP)
-- [ ] Theme context provider with persistence (3 SP)
-- [ ] Dark/Light mode toggle component (2 SP)
-- [ ] Base button components with variants (2 SP)
-- [ ] Form input components with validation (3 SP)
-- [ ] Card and container components (2 SP)
-- [ ] Dashboard layout with sidebar (4 SP)
-- [ ] Main navigation component (3 SP)
+- [ ] Fix Html import build error (1 SP) - Issue #69
+- [ ] Fix TypeScript errors in theme and database schema (2 SP) - Issue #83 [TECH DEBT]
+- [ ] Implement Drizzle-compatible auth queries (3 SP) - Issue #70
+- [ ] Theme context provider with persistence (3 SP) - Issue #71
+- [ ] Dark/Light mode toggle component (2 SP) - Issue #72
+- [ ] Base button components with variants (2 SP) - Issue #73
+- [ ] Form input components with validation (3 SP) - Issue #74
+- [ ] Card and container components (2 SP) - Issue #75
+- [ ] Dashboard layout with sidebar (4 SP) - Issue #76
+- [ ] Main navigation component (3 SP) - Issue #77
 
 ### Medium Priority (Should Have)
-- [ ] User profile page with edit capability (5 SP)
-- [ ] Settings page with preferences (4 SP)
-- [ ] Toast notification system (2 SP)
-- [ ] Loading states and skeletons (2 SP)
-- [ ] Error boundary implementation (2 SP)
+- [ ] User profile page with edit capability (5 SP) - Issue #78
+- [ ] Settings page with preferences (4 SP) - Issue #79
+- [ ] Toast notification system (2 SP) - Issue #80
+- [ ] Loading states and skeletons (2 SP) - Issue #81
+- [ ] Error boundary implementation (2 SP) - Issue #82
 
 ### Low Priority (Nice to Have)
 - [ ] Animated page transitions (2 SP)

@@ -11,7 +11,6 @@ async function seed() {
       id: randomUUID(),
       name: 'Test Organization',
       slug: 'test-org',
-      description: 'Sample organization for testing',
       planType: 'pro',
       settings: {
         defaultLanguage: 'en',
@@ -123,27 +122,18 @@ async function seed() {
         testNumber: testConfig.testNumber,
         status: testConfig.status,
         config: {
-          templateId: null,
-          parameters: testConfig.parameters,
-          alerts: {
-            enabled: true,
-            thresholds: {
-              pressure: { min: 90, max: 210 },
-              temperature: { min: 15, max: 30 },
-              leakRate: { max: 0.5 }
-            }
-          },
-          validation: {
-            requireSignature: false,
-            requireWitnessSignature: false,
-            requirePhotographs: false
-          }
+          workingPressure: testConfig.parameters.initialPressure,
+          maxPressure: testConfig.parameters.initialPressure * 1.5,
+          testDuration: testConfig.parameters.duration / 60, // convert minutes to hours
+          temperature: testConfig.parameters.temperatureC,
+          allowablePressureDrop: 0.1,
+          intermediateStages: [],
+          pressureUnit: 'MPa',
+          temperatureUnit: 'C',
+          notes: testConfig.description,
         },
-        results: testConfig.results,
-        metadata: {
-          tags: ['sample', 'test'],
-          customFields: {}
-        },
+        templateType: 'custom',
+        tags: ['sample', 'test'],
         isPublic: false,
         createdBy: user.id,
         createdAt: new Date(),

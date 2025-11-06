@@ -4,9 +4,9 @@
  * Run this script to verify the cache is working correctly
  */
 
-import { getValkeyClient, isValkeyHealthy } from './valkey';
+import { isValkeyHealthy } from './valkey';
 import { get, set, del, invalidate } from './index';
-import { ThemeCache, PreferencesCache, UserDataCache } from './user-preferences';
+import { ThemeCache, PreferencesCache } from './user-preferences';
 
 async function testBasicOperations() {
   console.log('\n=== Testing Basic Cache Operations ===');
