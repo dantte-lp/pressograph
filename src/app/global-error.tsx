@@ -10,15 +10,24 @@
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/error#global-errorjs
  */
 
+import { useEffect } from 'react';
+
 interface GlobalErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-export default function GlobalError({ error: _error, reset }: GlobalErrorProps) {
+export default function GlobalError({ error, reset }: GlobalErrorProps) {
+  useEffect(() => {
+    // Log error to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Global error:', error);
+    }
+  }, [error]);
+
   return (
-    <html lang="en">
-      <body>
+    <html lang="ru">
+      <body suppressHydrationWarning>
         <div style={{
           display: 'flex',
           minHeight: '100vh',
