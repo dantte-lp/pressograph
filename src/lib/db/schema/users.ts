@@ -16,6 +16,9 @@ export const users = pgTable(
     emailVerified: timestamp("email_verified", { mode: "date" }),
     image: varchar("image", { length: 512 }),
 
+    // Credentials authentication
+    password: varchar("password", { length: 255 }), // Nullable for OAuth-only users (future migration)
+
     // Role-based access control
     role: varchar("role", { length: 50 }).default("user").notNull(),
     // 'admin' | 'manager' | 'user' | 'viewer'

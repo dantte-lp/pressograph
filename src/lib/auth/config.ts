@@ -2,14 +2,17 @@
  * NextAuth Configuration
  *
  * Authentication configuration using NextAuth v4 with Drizzle adapter.
- * Supports OAuth providers and database session storage.
+ * Supports credentials-based authentication with bcrypt password hashing.
+ * Keycloak SSO support available for future implementation.
  */
 
 import { NextAuthOptions } from 'next-auth';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import GitHubProvider from 'next-auth/providers/github';
-import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { compare } from 'bcrypt';
 import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 // Extend the built-in session types
 declare module 'next-auth' {
@@ -39,22 +42,86 @@ export const authOptions: NextAuthOptions = {
   adapter: DrizzleAdapter(db) as any,
 
   providers: [
-    // GitHub OAuth
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    // Credentials Provider - Username/Password Authentication
+    CredentialsProvider({
+      id: 'credentials',
+      name: 'Credentials',
+      credentials: {
+        email: {
+          label: 'Email',
+          type: 'email',
+          placeholder: 'user@example.com',
+        },
+        password: {
+          label: 'Password',
+          type: 'password',
+        },
+      },
+      async authorize(credentials) {
+        // Validate input
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password are required');
+        }
+
+        try {
+          // Find user in database
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, credentials.email.toLowerCase()))
+            .limit(1);
+
+          // Check if user exists and has a password
+          if (!user || !user.password) {
+            throw new Error('Invalid email or password');
+          }
+
+          // Check if user is active
+          if (!user.isActive) {
+            throw new Error('Account is disabled. Please contact support.');
+          }
+
+          // Verify password using bcrypt
+          const isPasswordValid = await compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            throw new Error('Invalid email or password');
+          }
+
+          // Update last login timestamp
+          await db
+            .update(users)
+            .set({ lastLoginAt: new Date() })
+            .where(eq(users.id, user.id));
+
+          // Return user object (password excluded)
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error('[Auth Error]', error);
+          // Return null to show generic error to user (security best practice)
+          return null;
+        }
+      },
     }),
 
-    // Google OAuth
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    // FUTURE ENHANCEMENT: Keycloak SSO Integration
+    // Uncomment and configure when ready to implement enterprise SSO
+    /*
+    KeycloakProvider({
+      clientId: process.env.KEYCLOAK_CLIENT_ID!,
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
+      issuer: process.env.KEYCLOAK_ISSUER, // e.g., https://keycloak.example.com/realms/myrealm
     }),
-
-    // Note: Credentials provider is intentionally not implemented.
-    // This application uses OAuth-only authentication for enhanced security.
-    // Password storage and management is avoided by design.
-    // Supported: GitHub OAuth, Google OAuth
+    */
   ],
 
   session: {
@@ -92,12 +159,12 @@ export const authOptions: NextAuthOptions = {
     },
 
     async signIn({ account }) {
-      // Allow OAuth sign-ins
-      if (account?.provider !== 'credentials') {
+      // Credentials provider: validation already done in authorize()
+      if (account?.provider === 'credentials') {
         return true;
       }
 
-      // For credentials, we already validated in authorize
+      // Future OAuth/SSO providers can add validation here
       return true;
     },
 

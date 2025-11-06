@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Authentication Strategy Change (2025-11-06)
+- **BREAKING CHANGE:** Migrated from OAuth-only to Credentials Provider authentication
+  - **Removed:** GitHub OAuth and Google OAuth providers
+  - **Added:** Credentials Provider with bcrypt password hashing
+  - **Added:** Password field to users table (varchar 255, nullable)
+  - **Added:** Keycloak SSO provider configuration (commented, backlog/future enhancement)
+  - **Security:** Passwords hashed with bcrypt (10 rounds)
+  - **Security:** Account status validation (isActive check)
+  - **Security:** Last login timestamp tracking
+  - **Updated:** Environment variables (.env.local) with Keycloak examples
+  - **Created:** Test password script (scripts/set-test-password.ts)
+  - **Test credentials:** test@pressograph.dev / Test1234!
+  - **Rationale:** Changed from OAuth-only to support internal authentication with option for future enterprise SSO via Keycloak
+  - **Breaking:** Existing OAuth users will need password-based credentials
+  - **Issue:** Modified #70 implementation from OAuth to Credentials-based authentication
+
 ### Critical Fix - Bad Gateway Errors (2025-11-06)
 - **Fixed:** Multiple Bad Gateway errors on dev-pressograph.infra4.dev
   - **First issue:** Permission denied on `(dashboard)` directory (owned by root)
