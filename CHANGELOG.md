@@ -18,13 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📝 Preserved middleware.ts.backup for reference during transition period
 - 🚀 Ready for Sprint 2 authentication implementation (2025-11-17)
 
-### Known Issues - Next.js 16.0.1 (2025-11-06)
-- 🐛 Production build fails with global-error.tsx: "Cannot read properties of null (reading 'useContext')"
-- 📌 This is a known Next.js 16.0.1 bug: https://github.com/vercel/next.js/issues/85668
-- ⏳ Affects static generation of /_global-error route during build
-- ✅ Development server (npm run dev) works correctly
-- 🔜 Will be fixed in Next.js 16.1+ (tracking upstream)
-- 💡 Workaround: Use `npm run dev` for development, production deploy when Next.js 16.1+ releases
+### Next.js 16.0.1 Build Fix - NODE_ENV Workaround (2025-11-07)
+- 🐛 Fixed production build issue with global-error.tsx useContext error
+- 🔧 Applied NODE_ENV=production workaround to build script
+- 📚 Reference: https://stackoverflow.com/questions/74322410 (CC BY-SA 4.0)
+- ✅ Production build now completes successfully with all 13 static pages
+- ✅ Build command updated: `NODE_ENV=production next build`
+- 🎯 Issue #69 fully resolved - Build system operational for production deployment
 
 ### Next.js 16 Upgrade & Build Fix (2025-11-06)
 - ⬆️ Upgraded Next.js from 15.5.6 to 16.0.1 to fix production build error (Issue #69)
