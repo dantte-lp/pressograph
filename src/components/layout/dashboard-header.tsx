@@ -4,6 +4,7 @@
  * Dashboard Header
  *
  * Top navigation bar for the dashboard with:
+ * - Breadcrumb navigation
  * - Page title
  * - Theme toggle
  * - User menu
@@ -14,6 +15,7 @@ import { MenuIcon, UserIcon, LogOutIcon, SettingsIcon } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,18 +27,28 @@ import {
 
 interface DashboardHeaderProps {
   /**
-   * Page title to display
+   * Page title to display (optional, breadcrumb will be used if not provided)
    */
   title?: string;
   /**
    * Callback for mobile menu toggle
    */
   onMobileMenuToggle?: () => void;
+  /**
+   * Show breadcrumb navigation (default: true)
+   */
+  showBreadcrumb?: boolean;
+  /**
+   * Custom labels for breadcrumb routes
+   */
+  breadcrumbLabels?: Record<string, string>;
 }
 
 export function DashboardHeader({
-  title = 'Dashboard',
+  title,
   onMobileMenuToggle,
+  showBreadcrumb = true,
+  breadcrumbLabels,
 }: DashboardHeaderProps) {
   const { data: session } = useSession();
 
@@ -60,11 +72,14 @@ export function DashboardHeader({
           </Button>
         )}
 
-        {/* Page Title */}
-        <h1 className="text-xl font-semibold">{title}</h1>
-
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Page Title or Breadcrumb */}
+        <div className="flex flex-1 items-center gap-4">
+          {title ? (
+            <h1 className="text-xl font-semibold">{title}</h1>
+          ) : showBreadcrumb ? (
+            <Breadcrumb customLabels={breadcrumbLabels} />
+          ) : null}
+        </div>
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">

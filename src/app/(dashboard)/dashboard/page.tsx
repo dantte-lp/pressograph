@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, FolderIcon, FlaskConicalIcon, BarChart3Icon } from 'lucide-react';
+import { FolderIcon, FlaskConicalIcon, BarChart3Icon } from 'lucide-react';
 
 /**
  * Dashboard Home Page
