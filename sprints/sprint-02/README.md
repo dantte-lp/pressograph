@@ -1,6 +1,7 @@
 # Sprint 2: Authentication & Core UI
-**Dates:** 2025-11-17 → 2025-12-01 (2 weeks)
-**Goal:** Complete authentication system and establish core UI framework
+**Duration:** 2025-11-17 to 2025-12-01 (2 weeks)
+**Sprint Goal:** Complete authentication system and establish core UI framework
+**Planned Story Points:** 40 SP
 
 ## Sprint Goals
 1. Fix remaining Next.js 15 build issues
@@ -11,15 +12,17 @@
 6. Implement user profile and settings pages
 
 ## Story Points
-- **Planned:** TBD (after Sprint 1 retrospective)
+- **Planned:** 40 SP
 - **Completed:** 0
-- **Remaining:** TBD
+- **Remaining:** 40
 
 ## Prerequisites from Sprint 1
-- [ ] Next.js 15.5.6 build fully working
-- [ ] Database schema finalized
-- [ ] Development environment stable
-- [ ] GitHub issues organized
+- [x] Next.js 15.5.6 build working
+- [x] Database schema finalized with Drizzle ORM
+- [x] Development environment stable on dev-pressograph.infra4.dev
+- [x] Valkey cache integration complete
+- [x] Theme system with SSR implemented
+- [x] Basic shadcn/ui components installed
 
 ## Sprint Backlog
 
@@ -127,4 +130,8 @@
 
 ---
 *Sprint begins after Sprint 1 completion and retrospective*
-*Last updated: 2025-11-03*
+*Last updated: 2025-11-06*
+
+## Carried Over from Sprint 1
+- [ ] Drizzle Studio Routing (3 SP) - Issue #46
+- [ ] Fix TypeScript type inconsistencies (theme vs themePreference)
