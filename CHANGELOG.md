@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Next.js 16 Upgrade & Build Fix (2025-11-06)
+- ⬆️ Upgraded Next.js from 15.5.6 to 16.0.1 to fix production build error (Issue #69)
+- 🔧 Migrated webpack externals configuration to Turbopack resolveAlias pattern
+- 🐛 Fixed global-error.tsx: Implemented as proper client component with reset function
+- 🔥 Removed unused React imports following React 19 patterns
+- ✅ Production build now completes successfully with all 13 static pages generated
+- ✅ TypeScript compilation continues to pass with 0 errors
+- ✅ Issue #69 (P0-Critical) resolved - Build system fully operational
+- 📚 Next.js 16 uses Turbopack by default for improved build performance
+
 ### React 19 & Next.js 15 Modernization (2025-11-06)
 - ♻️ Applied React 19 modern patterns across codebase
 - ♻️ Removed deprecated forwardRef usage in Button component

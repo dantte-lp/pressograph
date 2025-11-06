@@ -5,8 +5,6 @@
  * It runs before React hydration to set the correct theme class on the document
  */
 
-import React from 'react';
-
 export const themeInitScript = `
 (function() {
   // Get theme from cookie

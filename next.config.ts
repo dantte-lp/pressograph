@@ -13,9 +13,17 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
   },
 
-  // Disable Turbopack to avoid potential issues with static generation
-  // turbopack: {},
+  // Turbopack configuration (Next.js 16 default)
+  turbopack: {
+    // Rules for externals that were in webpack config
+    resolveAlias: {
+      // Externalize native Node.js modules
+      '@node-rs/argon2': 'external @node-rs/argon2',
+      '@node-rs/bcrypt': 'external @node-rs/bcrypt',
+    },
+  },
 
+  // Keep webpack config for backwards compatibility (when using --webpack flag)
   webpack: (config) => {
     config.externals.push("@node-rs/argon2", "@node-rs/bcrypt");
     return config;
