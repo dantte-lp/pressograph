@@ -19,6 +19,7 @@
     "db:up": "drizzle-kit up",
     "db:introspect": "drizzle-kit introspect",
     "db:health": "tsx src/lib/db/health-check.ts",
+    "db:seed": "tsx src/lib/db/seed.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "format": "prettier --write .",

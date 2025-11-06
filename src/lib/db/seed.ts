@@ -1,0 +1,178 @@
+import { db } from './index';
+import { users, projects, pressureTests, organizations } from './schema';
+import { randomUUID } from 'crypto';
+
+async function seed() {
+  console.log('🌱 Starting database seeding...');
+
+  try {
+    // Create test organization
+    const [organization] = await db.insert(organizations).values({
+      id: randomUUID(),
+      name: 'Test Organization',
+      slug: 'test-org',
+      description: 'Sample organization for testing',
+      planType: 'pro',
+      settings: {
+        defaultLanguage: 'en',
+        allowPublicSharing: true,
+        requireApprovalForTests: false,
+        maxTestDuration: 48,
+        customBranding: { enabled: false }
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    console.log('✅ Created organization:', organization.name);
+
+    // Create test user
+    const [user] = await db.insert(users).values({
+      id: randomUUID(),
+      name: 'Test User',
+      email: 'test@pressograph.dev',
+      emailVerified: new Date(),
+      image: null,
+      organizationId: organization.id,
+      role: 'admin',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    console.log('✅ Created user:', user.email);
+
+    // Create test project
+    const [project] = await db.insert(projects).values({
+      id: randomUUID(),
+      name: 'Sample Project',
+      description: 'Sample project for testing pressure tests',
+      organizationId: organization.id,
+      ownerId: user.id,
+      isArchived: false,
+      settings: {
+        autoNumberTests: true,
+        testNumberPrefix: 'PT',
+        requireNotes: false,
+        defaultTemplateType: 'daily'
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    console.log('✅ Created project:', project.name);
+
+    // Create sample pressure tests
+    const testData = [
+      {
+        name: 'Initial System Test',
+        testNumber: 'PT-001',
+        description: 'Initial pressure test for system commissioning',
+        status: 'completed' as const,
+        parameters: {
+          initialPressure: 100,
+          finalPressure: 95,
+          duration: 60,
+          temperatureC: 20,
+          medium: 'water'
+        },
+        results: {
+          passed: true,
+          finalPressure: 95,
+          leakRate: 0.083,
+          notes: 'Test completed successfully within acceptable parameters'
+        }
+      },
+      {
+        name: 'Daily Check #1',
+        testNumber: 'PT-002',
+        description: 'Routine daily pressure verification',
+        status: 'in_progress' as const,
+        parameters: {
+          initialPressure: 150,
+          finalPressure: 145,
+          duration: 30,
+          temperatureC: 22,
+          medium: 'water'
+        },
+        results: null
+      },
+      {
+        name: 'Maintenance Test',
+        testNumber: 'PT-003',
+        description: 'Post-maintenance system verification',
+        status: 'pending' as const,
+        parameters: {
+          initialPressure: 200,
+          finalPressure: null,
+          duration: 120,
+          temperatureC: 18,
+          medium: 'air'
+        },
+        results: null
+      }
+    ];
+
+    for (const testConfig of testData) {
+      const [test] = await db.insert(pressureTests).values({
+        id: randomUUID(),
+        projectId: project.id,
+        organizationId: organization.id,
+        name: testConfig.name,
+        description: testConfig.description,
+        testNumber: testConfig.testNumber,
+        status: testConfig.status,
+        config: {
+          templateId: null,
+          parameters: testConfig.parameters,
+          alerts: {
+            enabled: true,
+            thresholds: {
+              pressure: { min: 90, max: 210 },
+              temperature: { min: 15, max: 30 },
+              leakRate: { max: 0.5 }
+            }
+          },
+          validation: {
+            requireSignature: false,
+            requireWitnessSignature: false,
+            requirePhotographs: false
+          }
+        },
+        results: testConfig.results,
+        metadata: {
+          tags: ['sample', 'test'],
+          customFields: {}
+        },
+        isPublic: false,
+        createdBy: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+
+      console.log(`✅ Created pressure test: ${test.name} (${test.testNumber})`);
+    }
+
+    console.log('\n🎉 Database seeding completed successfully!');
+    console.log('\n📊 Summary:');
+    console.log('  - 1 organization created');
+    console.log('  - 1 user created');
+    console.log('  - 1 project created');
+    console.log('  - 3 pressure tests created');
+    console.log('\n🔑 Test Credentials:');
+    console.log('  Email: test@pressograph.dev');
+    console.log('  Organization: test-org');
+
+  } catch (error) {
+    console.error('❌ Error seeding database:', error);
+    throw error;
+  } finally {
+    process.exit(0);
+  }
+}
+
+// Run the seed function
+seed().catch((error) => {
+  console.error('Fatal error during seeding:', error);
+  process.exit(1);
+});
