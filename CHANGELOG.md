@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Critical Fix - Bad Gateway Error (2025-11-06)
+- **Fixed:** Bad Gateway error on dev-pressograph.infra4.dev
+  - Root cause: Permission denied on `(dashboard)` directory (owned by root)
+  - Root cause: Route conflict between `/(dashboard)/dashboard` and `/dashboard`
+  - Fixed directory ownership: `chown developer:developer /workspace/src/app/(dashboard)`
+  - Removed old `/src/app/dashboard` directory to resolve routing conflict
+  - Added `allowedDevOrigins` to next.config.ts for cross-origin dev access
+  - Result: Site now returns HTTP 200 OK and renders correctly
+
 ### Sprint 2 Early Implementation - Phase 1 Complete (2025-11-06)
 - ✅ **Issue #70 (P0):** Drizzle-compatible auth queries - 100% complete
   - Cleaned up NextAuth configuration, removed unused imports
