@@ -26,9 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📚 Technology stack analysis and documentation (Issue #39)
 - 📚 Architecture Decision Records (ADRs)
 - 📚 Technology comparison matrices
+- ✨ Shadcn/ui components (dropdown-menu, button, card, input, label)
 
 ### Changed
 - 🔄 Authentication approach: Removed Traefik-level BasicAuth in favor of application-level NextAuth authentication (Issue #45 closed)
+
+### Fixed
+- 🐛 Theme toggle dropdown rendering issue
 
 ---
 
