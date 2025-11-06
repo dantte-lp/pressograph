@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Bug Fixes
+
+#### SessionProvider Error on Landing Page (2025-11-07)
+- **Fixed:** NextAuth SessionProvider error when accessing landing page
+  - **Issue:** `useSession` hook in Header component threw error: "useSession must be wrapped in SessionProvider"
+  - **Root Cause:** Next.js 16 App Router type system incompatibility when passing Session object from Server Component (layout.tsx) to Client Component (Providers) across React Server Components boundary
+  - **Solution:** Simplified provider implementation to let SessionProvider fetch session client-side automatically instead of passing it as prop from server layout
+  - **Changed Files:**
+    - `/opt/projects/repositories/pressograph/src/app/layout.tsx` - Removed async function and getSession call, reverted to synchronous layout
+    - `/opt/projects/repositories/pressograph/src/components/providers/index.tsx` - Removed session prop from Providers component interface
+  - **TypeScript:** Compilation now passes with 0 errors
+  - **Status:** ✅ Fixed and tested
+  - **Breaking Change:** No - transparent change that maintains same functionality
+  - **Performance Impact:** Minimal - session fetched once on client mount via SessionProvider's internal logic
+
 ### Landing Page Implementation (2025-11-07) - BACKLOG FEATURE
 - **Added:** Professional landing page at root route (/)
   - **Hero Section:**
