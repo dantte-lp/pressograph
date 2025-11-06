@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
 
   typedRoutes: true,
 
+  // Allow dev server to be accessed from dev-pressograph.infra4.dev
+  allowedDevOrigins: [
+    'dev-pressograph.infra4.dev',
+    'http://dev-pressograph.infra4.dev',
+    'https://dev-pressograph.infra4.dev',
+  ],
+
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [],
