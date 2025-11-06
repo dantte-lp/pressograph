@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Enhanced
+
+#### Chart Library Migration: Recharts → ECharts 6.0.0 (2025-11-07)
+- **Migrated:** Complete chart visualization system from Recharts to ECharts
+  - **Removed:** recharts@3.3.0 dependency
+  - **Added:** echarts@6.0.0 - Industry-leading visualization library
+  - **Added:** echarts-for-react@3.0.5 - React wrapper for ECharts
+  - **Benefits:**
+    - 🚀 Better performance with large datasets
+    - 🎨 More chart types and customization options
+    - 📊 Advanced features (mark lines, areas, gradients)
+    - 🌐 Industry-standard visualization solution
+    - 💪 Superior TypeScript support
+    - 🎯 SVG rendering for crisp, scalable graphics
+  - **New Components:**
+    - `EChartsWrapper` - Type-safe wrapper component with sensible defaults
+    - `ThemedChart` - Automatic theme detection with next-themes integration
+    - `useChartColors` - Hook providing theme-aware color palette
+  - **Migrated Components:**
+    - `PressureGraph` - Completely rewritten with ECharts
+      - Maintained all existing functionality
+      - Improved visual design with gradients and smooth curves
+      - Better tooltip formatting with custom HTML
+      - Enhanced mark lines for thresholds
+      - Dual Y-axis support (pressure + temperature)
+      - Theme-aware colors that adapt to light/dark mode
+  - **Theme Support:**
+    - Automatic light/dark mode detection
+    - Theme-aware color palette
+    - Seamless integration with next-themes
+    - Consistent colors across all chart types
+  - **TypeScript:**
+    - Full type safety with ECharts type definitions
+    - Proper EChartsOption typing
+    - Type-safe wrapper components
+  - **Performance:**
+    - SVG rendering by default (better quality)
+    - Lazy update optimization
+    - No merge operations (notMerge: true)
+    - Smooth animations with customizable easing
+  - **Files Changed:**
+    - `/opt/projects/repositories/pressograph/package.json` - Updated dependencies
+    - `/opt/projects/repositories/pressograph/src/components/charts/echarts-wrapper.tsx` - New wrapper component
+    - `/opt/projects/repositories/pressograph/src/components/charts/themed-chart.tsx` - Theme integration
+    - `/opt/projects/repositories/pressograph/src/components/charts/index.ts` - Exports
+    - `/opt/projects/repositories/pressograph/src/components/pressure-test/pressure-graph.tsx` - Complete rewrite
+  - **Status:** ✅ Completed and production-ready
+  - **Breaking Change:** No - API remains compatible with previous implementation
+
+#### Authentication Best Practices Study (2025-11-07)
+- **Completed:** Comprehensive study of Next.js 16 authentication patterns
+  - **Resources Reviewed:**
+    1. Next.js Official Authentication Guide (App Router patterns)
+    2. NextAuth.js Secure Authentication Guide (Strapi)
+    3. NextAuth Issue #13302 (Next.js 16 compatibility)
+    4. PeerDB PR #3634 (Real-world Next.js 16 + React 19 upgrade)
+    5. PeerDB Authentication Implementation Commit
+  - **Key Findings:**
+    - Server Components preferred for auth logic
+    - Client Components limited to UI interactions
+    - Data Access Layer (DAL) pattern recommended
+    - NextAuth 4.24.13 works with Next.js 16 (unofficial support)
+    - React 19 requires async params handling with `React.use()`
+  - **Current Implementation Assessment:**
+    - ✅ Strong: Type safety, bcrypt hashing, JWT strategy
+    - ✅ Strong: Custom session types, callback implementations
+    - ⚠️ Improvement: Need Data Access Layer (DAL)
+    - ⚠️ Improvement: Need middleware for route protection
+    - ⚠️ Improvement: Consider React 19 async patterns
+  - **Recommendations:**
+    - Priority 1: Implement `verifySession()` utility in DAL
+    - Priority 2: Add middleware for protected routes
+    - Priority 3: Review async params in Server Components
+    - Priority 4: Consider OAuth providers (GitHub, Google)
+  - **Documentation:**
+    - Created comprehensive study findings document
+    - Includes security best practices
+    - Provides implementation examples
+    - Lists action items with priorities
+  - **Files Created:**
+    - `/opt/projects/repositories/pressograph/docs/authentication/AUTH_STUDY_FINDINGS.md`
+  - **Status:** ✅ Study completed, implementation recommendations documented
+  - **Next Steps:** Implement Data Access Layer and middleware (future sprint)
+
 ### Bug Fixes
 
 #### SessionProvider Error on Landing Page (2025-11-07)

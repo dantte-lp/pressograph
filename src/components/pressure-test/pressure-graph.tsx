@@ -3,7 +3,7 @@
 /**
  * Pressure Graph Component
  *
- * Interactive pressure test visualization using Recharts
+ * Interactive pressure test visualization using ECharts
  * Features:
  * - Real-time data plotting (pressure vs time)
  * - Multi-stage test visualization
@@ -15,21 +15,10 @@
  */
 
 import { useMemo } from 'react';
-import {
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-  Area,
-  ComposedChart,
-} from 'recharts';
+import { ThemedChart, useChartColors } from '@/components/charts';
+import type { EChartsOption } from 'echarts';
 import { type TestRunResults } from '@/lib/db/schema/test-runs';
 import { type PressureTestConfig } from '@/lib/db/schema/pressure-tests';
-import { useTheme } from 'next-themes';
 
 interface PressureGraphProps {
   /** Test configuration (defines parameters and stages) */
@@ -63,31 +52,6 @@ function formatTime(timestamp: number, startTime: number): string {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-/**
- * Custom Tooltip Component
- */
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null;
-
-  return (
-    <div className="rounded-lg border border-border bg-background p-3 shadow-lg">
-      <p className="mb-2 text-sm font-medium text-foreground">{label}</p>
-      {payload.map((entry: any, index: number) => (
-        <div key={index} className="flex items-center gap-2 text-sm">
-          <div
-            className="h-3 w-3 rounded-full"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="text-muted-foreground">{entry.name}:</span>
-          <span className="font-medium text-foreground">
-            {entry.value.toFixed(2)} {entry.unit || ''}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function PressureGraph({
   config,
   results,
@@ -96,20 +60,9 @@ export function PressureGraph({
   showThresholds = true,
   animate = true,
 }: PressureGraphProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const colors = useChartColors();
 
-  // Theme colors (Industrial Blue/Gray palette)
-  const colors = {
-    pressure: isDark ? '#60A5FA' : '#3B82F6', // Blue
-    temperature: isDark ? '#F87171' : '#EF4444', // Red
-    threshold: isDark ? '#FBBF24' : '#F59E0B', // Amber
-    safe: isDark ? '#34D399' : '#10B981', // Green
-    grid: isDark ? '#374151' : '#E5E7EB', // Gray
-    text: isDark ? '#F3F4F6' : '#1F2937',
-  };
-
-  // Transform measurement data for Recharts
+  // Transform measurement data for ECharts
   const chartData = useMemo(() => {
     if (!results?.measurements || results.measurements.length === 0) {
       // Generate ideal curve from config for preview
@@ -170,149 +123,249 @@ export function PressureGraph({
     return [target - 10, target + 10];
   }, [config]);
 
+  // Build ECharts option
+  const option: EChartsOption = useMemo(() => {
+    const series: any[] = [];
+    const yAxis: any[] = [];
+    const markLines: any[] = [];
+
+    // Pressure Y-axis (left)
+    yAxis.push({
+      type: 'value',
+      name: `Pressure (${config.pressureUnit})`,
+      position: 'left',
+      min: pressureDomain[0],
+      max: pressureDomain[1],
+      axisLine: {
+        show: true,
+        lineStyle: { color: colors.pressure },
+      },
+      axisLabel: {
+        color: colors.pressure,
+        formatter: (value: number) => value.toFixed(1),
+      },
+      splitLine: {
+        lineStyle: { color: colors.grid, type: 'dashed' },
+      },
+    });
+
+    // Temperature Y-axis (right)
+    if (showTemperature) {
+      yAxis.push({
+        type: 'value',
+        name: `Temperature (°${config.temperatureUnit})`,
+        position: 'right',
+        min: temperatureDomain[0],
+        max: temperatureDomain[1],
+        axisLine: {
+          show: true,
+          lineStyle: { color: colors.temperature },
+        },
+        axisLabel: {
+          color: colors.temperature,
+          formatter: (value: number) => value.toFixed(1),
+        },
+        splitLine: {
+          show: false,
+        },
+      });
+    }
+
+    // Pressure area series
+    series.push({
+      name: 'Pressure',
+      type: 'line',
+      yAxisIndex: 0,
+      data: chartData.map((d) => d.pressure),
+      smooth: true,
+      showSymbol: false,
+      lineStyle: {
+        color: colors.pressure,
+        width: 3,
+      },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: `${colors.pressure}33` }, // 20% opacity
+            { offset: 1, color: `${colors.pressure}00` }, // 0% opacity
+          ],
+        },
+      },
+      emphasis: {
+        focus: 'series',
+      },
+      animation: animate,
+    });
+
+    // Temperature line series
+    if (showTemperature) {
+      series.push({
+        name: 'Temperature',
+        type: 'line',
+        yAxisIndex: 1,
+        data: chartData.map((d) => d.temperature),
+        smooth: true,
+        showSymbol: false,
+        lineStyle: {
+          color: colors.temperature,
+          width: 2,
+          type: 'dashed',
+        },
+        emphasis: {
+          focus: 'series',
+        },
+        animation: animate,
+      });
+    }
+
+    // Add threshold mark lines to pressure series
+    if (showThresholds) {
+      markLines.push(
+        {
+          name: 'Working Pressure',
+          yAxis: config.workingPressure,
+          lineStyle: {
+            color: colors.safe,
+            type: 'dashed',
+            width: 2,
+          },
+          label: {
+            formatter: `Working: ${config.workingPressure} ${config.pressureUnit}`,
+            color: colors.safe,
+            fontSize: 12,
+          },
+        },
+        {
+          name: 'Max Pressure',
+          yAxis: config.maxPressure,
+          lineStyle: {
+            color: colors.warning,
+            type: 'dashed',
+            width: 2,
+          },
+          label: {
+            formatter: `Max: ${config.maxPressure} ${config.pressureUnit}`,
+            color: colors.warning,
+            fontSize: 12,
+          },
+        }
+      );
+
+      // Add markLine to pressure series
+      series[0].markLine = {
+        silent: true,
+        symbol: 'none',
+        data: markLines,
+      };
+    }
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          crossStyle: {
+            color: colors.textMuted,
+          },
+        },
+        backgroundColor: colors.backgroundCard,
+        borderColor: colors.border,
+        textStyle: {
+          color: colors.text,
+        },
+        formatter: (params: any) => {
+          if (!Array.isArray(params) || params.length === 0) return '';
+
+          const timeIndex = params[0].dataIndex;
+          const time = chartData[timeIndex]?.time || '';
+
+          let html = `<div style="font-weight: 600; margin-bottom: 8px;">${time}</div>`;
+
+          params.forEach((param: any) => {
+            const value = param.value.toFixed(2);
+            let unit = '';
+
+            if (param.seriesName === 'Pressure') {
+              unit = config.pressureUnit;
+            } else if (param.seriesName === 'Temperature') {
+              unit = `°${config.temperatureUnit}`;
+            }
+
+            html += `
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: ${param.color};"></div>
+                <span style="color: ${colors.textMuted};">${param.seriesName}:</span>
+                <span style="font-weight: 600;">${value} ${unit}</span>
+              </div>
+            `;
+          });
+
+          return html;
+        },
+      },
+      legend: {
+        data: showTemperature ? ['Pressure', 'Temperature'] : ['Pressure'],
+        top: 10,
+        textStyle: {
+          color: colors.text,
+        },
+      },
+      grid: {
+        left: 60,
+        right: showTemperature ? 80 : 40,
+        bottom: 60,
+        top: 60,
+        containLabel: false,
+      },
+      xAxis: {
+        type: 'category',
+        data: chartData.map((d) => d.time),
+        boundaryGap: false,
+        axisLine: {
+          lineStyle: { color: colors.text },
+        },
+        axisLabel: {
+          color: colors.text,
+          rotate: 45,
+          fontSize: 11,
+        },
+        name: 'Time (HH:MM:SS)',
+        nameLocation: 'middle',
+        nameGap: 45,
+        nameTextStyle: {
+          color: colors.text,
+          fontSize: 12,
+        },
+      },
+      yAxis,
+      series,
+      animation: animate,
+      animationDuration: 1000,
+      animationEasing: 'cubicOut',
+    };
+  }, [
+    chartData,
+    config,
+    colors,
+    pressureDomain,
+    temperatureDomain,
+    showTemperature,
+    showThresholds,
+    animate,
+  ]);
+
   return (
     <div className="w-full">
-      <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart
-          data={chartData}
-          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="pressureGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={colors.pressure} stopOpacity={0.2} />
-              <stop offset="95%" stopColor={colors.pressure} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke={colors.grid}
-            opacity={0.3}
-          />
-
-          <XAxis
-            dataKey="time"
-            stroke={colors.text}
-            style={{ fontSize: '12px' }}
-            label={{
-              value: 'Time (HH:MM:SS)',
-              position: 'insideBottom',
-              offset: -5,
-              style: { fill: colors.text },
-            }}
-          />
-
-          <YAxis
-            yAxisId="pressure"
-            domain={pressureDomain}
-            stroke={colors.pressure}
-            style={{ fontSize: '12px' }}
-            label={{
-              value: `Pressure (${config.pressureUnit})`,
-              angle: -90,
-              position: 'insideLeft',
-              style: { fill: colors.pressure },
-            }}
-          />
-
-          {showTemperature && (
-            <YAxis
-              yAxisId="temperature"
-              orientation="right"
-              domain={temperatureDomain}
-              stroke={colors.temperature}
-              style={{ fontSize: '12px' }}
-              label={{
-                value: `Temperature (°${config.temperatureUnit})`,
-                angle: 90,
-                position: 'insideRight',
-                style: { fill: colors.temperature },
-              }}
-            />
-          )}
-
-          <Tooltip content={<CustomTooltip />} />
-
-          <Legend
-            wrapperStyle={{
-              paddingTop: '20px',
-              fontSize: '14px',
-            }}
-          />
-
-          {/* Threshold lines */}
-          {showThresholds && (
-            <>
-              <ReferenceLine
-                yAxisId="pressure"
-                y={config.workingPressure}
-                stroke={colors.safe}
-                strokeDasharray="3 3"
-                strokeWidth={2}
-                label={{
-                  value: `Working Pressure (${config.workingPressure} ${config.pressureUnit})`,
-                  position: 'insideTopLeft',
-                  style: { fill: colors.safe, fontSize: '12px' },
-                }}
-              />
-
-              <ReferenceLine
-                yAxisId="pressure"
-                y={config.maxPressure}
-                stroke={colors.threshold}
-                strokeDasharray="3 3"
-                strokeWidth={2}
-                label={{
-                  value: `Max Pressure (${config.maxPressure} ${config.pressureUnit})`,
-                  position: 'insideTopLeft',
-                  style: { fill: colors.threshold, fontSize: '12px' },
-                }}
-              />
-            </>
-          )}
-
-          {/* Pressure area */}
-          <Area
-            yAxisId="pressure"
-            type="monotone"
-            dataKey="pressure"
-            stroke="none"
-            fill="url(#pressureGradient)"
-            isAnimationActive={animate}
-          />
-
-          {/* Pressure line */}
-          <Line
-            yAxisId="pressure"
-            type="monotone"
-            dataKey="pressure"
-            stroke={colors.pressure}
-            strokeWidth={3}
-            dot={false}
-            activeDot={{ r: 6 }}
-            name="Pressure"
-            unit={config.pressureUnit}
-            isAnimationActive={animate}
-          />
-
-          {/* Temperature line */}
-          {showTemperature && (
-            <Line
-              yAxisId="temperature"
-              type="monotone"
-              dataKey="temperature"
-              stroke={colors.temperature}
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={false}
-              activeDot={{ r: 4 }}
-              name="Temperature"
-              unit={`°${config.temperatureUnit}`}
-              isAnimationActive={animate}
-            />
-          )}
-        </ComposedChart>
-      </ResponsiveContainer>
+      <ThemedChart
+        option={option}
+        style={{ height: `${height}px`, width: '100%' }}
+        className="pressure-graph"
+      />
 
       {/* Graph statistics */}
       {results && (
