@@ -13,7 +13,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
   },
 
-  turbopack: {},
+  // Disable Turbopack to avoid potential issues with static generation
+  // turbopack: {},
 
   webpack: (config) => {
     config.externals.push("@node-rs/argon2", "@node-rs/bcrypt");
