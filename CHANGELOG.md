@@ -9,6 +9,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### shadcn/ui Integration Strategy Documentation (2025-11-07)
+- **Created:** Comprehensive shadcn/ui integration strategy document
+  - **Document:** `docs/development/SHADCN_INTEGRATION_STRATEGY.md` (800+ lines)
+  - **Analysis Completed:**
+    - Studied 10 official shadcn/ui documentation URLs via WebFetch
+    - Analyzed current implementation (components.json, CSS, theme system)
+    - Assessed compatibility with Next.js 16.0.1 + React 19.2.0 + Tailwind v4.1.16
+    - Verified all 14 installed UI components
+  - **Key Findings:**
+    - ✅ Current implementation follows all shadcn/ui best practices
+    - ✅ Fully compatible with latest stack (Next.js 16, React 19, Tailwind v4)
+    - ✅ Proper configuration (new-york style, CSS variables, RSC enabled)
+    - ✅ React 19 patterns implemented (no forwardRef in Button component)
+    - ✅ Comprehensive theming with industrial design color palette
+    - ✅ Dark mode properly configured with next-themes
+    - ✅ No critical issues found - no migration needed
+  - **Documentation Sections:**
+    1. Executive Summary - Current state assessment and recommendations
+    2. Current State Assessment - Detailed analysis of all configuration files
+    3. Compatibility Analysis - Next.js 16, React 19, Tailwind v4 compatibility
+    4. Installation & Setup - Complete setup process and component installation
+    5. Theming Strategy - Color system, CSS variables, dark mode implementation
+    6. Component Usage Patterns - Comprehensive examples for all components
+    7. Form Integration - React Hook Form patterns with complete examples
+    8. Best Practices - 8 categories of development best practices
+    9. Migration Checklist - Optional enhancements (no required changes)
+    10. Next.js 16 + React 19 Considerations - Modern patterns and features
+    11. Troubleshooting - Common issues and solutions
+    12. References - Links to all official documentation
+  - **Resources Studied:**
+    - shadcn/ui Next.js Installation Guide
+    - components.json Configuration Reference
+    - Theming Documentation
+    - Dark Mode for Next.js Guide
+    - CLI Commands Reference
+    - Monorepo Setup Guide
+    - Components Library Structure
+    - React Hook Form Integration
+    - TanStack Form Integration
+    - Changelog and Recent Updates
+  - **Technical Highlights:**
+    - 14 components installed (Button, Card, Input, Select, Tabs, etc.)
+    - Tailwind CSS v4 @theme inline directives configured
+    - Industrial design color palette (light/dark themes)
+    - Server Component support enabled
+    - TypeScript strict mode compliant
+    - Form validation ready (React Hook Form + Zod)
+  - **Status:** ✅ Documentation complete, no implementation changes needed
+  - **Next Steps:** Use document as team reference for future component additions
+
+### Fixed
+
+#### Bad Gateway Error - File Permission Issues (2025-11-07)
+- **Fixed:** Second Bad Gateway error on dev-pressograph.infra4.dev during Sprint 2 session
+  - **Issue:** Turbopack crash with "Permission denied (os error 13)" on `/workspace/src/app/api/profile`
+  - **Root Cause:** Profile and Settings features created directories/files as root user instead of developer
+  - **Symptoms:**
+    - Turbopack panic during file watching
+    - Dev server restarting continuously (18 restarts)
+    - Fork issues in container (resource temporarily unavailable)
+    - Bad Gateway response from Traefik
+  - **Affected Directories:**
+    - `/workspace/src/app/(dashboard)/profile/` - owned by root
+    - `/workspace/src/app/(dashboard)/settings/` - owned by root
+    - `/workspace/src/app/api/profile/` - owned by root with 700 permissions
+    - `/workspace/src/components/ui/` - Several files owned by root
+  - **Solution Applied:**
+    1. Container restart to clear zombie processes and fork issues
+    2. Fixed permissions as root user: `chown -R developer:developer /workspace/src/app/api/`
+    3. Fixed ownership on dashboard routes
+    4. Fixed ownership on UI components
+  - **Result:**
+    - Dev server stabilized after permissions fix
+    - Turbopack successfully watching all directories
+    - Site responding with HTTP 200 OK
+    - Ready in 3.8s on restart
+  - **Prevention:**
+    - Always create files inside container as developer user
+    - Use `podman exec -u developer` for file operations
+    - Verify permissions after creating new directories
+  - **Commands Used:**
+    ```bash
+    # Restart container to clear processes
+    podman restart pressograph-dev-workspace
+
+    # Fix permissions as root
+    podman exec -u root pressograph-dev-workspace bash -c 'chown -R developer:developer /workspace/src/app/api/'
+    ```
+  - **Status:** ✅ Fully resolved - Site operational at https://dev-pressograph.infra4.dev
+
 #### User Profile Page (Issue #78) - 2025-11-07
 - **Implemented:** Comprehensive user profile management with security features
   - **Components Created:**
