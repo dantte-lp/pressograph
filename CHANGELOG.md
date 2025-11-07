@@ -9,6 +9,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CRITICAL: Y-Axis Positioning and Time Padding Consistency** - Fixed Y-axis alignment and time padding across all preview locations
+  - **Problem**: Preview components in `/tests/new`, `/tests/[id]`, and `/tests/[id]/edit` had incorrect Y-axis positioning and missing time padding
+  - **Reference**: `/preview?config=` (A4PreviewGraph) was working correctly, other previews needed to match
+
+  - **Issue 6.1: Y-Axis Ticks Misaligned**
+    - **Problem**: "насечки оси Y (вертикальная линия) смещены право и находятся над временем начала построения графика"
+    - **Translation**: Y-axis ticks (vertical lines) shifted right and positioned above graph start time
+    - **Root Cause**: Missing `onZero: false` in yAxis.axisLine configuration
+    - **Fix Applied:**
+      - Added `position: 'left'` to explicitly position Y-axis at chart left edge
+      - Added `onZero: false` to prevent alignment to X-axis time zero
+      - Y-axis now correctly appears at chart left edge, not at test start time
+    - **Locations Fixed**: PressureTestPreview component (used in create, view, edit pages)
+
+  - **Issue 6.2: Time Padding Not Applied**
+    - **Problem**: "время запаса должно быть за 1 час и 1 час после указанных в 'Test Schedule (Optional)'"
+    - **Translation**: Time padding should be 1 hour before and 1 hour after specified test schedule times
+    - **Root Cause**: X-axis range calculation didn't properly use endDateTime for padding
+    - **Fix Applied:**
+      - Fixed endTime calculation: Uses endDateTime timestamp when available
+      - Fixed X-axis max calculation: `(endTime - startTime) / 60000 + paddingHours * 60`
+      - Fixed X-axis min: `-paddingHours * 60` (1 hour before test start)
+      - Fixed totalDisplayHours: Calculates from actual timestamps with padding
+      - Data points unchanged - still start at actual test time
+      - Empty space now appears before/after test as expected
+
+  - **Example Time Display** (Test: 03.11.2025 00:21, Duration: 2h):
+    ```
+    Before (BROKEN):
+    - X-axis: 00:21 to 02:21 (no padding)
+    - Graph line: Starts at 00:21
+    - Y-axis: Positioned at test start time (00:21)
+
+    After (FIXED):
+    - X-axis: 02.11.2025 23:21 to 03.11.2025 03:21 (with padding)
+    - Graph line: Starts at 03.11.2025 00:21 (empty space before)
+    - Y-axis: Positioned at chart left edge (23:21)
+    ```
+
+  - **Technical Details:**
+    - Y-axis: `position: 'left'`, `axisLine.onZero: false`
+    - X-axis min: `-60` minutes (1 hour before start)
+    - X-axis max: `(endTime - startTime) / 60000 + 60` (1 hour after end)
+    - Padding: 1 hour = 60 minutes = 3,600,000 milliseconds
+    - Reference implementation: A4PreviewGraph (already correct)
+
+  - **Affected Components:**
+    - `/tests/new` - Create test form preview
+    - `/tests/[id]` - Test detail page preview
+    - `/tests/[id]/edit` - Edit test form preview
+
+  - **Working Reference:**
+    - `/preview?config=` - A4PreviewGraph (used as reference implementation)
+
+  - **Result:**
+    - All preview locations now consistent with `/preview?config=`
+    - Y-axis correctly positioned at chart left edge
+    - 1-hour padding visible before and after test
+    - Graph line starts at actual test time
+    - Professional appearance for all preview locations
+
 - **CRITICAL: Preview Page Now Completely Clean** - Moved preview page outside dashboard folder to remove all UI chrome (Issue 6.1)
   - **Problem**: User reported "я вижу верхнее и боковое меню" (I see top and side menu) in preview page
   - **HTML Evidence**: Preview page was rendering with sidebar navigation and header menu visible
