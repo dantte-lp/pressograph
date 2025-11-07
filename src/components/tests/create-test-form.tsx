@@ -38,7 +38,7 @@ import type { Project } from '@/lib/db/schema/projects';
  * Form validation schema
  */
 const intermediateStageSchema = z.object({
-  time: z.number().min(0, 'Time must be positive'), // MINUTES from test start (absolute time)
+  time: z.number().min(0, 'Time must be positive'), // MINUTES AFTER previous stage's hold ends (relative time)
   pressure: z.number().min(0, 'Pressure must be positive'), // Target pressure in configured unit (MPa/Bar/PSI)
   duration: z.number().min(0, 'Duration must be positive'), // Hold duration in MINUTES
 });
@@ -805,8 +805,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">#</th>
-                          <th className="px-3 py-2 text-left font-medium" title="Absolute time from test start (in minutes)">
+                          <th className="px-3 py-2 text-left font-medium" title="Minutes AFTER previous stage's hold duration ends">
                             Time (min)
+                          </th>
+                          <th className="px-3 py-2 text-left font-medium" title="Cumulative time from test start">
+                            Cumulative
                           </th>
                           <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
                           <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
@@ -817,6 +820,22 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                         {watchedStages.map((_stage, index) => {
                           const stagePressure = watchedStages[index]?.pressure || 0;
                           const isPressureBelowWorking = stagePressure > 0 && stagePressure < workingPressure;
+
+                          // Calculate cumulative time for this stage
+                          let cumulativeMinutes = 0;
+                          for (let i = 0; i <= index; i++) {
+                            cumulativeMinutes += watchedStages[i]?.time || 0; // Wait time after previous stage
+                            if (i < index) {
+                              cumulativeMinutes += watchedStages[i]?.duration || 0; // Hold duration
+                            }
+                          }
+
+                          // Format cumulative time as H:M
+                          const hours = Math.floor(cumulativeMinutes / 60);
+                          const mins = Math.round(cumulativeMinutes % 60);
+                          const cumulativeDisplay = hours > 0
+                            ? `${hours}:${mins.toString().padStart(2, '0')}`
+                            : `${mins}m`;
 
                           return (
                             <tr key={index} className="border-t hover:bg-muted/30">
@@ -829,8 +848,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                   className="h-8 w-20 text-xs"
                                   value={watchedStages[index]?.time || 0}
                                   onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
-                                  title="Time from test start in minutes (e.g., 120 for 2 hours)"
+                                  title="Minutes AFTER previous stage's hold duration ends"
                                 />
+                              </td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground font-mono">
+                                {cumulativeDisplay}
                               </td>
                               <td className="px-3 py-1.5">
                                 <Input

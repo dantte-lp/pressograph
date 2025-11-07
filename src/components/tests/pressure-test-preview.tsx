@@ -40,7 +40,7 @@ type ECOption = ComposeOption<
 >;
 
 interface IntermediateStage {
-  time: number; // MINUTES from test start (absolute time)
+  time: number; // MINUTES AFTER previous stage's hold ends (relative time)
   pressure: number;
   duration: number; // minutes
 }
@@ -134,20 +134,13 @@ export function PressureTestPreview({
 
     let currentTime = rampUpDuration;
 
-    // Add intermediate stages (stage.time is ABSOLUTE minutes from test start)
+    // Add intermediate stages (stage.time is RELATIVE minutes after previous stage)
     if (intermediateStages && intermediateStages.length > 0) {
-      // Sort by time to ensure correct order
-      const sortedStages = [...intermediateStages].sort((a, b) => a.time - b.time);
-
-      sortedStages.forEach((stage) => {
-        // stage.time is in MINUTES from test start (absolute time)
-        const stageStartMinutes = stage.time;
-
-        // If there's a gap, drop to working pressure first
-        if (stageStartMinutes > currentTime + 0.5) {
-          dataPoints.push([minutesToX(stageStartMinutes - 0.5), workingPressure]);
-          timeLabels.push(formatTime(stageStartMinutes - 0.5));
-        }
+      intermediateStages.forEach((stage) => {
+        // Calculate cumulative time for this stage
+        // stage.time = minutes AFTER previous stage's hold ends
+        currentTime += stage.time; // Add wait time after previous stage
+        const stageStartMinutes = currentTime;
 
         // Ramp up to stage pressure (30 seconds)
         dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
@@ -273,11 +266,11 @@ export function PressureTestPreview({
             color: '#f0f0f0',
           },
         },
-        // Major ticks every 2 hours
-        interval: 2 * 60 * 60 * 1000,
+        // Dynamic interval based on test duration (convert minutes to milliseconds)
+        interval: calculateXAxisInterval(testDuration) * 60 * 1000,
         minorTick: {
           show: true,
-          splitNumber: 4, // Creates minor ticks (every 30 minutes for 2-hour intervals)
+          splitNumber: 4, // Creates minor ticks subdividing the main interval
         },
         minorSplitLine: {
           show: true,

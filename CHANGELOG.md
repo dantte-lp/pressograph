@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **X-Axis Interval Calculation for Time-Based Axis** - Fixed 24-hour tests showing 4-hour intervals instead of 2-hour intervals
+  - Time-based axis now uses `calculateXAxisInterval()` function based on test duration
+  - Previously hardcoded to 2-hour intervals regardless of test duration
+  - Now correctly shows: 1h intervals (≤6h tests), 2h intervals (≤24h tests), 4h intervals (≤72h tests), 6h intervals (>72h tests)
+  - Padding (±1 hour) no longer affects interval calculation
+  - Fixes issue where 24-hour test with padding showed 4-hour intervals instead of 2-hour intervals
+- **Cumulative Time Calculation for Intermediate Stages** - Redesigned time semantics for better usability
+  - "Time (min)" field now represents RELATIVE time (minutes AFTER previous stage's hold ends)
+  - Added "Cumulative" column showing absolute time from test start in H:M format (e.g., "2:30")
+  - Graph generation updated to calculate cumulative time dynamically
+  - Example: Stage 1 at Time=120min, Hold=60min ends at 180min; Stage 2 at Time=120min starts at 300min (180+120)
+  - More intuitive workflow: users specify wait time between stages, system calculates absolute timing
+  - Schema comment updated: `time` field is now "MINUTES AFTER previous stage's hold ends (relative time)"
+  - Tooltip updated: "Minutes AFTER previous stage's hold duration ends"
+  - Removed sorting logic (no longer needed with relative time)
 - **Time Unit Correction for Intermediate Stages** - Changed time input from hours to minutes
   - Column header changed from "Time (h)" to "Time (min)"
   - Input step changed from 0.1 hours to 1 minute
