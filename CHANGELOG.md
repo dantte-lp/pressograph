@@ -9,6 +9,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Critical Navigation and Next.js 16 Compatibility Issues (2025-11-07)
+
+**Three critical bugs fixed in production:**
+
+1. **Sidebar Navigation Not Working**
+   - **Issue:** Users could not navigate to `/projects` or `/tests` from sidebar
+   - **Symptom:** Clicking "Projects" or "Tests" only expanded/collapsed submenu
+   - **Worked:** Sub-routes like `/projects/active`, `/projects/archived`, `/tests/new`, `/tests/history`
+   - **Root Cause:** Parent items with children rendered as buttons instead of links
+   - **Solution:**
+     - Split parent menu items into separate clickable link and expand/collapse button
+     - Link navigates to parent route, button toggles submenu
+     - Added proper ARIA labels for accessibility
+   - **Files Modified:** `/src/components/layout/sidebar.tsx`
+   - **Commit:** `a67ccddf`
+
+2. **Organization Validation Error on Project Creation**
+   - **Issue:** "User must belong to an organization to create projects" error
+   - **Symptom:** Project creation failed even though user had organizationId in database
+   - **Root Cause:** JWT session created before organizationId was added to user record
+   - **Solution:**
+     - Added fallback to fetch organizationId from database if missing from session
+     - Check session first (fast path), then query database if needed
+     - Improved error message to guide users
+   - **Impact:** Project creation now works without requiring re-login
+   - **Files Modified:** `/src/lib/actions/projects.ts`
+   - **Commit:** `6d531f5b`
+
+3. **Next.js 16 searchParams Promise Warning**
+   - **Issue:** Runtime warning about accessing searchParams properties without await
+   - **Error Message:** "Route used searchParams. searchParams is a Promise and must be unwrapped with await"
+   - **Root Cause:** Next.js 16 changed params and searchParams to be Promises
+   - **Solution:**
+     - Updated all page components to await params and searchParams
+     - Changed TypeScript interfaces to reflect Promise types
+     - Added async to page component functions
+   - **Files Modified:**
+     - `/src/app/(dashboard)/tests/page.tsx`
+     - `/src/app/(dashboard)/projects/[id]/page.tsx`
+   - **Build Status:** ✅ Production build successful with zero warnings
+   - **Commit:** `418de0a2`
+
+**Testing:**
+- ✅ All three routes now navigatable from sidebar
+- ✅ Project creation works without session refresh
+- ✅ No runtime warnings in console
+- ✅ Production build passes all checks
+
 #### Critical Drizzle Date Query Error (2025-11-07)
 - **Fixed:** Dashboard runtime error causing Drizzle query to fail
   - **Issue:** Failed query: `select count(*) from "test_runs" where ("test_runs"."executed_by" = $1 and "test_runs"."started_at" >= $2)`
