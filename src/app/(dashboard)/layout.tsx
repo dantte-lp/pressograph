@@ -11,8 +11,10 @@
 
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth/config';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
+import { type Locale } from '@/components/locale-switcher';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
   // Check authentication
@@ -23,5 +25,9 @@ export default async function Layout({ children }: { children: React.ReactNode }
     redirect('/auth/signin?callbackUrl=/dashboard');
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  // Get locale from cookie
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get('locale')?.value || 'en') as Locale;
+
+  return <DashboardLayout locale={locale}>{children}</DashboardLayout>;
 }

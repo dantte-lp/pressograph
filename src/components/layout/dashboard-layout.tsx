@@ -12,15 +12,20 @@
 
 import { useState } from 'react';
 import { Sidebar } from './sidebar';
-import { DashboardHeader } from './dashboard-header';
+import { DashboardHeaderClient } from './dashboard-header';
+import { type Locale } from '@/components/locale-switcher';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: string;
+  /**
+   * Current locale (passed from Server Component)
+   */
+  locale: Locale;
 }
 
-export function DashboardLayout({ children, title }: DashboardLayoutProps) {
+export function DashboardLayout({ children, title, locale }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -64,9 +69,10 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <DashboardHeader
+        <DashboardHeaderClient
           title={title}
           onMobileMenuToggle={toggleMobileMenu}
+          locale={locale}
         />
 
         {/* Content */}

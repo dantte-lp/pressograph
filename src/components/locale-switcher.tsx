@@ -2,12 +2,13 @@
  * Locale Switcher Component
  *
  * Allows users to switch between available application languages.
- * Uses next-intl for internationalization and shadcn/ui Select component.
+ * Compatible with Next.js 16 App Router and next-intl.
+ * Uses shadcn/ui Select component.
  */
 
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Select,
@@ -39,6 +40,12 @@ const LOCALE_FLAGS: Record<Locale, string> = {
 
 interface LocaleSwitcherProps {
   /**
+   * Current locale (passed from server component)
+   * @required
+   */
+  currentLocale: Locale;
+
+  /**
    * Whether to show flag emoji next to language name
    * @default true
    */
@@ -62,25 +69,42 @@ interface LocaleSwitcherProps {
  * Displays a dropdown for switching between available application languages.
  * The selected locale is stored in a cookie and the page is refreshed to apply changes.
  *
+ * IMPORTANT: This component requires the currentLocale prop to be passed from a Server Component
+ * that reads the locale from cookies. This avoids the need for next-intl context.
+ *
  * @example
  * ```tsx
- * // In header or settings page
- * <LocaleSwitcher />
+ * // In Server Component (e.g., layout or header)
+ * import { cookies } from 'next/headers';
+ * import { LocaleSwitcher } from '@/components/locale-switcher';
+ *
+ * export default async function Header() {
+ *   const cookieStore = await cookies();
+ *   const locale = (cookieStore.get('locale')?.value || 'en') as Locale;
+ *
+ *   return <LocaleSwitcher currentLocale={locale} />;
+ * }
  *
  * // Without flags
- * <LocaleSwitcher showFlags={false} />
+ * <LocaleSwitcher currentLocale={locale} showFlags={false} />
  *
  * // With custom styling
- * <LocaleSwitcher className="w-[180px]" size="sm" />
+ * <LocaleSwitcher currentLocale={locale} className="w-[180px]" size="sm" />
  * ```
  */
 export function LocaleSwitcher({
+  currentLocale,
   showFlags = true,
   className,
   size = 'default',
 }: LocaleSwitcherProps) {
-  const locale = useLocale() as Locale;
+  const [locale, setLocale] = useState<Locale>(currentLocale);
   const router = useRouter();
+
+  // Update local state when prop changes (e.g., after server refresh)
+  useEffect(() => {
+    setLocale(currentLocale);
+  }, [currentLocale]);
 
   const handleChange = (newLocale: string) => {
     // Set locale cookie
