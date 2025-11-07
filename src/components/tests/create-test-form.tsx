@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +15,7 @@ import {
   SaveIcon,
   PlayIcon,
 } from 'lucide-react';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,6 +144,13 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const maxPressure = watch('maxPressure') || 15;
   const testDuration = watch('testDuration') || 24;
   const pressureUnit = watch('pressureUnit') || 'MPa';
+  const temperature = watch('temperature') || 20;
+
+  // Debounce graph updates for better performance (300ms delay)
+  const debouncedWorkingPressure = useDebounce(workingPressure, 300);
+  const debouncedMaxPressure = useDebounce(maxPressure, 300);
+  const debouncedTestDuration = useDebounce(testDuration, 300);
+  const debouncedStages = useDebounce(watchedStages, 300);
 
   // Add tag
   const handleAddTag = () => {
@@ -594,10 +602,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
-                  workingPressure={workingPressure}
-                  maxPressure={maxPressure}
-                  testDuration={testDuration}
-                  intermediateStages={watchedStages}
+                  workingPressure={debouncedWorkingPressure}
+                  maxPressure={debouncedMaxPressure}
+                  testDuration={debouncedTestDuration}
+                  intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
                 />
               </CardContent>
@@ -622,61 +630,91 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {watchedStages.map((_, index) => (
-                    <Card key={index} className="border-muted">
-                      <div className="px-4 py-3 flex items-center justify-between border-b">
-                        <h4 className="text-sm font-medium">Stage {index + 1}</h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveStage(index)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <TrashIcon className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                      <CardContent className="px-4 py-3 grid gap-3 md:grid-cols-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`stage-${index}-time`} className="text-xs">Time (minutes)</Label>
-                          <Input
-                            id={`stage-${index}-time`}
-                            type="number"
-                            step="1"
-                            className="h-9"
-                            {...register(`intermediateStages.${index}.time` as const, {
-                              valueAsNumber: true,
-                            })}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`stage-${index}-pressure`} className="text-xs">Pressure</Label>
-                          <Input
-                            id={`stage-${index}-pressure`}
-                            type="number"
-                            step="0.1"
-                            className="h-9"
-                            {...register(`intermediateStages.${index}.pressure` as const, {
-                              valueAsNumber: true,
-                            })}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`stage-${index}-duration`} className="text-xs">Hold Duration (min)</Label>
-                          <Input
-                            id={`stage-${index}-duration`}
-                            type="number"
-                            step="1"
-                            className="h-9"
-                            {...register(`intermediateStages.${index}.duration` as const, {
-                              valueAsNumber: true,
-                            })}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="space-y-2">
+                  {/* Compact table view */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border rounded-lg">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">#</th>
+                          <th className="px-3 py-2 text-left font-medium">Time (min)</th>
+                          <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
+                          <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
+                          <th className="px-3 py-2 text-left font-medium">Cumulative</th>
+                          <th className="px-3 py-2 text-center font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {watchedStages.map((stage, index) => {
+                          // Calculate cumulative time
+                          const cumulativeTime = watchedStages
+                            .slice(0, index + 1)
+                            .reduce((sum, s) => sum + (s.time || 0) + (s.duration || 0), 0);
+
+                          return (
+                            <tr key={index} className="border-t hover:bg-muted/30">
+                              <td className="px-3 py-2 font-medium">{index + 1}</td>
+                              <td className="px-3 py-1.5">
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  placeholder="0"
+                                  className="h-8 w-20 text-xs"
+                                  {...register(`intermediateStages.${index}.time` as const, {
+                                    valueAsNumber: true,
+                                  })}
+                                />
+                              </td>
+                              <td className="px-3 py-1.5">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder="0.0"
+                                  className="h-8 w-20 text-xs"
+                                  {...register(`intermediateStages.${index}.pressure` as const, {
+                                    valueAsNumber: true,
+                                  })}
+                                />
+                              </td>
+                              <td className="px-3 py-1.5">
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  placeholder="0"
+                                  className="h-8 w-20 text-xs"
+                                  {...register(`intermediateStages.${index}.duration` as const, {
+                                    valueAsNumber: true,
+                                  })}
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
+                                {cumulativeTime > 0 ? `${cumulativeTime} min` : '-'}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveStage(index)}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <TrashIcon className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
+                    <span>Total Stages: {watchedStages.length}</span>
+                    <span>
+                      Total Time: {watchedStages.reduce((sum, s) => sum + (s.time || 0) + (s.duration || 0), 0)} minutes
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -707,10 +745,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
-                  workingPressure={workingPressure}
-                  maxPressure={maxPressure}
-                  testDuration={testDuration}
-                  intermediateStages={watchedStages}
+                  workingPressure={debouncedWorkingPressure}
+                  maxPressure={debouncedMaxPressure}
+                  testDuration={debouncedTestDuration}
+                  intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
                 />
               </CardContent>
@@ -844,10 +882,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
-                  workingPressure={workingPressure}
-                  maxPressure={maxPressure}
-                  testDuration={testDuration}
-                  intermediateStages={watchedStages}
+                  workingPressure={debouncedWorkingPressure}
+                  maxPressure={debouncedMaxPressure}
+                  testDuration={debouncedTestDuration}
+                  intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
                 />
               </CardContent>

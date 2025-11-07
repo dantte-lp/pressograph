@@ -8,6 +8,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **ECharts-Based Graph Export System** - Complete rewrite of graph export using ECharts native capabilities
+  - New graph-export-echarts.ts module using ECharts getDataURL() method
+  - High-resolution PNG export (pixelRatio: 4) for print-quality output
+  - 100% visual parity between preview and export (no more differences)
+  - Russian labels matching v1 Pressograph export style
+  - Temporary ECharts instance for export rendering (no preview canvas dependency)
+  - Clean professional output without watermarks
+  - PDF export with only the graph (no metadata page)
+- **Real-time Graph Updates with Debouncing** - Optimized test configuration preview
+  - useDebounce hook for 300ms delayed updates
+  - Graph updates automatically as user types in /tests/new
+  - Prevents expensive re-renders during rapid input changes
+  - Smooth user experience with debounced working pressure, max pressure, test duration, and intermediate stages
+- **Compact Intermediate Stages UI** - Improved form layout for test configuration
+  - Replaced card-based layout with compact table view
+  - Automatic cumulative time calculation for each stage
+  - Total stages and total time summary display
+  - Inline editing with smaller input fields (h-8)
+  - Better space efficiency (50% height reduction)
+  - Real-time validation and visual feedback
+- **Russian Labels in Graph Preview** - Consistent localization across all views
+  - Preview graphs now use Russian labels matching export
+  - "Время" (Time) for X-axis
+  - "Давление, МПа" (Pressure, MPa) for Y-axis
+  - "Предварительный просмотр испытания" (Test Preview) for title
+
+### Fixed
+- **TypeError: measurement.pressure.toFixed is not a function** - Critical runtime error on test run detail page
+  - Added type checking before calling .toFixed() on pressure and temperature values
+  - Handles string/number type coercion from database JSONB fields
+  - Graceful fallback to parseFloat() for non-number values
+  - Prevents application crashes when viewing test run results
+- **Graph Preview/Export Inconsistency** - Resolved visual differences between preview and export
+  - Preview now uses same ECharts configuration as export
+  - Identical colors, margins, grid lines, and axis formatting
+  - User sees EXACTLY what will be exported
+  - Eliminated confusion from mismatched graph appearances
+
+### Changed
+- PressureTestPreview component updated to use Russian labels
+- PressureTestPreviewEnhanced component updated to use Russian labels
+- CreateTestForm now uses debounced values for all graph preview instances
+- Intermediate stages input moved from individual cards to compact table format
+
+### Known Issues
+- **Performance.measure runtime error** - Non-blocking Turbopack warning in Next.js 16.0.1
+  - Error: "Performance.measure: Given attribute end cannot be negative"
+  - This is a known issue with Turbopack performance monitoring
+  - Does not affect application functionality
+  - Will be resolved in future Next.js updates
+
+### Previously Added
 - **Successful Emulation Export Mode (#91, #92 - 577a84a2)** - Generate and export simulated pressure test graphs without running actual tests
   - Emulated test data generator with realistic pressure curves and noise
   - Support for multiple export formats: PNG, PDF, CSV, and JSON

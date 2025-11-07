@@ -218,15 +218,25 @@ export default async function TestRunDetailPage({ params }: TestRunDetailPagePro
                   </tr>
                 </thead>
                 <tbody>
-                  {results.measurements.slice(0, 100).map((measurement, index) => (
-                    <tr key={index} className="border-b hover:bg-muted/50">
-                      <td className="py-2 px-4">
-                        {new Date(measurement.timestamp).toLocaleTimeString()}
-                      </td>
-                      <td className="py-2 px-4 font-mono">{measurement.pressure.toFixed(3)}</td>
-                      <td className="py-2 px-4 font-mono">{measurement.temperature.toFixed(1)}</td>
-                    </tr>
-                  ))}
+                  {results.measurements.slice(0, 100).map((measurement, index) => {
+                    // Ensure pressure and temperature are numbers before calling toFixed
+                    const pressure = typeof measurement.pressure === 'number'
+                      ? measurement.pressure.toFixed(3)
+                      : parseFloat(String(measurement.pressure) || '0').toFixed(3);
+                    const temperature = typeof measurement.temperature === 'number'
+                      ? measurement.temperature.toFixed(1)
+                      : parseFloat(String(measurement.temperature) || '0').toFixed(1);
+
+                    return (
+                      <tr key={index} className="border-b hover:bg-muted/50">
+                        <td className="py-2 px-4">
+                          {new Date(measurement.timestamp).toLocaleTimeString()}
+                        </td>
+                        <td className="py-2 px-4 font-mono">{pressure}</td>
+                        <td className="py-2 px-4 font-mono">{temperature}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {results.measurements.length > 100 && (

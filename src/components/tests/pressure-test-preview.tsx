@@ -147,10 +147,10 @@ export function PressureTestPreview({
 
     const chart = chartInstance.current;
 
-    // Configure chart options
+    // Configure chart options (Russian labels matching export)
     const option: ECOption = {
       title: {
-        text: 'Pressure Test Profile Preview',
+        text: 'Предварительный просмотр испытания',
         left: 'center',
         textStyle: {
           fontSize: 14,
@@ -194,7 +194,7 @@ export function PressureTestPreview({
       },
       xAxis: {
         type: 'value',
-        name: 'Time',
+        name: 'Время',
         nameLocation: 'middle',
         nameGap: 25,
         nameTextStyle: {
@@ -214,7 +214,7 @@ export function PressureTestPreview({
       },
       yAxis: {
         type: 'value',
-        name: `Pressure (${pressureUnit})`,
+        name: `Давление, ${pressureUnit}`,
         nameLocation: 'middle',
         nameGap: 35,
         nameTextStyle: {

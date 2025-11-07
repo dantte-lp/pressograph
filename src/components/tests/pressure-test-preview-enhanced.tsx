@@ -233,10 +233,10 @@ export function PressureTestPreviewEnhanced({
 
     const chart = chartInstance.current;
 
-    // Configure chart options (adapted from old Pressograph styling)
+    // Configure chart options (Russian labels matching export)
     const option: ECOption = {
       title: {
-        text: title || 'Pressure Test Profile Preview',
+        text: title || 'Предварительный просмотр испытания',
         left: 'center',
         textStyle: {
           fontSize: 14,
@@ -280,7 +280,7 @@ export function PressureTestPreviewEnhanced({
       },
       xAxis: {
         type: 'value',
-        name: 'Time',
+        name: 'Время',
         nameLocation: 'middle',
         nameGap: 25,
         nameTextStyle: {
@@ -309,7 +309,7 @@ export function PressureTestPreviewEnhanced({
       },
       yAxis: {
         type: 'value',
-        name: `Pressure (${pressureUnit})`,
+        name: `Давление, ${pressureUnit}`,
         nameLocation: 'middle',
         nameGap: 35,
         nameTextStyle: {
