@@ -8,6 +8,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+
+- **CRITICAL: Preview Page Now Completely Clean** - Moved preview page outside dashboard folder to remove all UI chrome (Issue 6.1)
+  - **Problem**: User reported "я вижу верхнее и боковое меню" (I see top and side menu) in preview page
+  - **HTML Evidence**: Preview page was rendering with sidebar navigation and header menu visible
+  - **Root Cause**: Preview page inside `(dashboard)` folder was inheriting dashboard layout despite having layout override
+  - **Solution**: Moved preview page from `/src/app/(dashboard)/tests/preview/` to `/src/app/preview/`
+  - **Changes Applied:**
+    - Relocated page.tsx to top-level app directory (outside dashboard route group)
+    - Deleted layout.tsx override (no longer needed outside dashboard)
+    - Updated preview-dialog.tsx to use `/preview` URL instead of `/tests/preview`
+    - Updated all documentation to reflect new URL structure
+  - **Result**: Preview page now displays ONLY the graph with NO sidebar, NO header, NO UI elements
+  - **Testing**: User's HTML evidence file showed sidebar/header before fix
+  - **User Experience**: Clean, print-ready display perfect for professional reports
+  - Fixes: Issue 6.1
+
+- **CRITICAL: Time Range Calculation and Graph Positioning** - Fixed three critical time-related bugs (Issues 7.1, 7.2, 7.3)
+  - **Issue 7.1: Wrong Time Range Display**
+    - **Problem**: Test starting at 00:21 showed 22:31 to 02:21 instead of 23:21 to 01:21
+    - **Expected**: 1 hour before (23:21) to 1 hour after test end
+    - **Actual**: Showed 22:31 (1h 50min before) due to incorrect padding calculation
+    - **Root Cause**: Preview page was calculating padding and passing PADDED times to graph component, which then treated them as actual test times causing double-padding effect
+
+  - **Issue 7.2: Graph Line Starting at Wrong Time**
+    - **Problem**: "график по оси X рисуется не с 'Test Schedule (Optional)', а с начала оси X"
+    - **Translation**: Graph line starts at X-axis beginning (23:21 padded time) instead of actual test start (00:21)
+    - **User Expectation**: Empty space from 23:21 to 00:21, then graph line starts at 00:21
+    - **Root Cause**: Data points were starting at time 0 which mapped to padded start time instead of actual test start
+
+  - **Issue 7.3: Y-Axis Positioned at Wrong Location**
+    - **Problem**: "На Preview нужно переместить отсечки оси Y перед началом оси X"
+    - **Translation**: Y-axis ticks drawn at test start time instead of at X-axis beginning
+    - **Expected**: Y-axis at left edge of chart (at padded start time 23:21)
+    - **Actual**: Y-axis appeared at test start time (00:21), not at chart edge
+
+  - **Comprehensive Solution:**
+    1. **Preview Page (page.tsx):**
+       - Now passes ACTUAL (non-padded) start/end times to A4PreviewGraph
+       - Added `paddingHours={1}` prop to delegate padding calculation to graph component
+       - Removed confusing local padding calculation that caused double-padding
+
+    2. **A4PreviewGraph Component:**
+       - Added `paddingHours` prop to interface
+       - Separated time concerns:
+         * `startTime/endTime` = actual test start/end (from Test Schedule)
+         * `paddedStartTime/paddedEndTime` = axis display range (with ±1h padding)
+       - X-axis configuration:
+         * `min: -paddingHours * 60` (shows 1 hour before test, e.g., -60 minutes)
+         * `max: testDuration + paddingHours * 60` (shows 1 hour after test)
+         * Data points start at 0 (actual test start, not negative time)
+       - Y-axis configuration:
+         * Added `position: 'left'` (explicit left edge positioning)
+         * Added `onZero: false` (prevents alignment to X-axis time 0)
+         * Ensures Y-axis appears at chart left edge, not at test start time
+
+  - **Mathematical Fix Example** (Test start: 00:21 on Nov 3, 2025):
+    ```
+    Before (BROKEN):
+    - Padded time passed to graph: 22:31 (00:21 - 2h due to double padding)
+    - X-axis: 22:31 to 02:21
+    - Graph line: Starts at 22:31 (wrong)
+    - Y-axis: At test start time (00:21) instead of chart edge
+
+    After (FIXED):
+    - Actual time passed to graph: 00:21
+    - Padding calculated by graph: -60min to +60min
+    - X-axis: 23:21 to 03:21 (assuming 2h test duration)
+    - Graph line: Starts at 00:21 (correct, with empty space before)
+    - Y-axis: At 23:21 (chart left edge, correct)
+    ```
+
+  - **Time Calculation Details:**
+    - All time arithmetic uses milliseconds for precision
+    - 1 hour = 60 * 60 * 1000 = 3,600,000 milliseconds
+    - X-axis values in minutes for easier ECharts configuration
+    - Formatter converts minutes to actual date/time display
+
+  - **Result**:
+    - X-axis correctly shows padded time range with proper 1-hour spacing
+    - Graph line starts at actual test time with visible empty space before
+    - Y-axis positioned at left edge of chart (at padded start time)
+    - All time calculations consistent and accurate
+
+  - Fixes: Issues 7.1, 7.2, 7.3
+
+- **Preview UI Simplification** - Removed full screen popup, keeping only new window button (Issue 8)
+  - **Problem**: User reported "popup так и не открывается во весь экран в альбомной ариентации"
+  - **Translation**: "Popup still doesn't open full screen in landscape orientation"
+  - **User Request**: "если не получается, давай отключим вообще и удалим функцию, оставим вариант в новом окне"
+  - **Translation**: "If it doesn't work, let's disable it completely and remove the function, keep only the new window option"
+  - **Solution**: Removed full-screen modal dialog completely, simplified to single button
+  - **Changes to preview-dialog.tsx:**
+    - Removed Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription imports
+    - Removed PressureTestPreview import (not needed for new window approach)
+    - Removed Maximize2, X icons (only ExternalLink needed now)
+    - Removed useState for dialog open state
+    - Removed button group container (was: [Full Screen] [New Window])
+    - Simplified to single button: "Open in New Window"
+    - Updated component documentation to reflect simpler design
+  - **Benefits:**
+    - Simpler UI with single clear action
+    - No landscape orientation issues
+    - Cleaner component with 80 fewer lines
+    - Opens in dedicated browser window with proper A4 landscape sizing
+    - Better browser compatibility (no modal restrictions)
+  - **UI Transformation:**
+    - Before: `[Full Screen] [New Window]` (button group)
+    - After: `[Open in New Window]` (single button)
+  - Fixes: Issue 8
+
+### Fixed
 - **CRITICAL: Popup Window Opens in Proper Landscape Dimensions** - Fixed new window opening in portrait despite landscape content
   - **Root Cause**: Browser was ignoring window.open dimensions parameter or using default portrait size
   - **User Question**: "popup окно открывается портретным, хотя внутри оно альбомное. Это системное ограничение или что?"
