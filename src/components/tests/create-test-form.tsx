@@ -38,7 +38,7 @@ import type { Project } from '@/lib/db/schema/projects';
  * Form validation schema
  */
 const intermediateStageSchema = z.object({
-  time: z.number().min(0, 'Time must be positive'), // HOURS from test start (absolute time, matching v1 logic)
+  time: z.number().min(0, 'Time must be positive'), // MINUTES from test start (absolute time)
   pressure: z.number().min(0, 'Pressure must be positive'), // Target pressure in configured unit (MPa/Bar/PSI)
   duration: z.number().min(0, 'Duration must be positive'), // Hold duration in MINUTES
 });
@@ -805,8 +805,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">#</th>
-                          <th className="px-3 py-2 text-left font-medium" title="Absolute time from test start (in hours)">
-                            Time (h)
+                          <th className="px-3 py-2 text-left font-medium" title="Absolute time from test start (in minutes)">
+                            Time (min)
                           </th>
                           <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
                           <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
@@ -824,12 +824,12 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                               <td className="px-3 py-1.5">
                                 <Input
                                   type="number"
-                                  step="0.1"
+                                  step="1"
                                   placeholder="0"
                                   className="h-8 w-20 text-xs"
                                   value={watchedStages[index]?.time || 0}
                                   onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
-                                  title="Time from test start in hours (e.g., 2.1 for 2h 6m)"
+                                  title="Time from test start in minutes (e.g., 120 for 2 hours)"
                                 />
                               </td>
                               <td className="px-3 py-1.5">

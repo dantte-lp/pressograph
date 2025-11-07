@@ -40,7 +40,7 @@ type ECOption = ComposeOption<
 >;
 
 interface IntermediateStage {
-  time: number; // minutes
+  time: number; // MINUTES from test start (absolute time)
   pressure: number;
   duration: number; // minutes
 }
@@ -134,14 +134,14 @@ export function PressureTestPreview({
 
     let currentTime = rampUpDuration;
 
-    // Add intermediate stages (stage.time is ABSOLUTE hours from test start, matching v1)
+    // Add intermediate stages (stage.time is ABSOLUTE minutes from test start)
     if (intermediateStages && intermediateStages.length > 0) {
       // Sort by time to ensure correct order
       const sortedStages = [...intermediateStages].sort((a, b) => a.time - b.time);
 
       sortedStages.forEach((stage) => {
-        // stage.time is in HOURS from test start (matching v1 logic)
-        const stageStartMinutes = stage.time * 60;
+        // stage.time is in MINUTES from test start (absolute time)
+        const stageStartMinutes = stage.time;
 
         // If there's a gap, drop to working pressure first
         if (stageStartMinutes > currentTime + 0.5) {

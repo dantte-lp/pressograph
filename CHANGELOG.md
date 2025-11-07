@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Time Unit Correction for Intermediate Stages** - Changed time input from hours to minutes
+  - Column header changed from "Time (h)" to "Time (min)"
+  - Input step changed from 0.1 hours to 1 minute
+  - Schema comment updated: time field now represents MINUTES from test start
+  - Tooltip updated: "Time from test start in minutes (e.g., 120 for 2 hours)"
+  - Graph rendering updated: stage.time now interpreted as minutes (not hours)
+  - Removed `* 60` conversion in graph calculation (stage.time is already in minutes)
+  - More intuitive for users - direct minute input instead of decimal hours
+  - Prevents confusion with 0.1 hour increments (6 minutes)
+
 ### Added
 - **X-Axis Time Padding** - Added 1 hour buffer before and after test duration for time-based graphs
   - When using startDateTime/endDateTime, graph displays ±1 hour padding
@@ -14,11 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improves visualization by showing context before/after test boundaries
   - Only applies to time-based axis (when start/end dates are provided)
   - Duration-based axis (minutes) remains unchanged
-- **Finer Time Granularity for Intermediate Stages** - Changed step from 0.5h to 0.1h (6 minutes)
-  - Time (h) input now accepts 0.1 hour increments
-  - Allows more precise stage timing (e.g., 2.1h = 2h 6m)
-  - Updated placeholder example in tooltip from "2.5" to "2.1"
-  - Better control for short-duration pressure tests
+  - **X-axis interval calculation correctly based on test duration** (not padded range)
+  - For 24-hour test: 2-hour intervals even with ±1 hour padding (displays -1h to +25h)
 
 ### Fixed
 - **Intermediate Stage Pressure Validation** - Pressure in stages cannot go below working pressure
