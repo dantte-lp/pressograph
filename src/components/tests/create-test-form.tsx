@@ -38,9 +38,9 @@ import type { Project } from '@/lib/db/schema/projects';
  * Form validation schema
  */
 const intermediateStageSchema = z.object({
-  time: z.number().min(0, 'Time must be positive'),
-  pressure: z.number().min(0, 'Pressure must be positive'),
-  duration: z.number().min(0, 'Duration must be positive'),
+  time: z.number().min(0, 'Time must be positive'), // HOURS from test start (absolute time, matching v1 logic)
+  pressure: z.number().min(0, 'Pressure must be positive'), // Target pressure in configured unit (MPa/Bar/PSI)
+  duration: z.number().min(0, 'Duration must be positive'), // Hold duration in MINUTES
 });
 
 const testFormSchema = z.object({
@@ -794,25 +794,16 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">#</th>
-                          <th className="px-3 py-2 text-left font-medium" title="Time after previous stage (minutes)">
-                            Offset (min)
+                          <th className="px-3 py-2 text-left font-medium" title="Absolute time from test start (in hours)">
+                            Time (h)
                           </th>
                           <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
                           <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
-                          <th className="px-3 py-2 text-left font-medium" title="Absolute time from test start">
-                            Cumulative (min)
-                          </th>
                           <th className="px-3 py-2 text-center font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {watchedStages.map((_stage, index) => {
-                          // Calculate cumulative time (relative to test start)
-                          // For stage i: cumulative = sum of all previous (time + duration) + current time + current duration
-                          let cumulativeTime = 0;
-                          for (let i = 0; i <= index; i++) {
-                            cumulativeTime += (watchedStages[i]?.time || 0) + (watchedStages[i]?.duration || 0);
-                          }
 
                           return (
                             <tr key={index} className="border-t hover:bg-muted/30">
@@ -820,11 +811,12 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                               <td className="px-3 py-1.5">
                                 <Input
                                   type="number"
-                                  step="1"
+                                  step="0.5"
                                   placeholder="0"
                                   className="h-8 w-20 text-xs"
                                   value={watchedStages[index]?.time || 0}
                                   onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
+                                  title="Time from test start in hours (e.g., 2.5 for 2h 30m)"
                                 />
                               </td>
                               <td className="px-3 py-1.5">
@@ -847,9 +839,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                   onChange={(e) => handleUpdateStageField(index, 'duration', parseFloat(e.target.value) || 0)}
                                 />
                               </td>
-                              <td className="px-3 py-2 text-xs text-muted-foreground">
-                                {cumulativeTime > 0 ? `${cumulativeTime} min` : '-'}
-                              </td>
                               <td className="px-3 py-2 text-center">
                                 <Button
                                   type="button"
@@ -871,9 +860,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   {/* Summary */}
                   <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
                     <span>Total Stages: {watchedStages.length}</span>
-                    <span>
-                      Total Time: {watchedStages.reduce((sum, s) => sum + (s.time || 0) + (s.duration || 0), 0)} minutes
-                    </span>
                   </div>
                 </div>
               )}

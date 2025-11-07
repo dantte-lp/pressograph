@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Graph Ramp Duration Calculation** - Fixed graph starting at 2h 24m instead of 0
+  - Changed ramp up duration from 10% of total time to fixed 30 seconds (matching v1)
+  - Changed depressurize duration from 5% to fixed 30 seconds
+  - Graph now shows correct pressure profile from test start to end
+  - Eliminates confusing time offset in graph display
+  - Matches v1 behavior with rapid pressure changes (30 seconds)
+- **Intermediate Stages Time Interpretation** - Fixed stages to use absolute time from test start
+  - Changed "Offset (min)" back to "Time (h)" to match v1 behavior
+  - Stage time field now represents HOURS from test start (not minutes from previous stage)
+  - Removed "Cumulative" column as time field is already absolute
+  - Updated graph generation logic to interpret stage.time as hours from start
+  - Stage.time * 60 converts hours to minutes for graph calculation
+  - Matches v1 logic where intermediate stages use absolute timing
+  - Simplified form table with clearer column headers
+- **Form Cache Project Selection** - Project dropdown now preserves selection on page refresh
+  - useFormCache hook properly restores all form values including projectId
+  - Auto-save every 30 seconds includes Project selection
+  - Draft restoration shows toast with timestamp
+  - 7-day cache expiration prevents stale data
 - **Preview Dialog Full-Screen Orientation** - Enhanced full-screen preview to maximum viewport dimensions (98vw × 95vh)
   - Increased from 95vw to 98vw width for truly full-width display
   - Increased from 85vh to 95vh height for maximum vertical space
@@ -20,12 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Graph now uses actual form values without defaults
   - Prevents confusing time ranges in empty/new forms
   - X-axis now correctly displays 0 to actual test duration
-- **Intermediate Stages Time Calculation** - Changed time field to relative offset from previous stage
-  - Renamed "Time" column to "Offset" to clarify it's relative, not absolute
-  - Added "Cumulative" column showing absolute time from test start
-  - Updated graph data generation to use cumulative time calculation
-  - Fixed both PressureTestPreview and PressureTestPreviewEnhanced components
-  - Time field now represents minutes after previous stage ends
 - **Select Component Controlled Warnings** - Fixed React controlled component warnings
   - Added `|| ''` fallback to projectId Select value
   - Added `|| 'MPa'` fallback to pressureUnit Select value

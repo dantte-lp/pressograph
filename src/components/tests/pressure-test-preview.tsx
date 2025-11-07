@@ -96,8 +96,8 @@ export function PressureTestPreview({
   // Calculate pressure profile data points
   const profileData = useMemo(() => {
     const totalMinutes = testDuration * 60;
-    const rampUpDuration = totalMinutes * 0.1; // 10% of total time for ramp up
-    const depressurizeDuration = totalMinutes * 0.05; // 5% of total time for depressurization
+    const rampUpDuration = 0.5; // 30 seconds to ramp up (matching v1)
+    const depressurizeDuration = 0.5; // 30 seconds to depressurize (matching v1)
 
     const dataPoints: [number, number][] = [];
     const timeLabels: string[] = [];
@@ -123,30 +123,45 @@ export function PressureTestPreview({
     dataPoints.push([minutesToX(0), 0]);
     timeLabels.push('0');
 
-    // Ramp up to working pressure
+    // Ramp up to working pressure (30 seconds)
     dataPoints.push([minutesToX(rampUpDuration), workingPressure]);
     timeLabels.push(formatTime(rampUpDuration));
 
     let currentTime = rampUpDuration;
 
-    // Add intermediate stages (time is relative to previous stage end)
+    // Add intermediate stages (stage.time is ABSOLUTE hours from test start, matching v1)
     if (intermediateStages && intermediateStages.length > 0) {
-      intermediateStages.forEach((stage) => {
-        // Calculate stage start time (relative offset from current time)
-        const stageStartTime = Math.min(currentTime + stage.time, totalMinutes - depressurizeDuration);
-        if (stageStartTime > currentTime) {
-          dataPoints.push([minutesToX(stageStartTime), stage.pressure]);
-          timeLabels.push(formatTime(stageStartTime));
+      // Sort by time to ensure correct order
+      const sortedStages = [...intermediateStages].sort((a, b) => a.time - b.time);
+
+      sortedStages.forEach((stage) => {
+        // stage.time is in HOURS from test start (matching v1 logic)
+        const stageStartMinutes = stage.time * 60;
+
+        // If there's a gap, drop to working pressure first
+        if (stageStartMinutes > currentTime + 0.5) {
+          dataPoints.push([minutesToX(stageStartMinutes - 0.5), workingPressure]);
+          timeLabels.push(formatTime(stageStartMinutes - 0.5));
         }
 
-        // Hold at stage pressure for specified duration
-        const stageEndTime = Math.min(stageStartTime + stage.duration, totalMinutes - depressurizeDuration);
-        if (stageEndTime > stageStartTime) {
-          dataPoints.push([minutesToX(stageEndTime), stage.pressure]);
-          timeLabels.push(formatTime(stageEndTime));
-        }
+        // Ramp up to stage pressure (30 seconds)
+        dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
+        timeLabels.push(formatTime(stageStartMinutes));
 
-        currentTime = stageEndTime;
+        // Hold at stage pressure for specified duration (minutes)
+        const stageEndMinutes = stageStartMinutes + stage.duration;
+        if (stageEndMinutes < totalMinutes - depressurizeDuration) {
+          dataPoints.push([minutesToX(stageEndMinutes), stage.pressure]);
+          timeLabels.push(formatTime(stageEndMinutes));
+
+          // Drop back to working pressure after stage (30 seconds)
+          dataPoints.push([minutesToX(stageEndMinutes + 0.5), workingPressure]);
+          timeLabels.push(formatTime(stageEndMinutes + 0.5));
+
+          currentTime = stageEndMinutes + 0.5;
+        } else {
+          currentTime = stageEndMinutes;
+        }
       });
     }
 
@@ -157,7 +172,7 @@ export function PressureTestPreview({
       timeLabels.push(formatTime(depressurizeStartTime));
     }
 
-    // Depressurize to 0
+    // Depressurize to 0 (30 seconds)
     dataPoints.push([minutesToX(totalMinutes), 0]);
     timeLabels.push(formatTime(totalMinutes));
 
