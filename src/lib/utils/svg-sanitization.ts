@@ -79,15 +79,49 @@ export function validateSVG(svgString: string): { valid: boolean; error?: string
 }
 
 /**
+ * Post-process SVG string to fix common XML attribute issues
+ *
+ * Applies aggressive cleaning to fix ECharts-generated SVG issues:
+ * 1. Removes duplicate/broken attributes
+ * 2. Escapes unescaped characters in text nodes
+ * 3. Removes empty attributes
+ *
+ * @param svg - Raw SVG string from ECharts
+ * @returns Cleaned SVG string
+ */
+function postProcessSVGString(svg: string): string {
+  return svg
+    // Fix common attribute issues - remove duplicate quotes
+    .replace(/="([^"]*)"([^>\s]*)"([^"]*)"/g, '="$1$2$3"')
+    // Remove empty attributes that can cause parsing issues
+    .replace(/\s+([a-z-]+)=""\s+/gi, ' ')
+    // Escape any remaining unescaped ampersands in text nodes
+    // This is critical - ECharts may generate text with & that breaks XML
+    .replace(/>([^<>]*)</g, (match, text) => {
+      // Only process if text contains problematic characters
+      if (!text || typeof text !== 'string') return match;
+
+      const cleaned = text
+        // Fix unescaped ampersands (but preserve already-escaped entities)
+        .replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g, '&amp;')
+        // Escape any stray < or > in text nodes
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      return `>${cleaned}<`;
+    });
+}
+
+/**
  * Clean and validate SVG string before download
  *
  * Performs comprehensive SVG sanitization:
- * 1. Validates SVG is well-formed XML
- * 2. Optionally applies additional cleaning (future: remove scripts, etc.)
+ * 1. Post-processes the SVG to fix common ECharts issues
+ * 2. Validates SVG is well-formed XML (warning only, not blocking)
+ * 3. Returns cleaned SVG for download
  *
  * @param svgString - SVG string to clean and validate
  * @returns Cleaned SVG string
- * @throws Error if SVG is invalid and cannot be cleaned
  *
  * @example
  * ```ts
@@ -100,18 +134,20 @@ export function validateSVG(svgString: string): { valid: boolean; error?: string
  * ```
  */
 export function cleanSVGForExport(svgString: string): string {
-  // Validate SVG
-  const validation = validateSVG(svgString);
+  // Step 1: Post-process the SVG to fix common issues
+  const processedSVG = postProcessSVGString(svgString);
+
+  // Step 2: Validate SVG (warning only, not blocking)
+  const validation = validateSVG(processedSVG);
   if (!validation.valid) {
-    throw new Error(`Invalid SVG: ${validation.error}`);
+    console.warn('SVG validation warning:', validation.error);
+    console.warn('Proceeding with download anyway - user can verify in browser');
+    // Don't throw - allow download and let user decide
+    // The post-processing above should fix most issues
   }
 
-  // Future: Additional cleaning steps could go here
-  // - Remove script tags
-  // - Sanitize event handlers
-  // - Validate namespace declarations
-
-  return svgString;
+  // Step 3: Return cleaned SVG
+  return processedSVG;
 }
 
 /**

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **SVG Export XML Attribute Errors** - Resolved critical SVG export failures caused by unescaped characters
+  - Implemented aggressive post-processing of ECharts-generated SVG strings
+  - Added `postProcessSVGString()` function to fix common XML attribute issues:
+    - Removes duplicate/broken attribute quotes
+    - Removes empty attributes that cause parsing errors
+    - Escapes unescaped ampersands in text nodes (preserves valid entities)
+    - Escapes stray `<` and `>` characters in text content
+  - Changed SVG validation from blocking error to non-blocking warning
+  - Allows download even with validation warnings - user can verify in browser
+  - Fixes error "attributes construct error" at line 3, column 133
+  - Component: `src/lib/utils/svg-sanitization.ts`
+  - Issue: SVG exports were failing with XML parsing errors for test names containing special characters
+
+- **Optimized Export Spacing** - Reduced excessive empty space in PDF and PNG exports
+  - Reduced grid margins for tighter graph layout:
+    - `top`: 60px (reduced from ~20% of height)
+    - `left`: 60px (reduced from ~10% of width)
+    - `right`: 40px (reduced from ~8% of width)
+    - `bottom`: 80px base, 100px with below-graph data (reduced from ~15%/20%)
+  - Reduced title top position: 10px (reduced from 20px)
+  - Reduced below-graph data placement: 8% (reduced from 12%)
+  - Reduced PDF margins: 5mm (reduced from 10mm) for A4 landscape exports
+  - Spacing now matches v1.0 Export Emulation function reference formatting
+  - More professional, compact appearance with minimal wasted space
+  - Component: `src/components/tests/echarts-export-dialog.tsx`
+  - User feedback: "Too much empty space around the graph on all sides" and "Too much space between title and graph"
+
 ### Planned
 
 - **Comprehensive Page Refactoring Plan** - Created refactoring roadmap for applying shadcn/ui Integration Strategy

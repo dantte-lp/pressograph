@@ -451,7 +451,7 @@ export function EChartsExportDialog({
         title: {
           text: sanitizedTestNumber ? `Test №${sanitizedTestNumber}` : sanitizedTestName || 'Pressure Test',
           left: 'center',
-          top: 20,
+          top: 10, // REDUCED from 20 to minimize space above title
           textStyle: {
             fontSize: 18,
             fontWeight: 600,
@@ -471,10 +471,10 @@ export function EChartsExportDialog({
             : {}),
         },
         grid: {
-          left: '10%',
-          right: '8%',
-          bottom: dataPlacement === 'below' && dataText ? '20%' : '15%', // Extra space for below placement
-          top: '20%',
+          left: 60, // REDUCED from '10%' for tighter left margin (matches v1: 80px base, but adjusted for export)
+          right: 40, // REDUCED from '8%' for tighter right margin (matches v1: 50px)
+          bottom: dataPlacement === 'below' && dataText ? 100 : 80, // REDUCED from '20%'/'15%' for tighter bottom margin
+          top: 60, // REDUCED from '20%' to minimize space between title and graph
           containLabel: true,
         },
         // Add graphic elements for data display based on placement
@@ -484,7 +484,7 @@ export function EChartsExportDialog({
                 {
                   type: 'text',
                   left: 'center',
-                  bottom: '12%',
+                  bottom: '8%', // REDUCED from '12%' to bring data text closer to graph
                   style: {
                     text: sanitizedDataText,
                     fontSize: 11,
@@ -803,10 +803,10 @@ export function EChartsExportDialog({
           backgroundColor: '#ffffff',
         });
 
-        // Calculate dimensions to fit A4 landscape with margins
+        // Calculate dimensions to fit A4 landscape with minimal margins
         const pdfWidth = 297; // A4 width in mm
         const pdfHeight = 210; // A4 height in mm
-        const margin = 10; // 10mm margin
+        const margin = 5; // REDUCED from 10mm to 5mm for tighter spacing
         const imgWidth = pdfWidth - 2 * margin;
         const imgHeight = pdfHeight - 2 * margin;
 
