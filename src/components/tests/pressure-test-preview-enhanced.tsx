@@ -114,6 +114,19 @@ export function PressureTestPreviewEnhanced({
     setRecalcKey((prev) => prev + 1);
   };
 
+  // Calculate optimal X-axis interval based on test duration
+  const calculateXAxisInterval = (durationHours: number): number => {
+    if (durationHours <= 6) {
+      return 1 * 60; // 1 hour intervals for short tests
+    } else if (durationHours <= 24) {
+      return 2 * 60; // 2 hour intervals for daily tests
+    } else if (durationHours <= 72) {
+      return 4 * 60; // 4 hour intervals for 1-3 day tests
+    } else {
+      return 6 * 60; // 6 hour intervals for extended tests
+    }
+  };
+
   // Calculate pressure profile data points
   const profileData = useMemo(() => {
     const totalMinutes = testDuration * 60;
@@ -266,11 +279,7 @@ export function PressureTestPreviewEnhanced({
         },
       },
       legend: {
-        data: ['Pressure Profile', 'Working Pressure', 'Max Pressure'],
-        top: 30,
-        textStyle: {
-          fontSize: 11,
-        },
+        show: false, // Disabled to avoid series name mismatch errors
       },
       grid: {
         left: '10%',
@@ -289,6 +298,8 @@ export function PressureTestPreviewEnhanced({
         },
         min: 0,
         max: axisBounds.xMax,
+        interval: calculateXAxisInterval(testDuration), // Dynamic interval based on duration
+        minInterval: 30, // Minimum 30 minutes
         axisLabel: {
           formatter: (value: number) => {
             if (value === 0) return '0';
