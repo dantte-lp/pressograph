@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Build Fixes and shadcn/ui Table Component (2025-11-07 - Part 7)
+- **Feature:** Installed shadcn/ui table component
+  - **Component:** `/src/components/ui/table.tsx` - Base table primitives
+  - Exports: Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption
+  - Required for tests table functionality
+- **Build Fixes:**
+  - Fixed Next.js 16 Link href type errors by adding type assertions
+  - Added organizationId to NextAuth session types and JWT callbacks
+  - Fixed null safety checks for project.settings throughout components
+  - Removed unused imports (FlaskConicalIcon, deleteProject)
+  - Updated Zod schemas to remove .default() for better type inference
+- **Infrastructure:**
+  - Container restart resolved 502 Bad Gateway issues
+  - Next.js dev server running on port 3000
+  - Drizzle Studio running on port 5555 (accessible via https://local.drizzle.studio?port=5555&host=0.0.0.0)
+- **Affected Files:**
+  - `/src/components/ui/table.tsx` - New shadcn/ui table component
+  - `/src/lib/auth/config.ts` - Added organizationId to session
+  - `/src/lib/actions/projects.ts` - Added organization validation
+  - `/src/app/(dashboard)/dashboard/page.tsx` - Link href fixes
+  - `/src/app/(dashboard)/projects/[id]/page.tsx` - Link href fixes
+  - `/src/app/(dashboard)/tests/page.tsx` - Link href and import fixes
+  - `/src/components/projects/create-project-dialog.tsx` - Zod schema fixes
+  - `/src/components/projects/edit-project-dialog.tsx` - Null safety fixes
+  - `/src/components/projects/project-card.tsx` - Null safety and import fixes
+  - `/src/components/tests/tests-table-client.tsx` - Link href fixes
+- **Status:** Production build successful, all pages rendering correctly
+
+### Added
+
 #### Complete Tests Page and Project Detail Implementation (2025-11-07 - Part 6)
 - **Feature:** Implemented comprehensive /tests page (replaces old /history route from v1.0)
   - **Global Tests View** (`/tests`):
