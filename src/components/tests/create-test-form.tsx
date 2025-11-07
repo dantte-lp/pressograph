@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { FormError } from '@/components/ui/form-error';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -381,9 +382,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
       </Card>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit((data) => onSubmit(data, false))}>
-        {/* Step 1: Basic Information */}
-        {currentStep === 1 && (
+      <Form {...form}>
+        <form onSubmit={handleSubmit((data) => onSubmit(data, false))}>
+          {/* Step 1: Basic Information */}
+          {currentStep === 1 && (
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -392,31 +394,39 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Test Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Daily Pressure Test - Pipeline A"
-                  {...register('name')}
-                  aria-invalid={!!errors.name}
-                />
-                {errors.name && <FormError error={errors.name.message} />}
-              </div>
+              <FormField
+                control={control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Test Name <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Daily Pressure Test - Pipeline A"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="projectId">
-                  Project <span className="text-destructive">*</span>
-                </Label>
-                <Controller
-                  name="projectId"
-                  control={control}
-                  render={({ field }) => (
+              <FormField
+                control={control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Project <span className="text-destructive">*</span>
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger id="projectId" aria-invalid={!!errors.projectId}>
-                        <SelectValue placeholder="Select a project" />
-                      </SelectTrigger>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                      </FormControl>
                       <SelectContent>
                         {projects.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
@@ -425,10 +435,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                         ))}
                       </SelectContent>
                     </Select>
-                  )}
-                />
-                {errors.projectId && <FormError error={errors.projectId.message} />}
-              </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
@@ -522,51 +532,71 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               </CardHeader>
               <CardContent className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="workingPressure">
-                    Working Pressure <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="workingPressure"
-                      type="number"
-                      step="0.1"
-                      {...register('workingPressure', { valueAsNumber: true })}
-                      aria-invalid={!!errors.workingPressure}
-                    />
-                    <Controller
-                      name="pressureUnit"
-                      control={control}
-                      render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <SelectTrigger className="w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="MPa">MPa</SelectItem>
-                            <SelectItem value="Bar">Bar</SelectItem>
-                            <SelectItem value="PSI">PSI</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  {errors.workingPressure && <FormError error={errors.workingPressure.message} />}
-                </div>
+                <FormField
+                  control={control}
+                  name="workingPressure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Working Pressure <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormField
+                          control={control}
+                          name="pressureUnit"
+                          render={({ field: unitField }) => (
+                            <FormItem>
+                              <Select onValueChange={unitField.onChange} value={unitField.value}>
+                                <FormControl>
+                                  <SelectTrigger className="w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="MPa">MPa</SelectItem>
+                                  <SelectItem value="Bar">Bar</SelectItem>
+                                  <SelectItem value="PSI">PSI</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="maxPressure">
-                    Max Pressure <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="maxPressure"
-                    type="number"
-                    step="0.1"
-                    {...register('maxPressure', { valueAsNumber: true })}
-                    aria-invalid={!!errors.maxPressure}
-                  />
-                  {errors.maxPressure && <FormError error={errors.maxPressure.message} />}
-                </div>
+                <FormField
+                  control={control}
+                  name="maxPressure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Max Pressure <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="testDuration">
@@ -1038,7 +1068,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             </Card>
           </div>
         )}
-      </form>
+        </form>
+      </Form>
     </div>
   );
 }
