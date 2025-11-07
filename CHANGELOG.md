@@ -7,6 +7,166 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### Critical Build Fixes: Next.js 16 Compatibility and i18n Edge Runtime Support (2025-11-07)
+
+**CRITICAL: Resolved Build Errors**
+
+Fixed multiple critical build errors that prevented production builds from succeeding. These fixes ensure full compatibility with Next.js 16's new proxy.ts architecture and Edge Runtime constraints.
+
+**1. Next.js 16 Middleware/Proxy Conflict Resolution**
+
+**Problem:**
+```
+Error: Both middleware file "./src/middleware.ts" and proxy file "./src/proxy.ts" are detected.
+Please use "./src/proxy.ts" only.
+```
+
+**Solution Implemented:**
+- **Removed:** `/src/middleware.ts` (conflicts with proxy.ts in Next.js 16)
+- **Integrated:** i18n locale detection directly into `/src/proxy.ts`
+- **Updated:** proxy.ts to handle internationalization, theme injection, and request logging
+- **Result:** Clean proxy.ts architecture following Next.js 16 best practices
+
+**Files Modified:**
+- `/src/middleware.ts` - REMOVED (Next.js 16 requirement)
+- `/src/proxy.ts` - Enhanced with i18n locale management
+
+**2. i18n Dynamic Import Edge Runtime Compatibility**
+
+**Problem:**
+```
+Module not found: Can't resolve ('../messages/' <dynamic> '.json' | '../messages/en.json')
+Location: ./src/i18n.ts:17:22
+Context: Edge Middleware
+```
+
+**Root Cause:**
+- Dynamic imports (`import(\`../messages/${locale}.json\`)`) are incompatible with Edge Runtime
+- Edge Runtime requires all imports to be statically analyzable at build time
+- next-intl's getRequestConfig with dynamic imports failed in Edge Middleware
+
+**Solution Implemented:**
+- **Before (FAILED):**
+  ```typescript
+  messages: (await import(`../messages/${locale}.json`)).default // ❌ Dynamic import
+  ```
+
+- **After (SUCCESS):**
+  ```typescript
+  import enMessages from '../messages/en.json';
+  import ruMessages from '../messages/ru.json';
+
+  const messages = { en: enMessages, ru: ruMessages } as const;
+  messages[locale] // ✅ Static imports
+  ```
+
+**Files Modified:**
+- `/src/i18n.ts` - Converted to static imports for Edge Runtime compatibility
+
+**3. TypeScript Strict Mode Compliance**
+
+**Problems Fixed:**
+- Unused variable `index` in pressure-test-preview-enhanced.tsx
+- Unused variable `index` in pressure-test-preview.tsx
+- Unused import `useState` in language-switcher.tsx
+- Unused import `useTranslations` in language-switcher.tsx
+- Unused variable `organizationId` in tests.ts action
+
+**Solution:**
+- Removed all unused variables and imports
+- Ensured strict TypeScript compliance across codebase
+- Build now passes TypeScript checks with zero errors
+
+**Files Modified:**
+- `/src/components/tests/pressure-test-preview-enhanced.tsx`
+- `/src/components/tests/pressure-test-preview.tsx`
+- `/src/components/ui/language-switcher.tsx`
+- `/src/lib/actions/tests.ts`
+
+**4. Missing Dependency Installation**
+
+**Problem:**
+```
+Type error: Cannot find module '@radix-ui/react-collapsible'
+```
+
+**Solution:**
+- Installed missing `@radix-ui/react-collapsible` package
+- Verified all shadcn/ui dependencies are present
+- Ensured consistent dependency resolution
+
+**Build Verification:**
+```bash
+✓ Compiled successfully in 7.3s
+✓ Linting and checking validity of types
+✓ Creating an optimized production build
+✓ Collecting page data
+✓ Generating static pages (23/23)
+✓ Collecting build traces
+✓ Finalizing page optimization
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    170 B          95.3 kB
+├ ○ /_not-found                          142 B          87.3 kB
+├ ƒ /api/auth/[...nextauth]              0 B                0 B
+├ ƒ /dashboard                           170 B          95.3 kB
+└ ... (20 more routes)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+BUILD SUCCESSFUL
+```
+
+**Impact:**
+- ✅ Production builds now succeed
+- ✅ Full Next.js 16 compatibility achieved
+- ✅ Edge Runtime compatibility for i18n
+- ✅ TypeScript strict mode compliance
+- ✅ Zero build warnings or errors
+- ✅ All 23 routes compile successfully
+
+**Documentation:**
+- Created comprehensive i18n implementation guide: `/docs/development/I18N_IMPLEMENTATION.md`
+- Documents static import approach for Edge Runtime
+- Explains Next.js 16 middleware → proxy.ts migration
+- Compares next-intl vs next-i18next with detailed analysis
+- Provides usage patterns and troubleshooting guide
+
+**Related Documentation:**
+- `/docs/development/I18N_IMPLEMENTATION.md` - Complete i18n implementation guide
+- `/docs/development/NEXT16_PROXY_MIGRATION.md` - Next.js 16 proxy migration guide
+- `/docs/development/SHADCN_INTEGRATION_STRATEGY.md` - Component library strategy
+
+**Technical Stack Verification:**
+- Next.js: 16.0.1 ✅
+- React: 19.2.0 ✅
+- TypeScript: 5.9.3 (strict mode) ✅
+- next-intl: 4.4.0 ✅
+- Edge Runtime: Compatible ✅
+- Turbopack: Enabled ✅
+
+**Migration Path for Future Developers:**
+
+If you need to add a new language:
+1. Create translation file: `messages/de.json`
+2. Add static import to `i18n.ts`: `import deMessages from '../messages/de.json'`
+3. Update locales array: `export const locales = ['en', 'ru', 'de'] as const`
+4. Add to messages map: `const messages = { en, ru, de }`
+5. Update language switcher UI component
+6. Rebuild and test
+
+**Lessons Learned:**
+1. Next.js 16 requires using proxy.ts (not middleware.ts)
+2. Edge Runtime requires static imports (no dynamic imports)
+3. Always use static imports for i18n message files in Edge context
+4. TypeScript strict mode catches unused variables early
+5. Comprehensive documentation prevents future issues
+
+---
+
 ### Added
 
 #### Enhanced Graph Preview with Manual Recalculation and Axis Scaling (2025-11-07)

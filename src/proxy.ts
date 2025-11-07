@@ -11,6 +11,7 @@
  * - Server Actions (auth checks in actions)
  *
  * Handles:
+ * - Internationalization (next-intl)
  * - Theme injection for SSR
  * - Request logging
  *
@@ -19,20 +20,38 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { defaultLocale, type Locale } from './i18n';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Create response
-  const response = NextResponse.next();
+  let response = NextResponse.next();
 
-  // 1. Theme Injection for SSR
+  // 1. Internationalization (i18n)
+  // Get locale from cookie or use default
+  const localeCookie = request.cookies.get('locale');
+  const locale = (localeCookie?.value as Locale) || defaultLocale;
+
+  // Set locale cookie if not present
+  if (!localeCookie) {
+    response.cookies.set('locale', locale, {
+      path: '/',
+      maxAge: 31536000, // 1 year
+      sameSite: 'lax',
+    });
+  }
+
+  // Set locale header for next-intl
+  response.headers.set('x-next-intl-locale', locale);
+
+  // 2. Theme Injection for SSR
   const theme = request.cookies.get('theme')?.value || 'system';
   response.headers.set('x-theme', theme);
 
-  // 2. Request logging (development only)
+  // 3. Request logging (development only)
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Proxy] ${request.method} ${pathname}`);
+    console.log(`[Proxy] ${request.method} ${pathname} [locale: ${locale}]`);
   }
 
   // Note: Authentication checks have been moved to:

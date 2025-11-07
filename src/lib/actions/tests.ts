@@ -496,9 +496,6 @@ export async function createTest(data: {
     const session = await requireAuth();
     const userId = session.user.id;
 
-    // Use organizationId from session if available, otherwise from data
-    const organizationId = session.user.organizationId || data.organizationId;
-
     // Verify project ownership
     const project = await db
       .select({ id: projects.id, settings: projects.settings, organizationId: projects.organizationId })

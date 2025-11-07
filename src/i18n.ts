@@ -1,10 +1,20 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies } from 'next/headers';
 
+// Static imports for Edge Runtime compatibility
+import enMessages from '../messages/en.json';
+import ruMessages from '../messages/ru.json';
+
 export const locales = ['en', 'ru'] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'en';
+
+// Message map for static imports
+const messages = {
+  en: enMessages,
+  ru: ruMessages,
+} as const;
 
 export default getRequestConfig(async () => {
   // Get locale from cookie or use default
@@ -14,6 +24,6 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: messages[locale],
   };
 });

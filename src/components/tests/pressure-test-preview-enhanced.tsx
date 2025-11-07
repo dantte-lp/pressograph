@@ -138,7 +138,7 @@ export function PressureTestPreviewEnhanced({
 
     // Add intermediate stages
     if (intermediateStages && intermediateStages.length > 0) {
-      intermediateStages.forEach((stage, index) => {
+      intermediateStages.forEach((stage) => {
         // Transition to stage pressure
         const stageStartTime = Math.min(stage.time, totalMinutes - depressurizeDuration);
         if (stageStartTime > currentTime) {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useLocale } from 'next-intl';
+import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,7 +18,6 @@ const languages = [
 
 export function LanguageSwitcher() {
   const locale = useLocale();
-  const t = useTranslations('settings');
   const [isPending, startTransition] = useTransition();
 
   const currentLanguage = languages.find((lang) => lang.code === locale) || languages[0];
