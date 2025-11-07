@@ -8,6 +8,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: Unified Graph Preview Across All Pages** - Fixed inconsistent graph rendering between detail, edit, and create pages
+  - Root cause: Detail page used `PressureTestPreviewEnhanced` while edit/create pages used `PressureTestPreview`
+  - Solution: Replaced `PressureTestPreviewEnhanced` with `PressureTestPreview` in detail page
+  - Result: All three pages (create, edit, detail) now show identical graph visualization
+  - Added `startDateTime` and `endDateTime` props for calendar-based axis support
+  - Ensures pixel-perfect consistency across entire application
+  - Tested with test ID: `5ccdd3d3-96f0-49b2-9a7f-788215714632`
+  - Files modified: `/src/app/(dashboard)/tests/[id]/page.tsx`
+  - References: Issue #6.1
+
+- **CRITICAL: ECharts Export Quality - Complete Rewrite Using Best Practices** - Fixed poor quality square exports by implementing dedicated instance approach
+  - **Previous Issues (Why Export Was Broken):**
+    - Exported by scaling up small preview canvas (400px square)
+    - Resulted in pixelated/blurry output despite claiming 1920x1080
+    - Wrong aspect ratio (square instead of wide 16:9)
+    - Poor quality due to scaling artifacts
+    - Looked like browser screenshot, not professional export
+
+  - **New Implementation (ECharts Best Practices):**
+    - Creates dedicated ECharts instance at export resolution
+    - Initializes with target dimensions: 1920x1080 @ 2x DPI = 3840x2160
+    - Sets `devicePixelRatio: 2` during initialization (not just in getDataURL)
+    - Renders chart at native resolution (NO SCALING)
+    - Uses hidden off-screen container for rendering
+    - Properly disposes instance to prevent memory leaks
+    - Wide 16:9 aspect ratio for professional presentations
+    - White background (#ffffff) for print-ready output
+
+  - **Technical Implementation Steps:**
+    1. Create hidden container with export dimensions (1920x1080)
+    2. Initialize ECharts instance with width, height, devicePixelRatio
+    3. Calculate pressure profile data independently
+    4. Apply full chart options at export resolution
+    5. Export using getDataURL with white background
+    6. Dispose instance and cleanup DOM elements
+
+  - **Export Specifications:**
+    - Display Resolution: 1920x1080 (Full HD)
+    - Actual Resolution: 3840x2160 (2x pixel ratio)
+    - Aspect Ratio: 16:9 (Wide, not square)
+    - Quality: Native rendering (no scaling artifacts)
+    - Background: White (#ffffff) for printing
+    - Format: PNG (lossless compression)
+    - Rendering Method: Dedicated instance per export
+
+  - **Best Practices Applied:**
+    - Tree-shaking: Import only required ECharts components
+    - Memory Management: Proper instance disposal after export
+    - Performance: Disabled animations for faster export
+    - Type Safety: Full TypeScript coverage with ComposeOption
+    - Error Handling: Try-catch with cleanup in finally block
+
+  - Result: Professional-quality exports with crisp rendering and correct aspect ratio
+  - Tested with test ID: `5ccdd3d3-96f0-49b2-9a7f-788215714632`
+  - Files modified: `/src/components/tests/echarts-export-dialog.tsx`
+  - References:
+    - Issue #6.2
+    - `/docs/ECHARTS_BEST_PRACTICES.md` - Export/Image Generation section
+    - User feedback: "картинка экспортировалась, но сама диаграмма плохого качества и квадратная"
+
+### Fixed
 - **CRITICAL: Edit Page Graph Preview Visual Consistency** - Fixed "radically different" appearance between edit and create page previews
   - Root cause: Edit form used non-debounced values while create form used 300ms debounced values
   - Solution: Added `useDebounce` hook to edit form for all graph preview values
