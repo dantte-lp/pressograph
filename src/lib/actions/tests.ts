@@ -554,6 +554,90 @@ export async function createTest(data: {
 }
 
 /**
+ * Update a test
+ */
+export async function updateTest(
+  testId: string,
+  data: {
+    name?: string;
+    description?: string | null;
+    projectId?: string;
+    templateType?: 'daily' | 'extended' | 'custom';
+    config?: any;
+    tags?: string[];
+  }
+): Promise<{ success: boolean; test?: any; error?: string }> {
+  try {
+    const session = await requireAuth();
+    const userId = session.user.id;
+
+    // Verify ownership
+    const test = await db
+      .select({ id: pressureTests.id, status: pressureTests.status })
+      .from(pressureTests)
+      .where(
+        and(
+          eq(pressureTests.id, testId),
+          eq(pressureTests.createdBy, userId)
+        )
+      )
+      .limit(1);
+
+    if (!test[0]) {
+      return { success: false, error: 'Test not found or access denied' };
+    }
+
+    // Only allow editing tests in 'draft' or 'ready' status
+    if (test[0].status !== 'draft' && test[0].status !== 'ready') {
+      return { success: false, error: 'Cannot edit test in current status' };
+    }
+
+    // If project is being changed, verify new project ownership
+    if (data.projectId && data.projectId !== test[0].id) {
+      const project = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(
+          and(
+            eq(projects.id, data.projectId),
+            eq(projects.ownerId, userId)
+          )
+        )
+        .limit(1);
+
+      if (!project[0]) {
+        return { success: false, error: 'New project not found or access denied' };
+      }
+    }
+
+    // Prepare update data
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.projectId !== undefined) updateData.projectId = data.projectId;
+    if (data.templateType !== undefined) updateData.templateType = data.templateType;
+    if (data.config !== undefined) updateData.config = data.config;
+    if (data.tags !== undefined) updateData.tags = data.tags;
+
+    // Update test
+    const result = await db
+      .update(pressureTests)
+      .set(updateData)
+      .where(eq(pressureTests.id, testId))
+      .returning();
+
+    return { success: true, test: result[0] };
+  } catch (error) {
+    console.error('Error updating test:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update test';
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
  * Delete a test
  */
 export async function deleteTest(testId: string): Promise<{ success: boolean; error?: string }> {
