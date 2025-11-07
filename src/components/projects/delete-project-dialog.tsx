@@ -5,7 +5,6 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
@@ -28,26 +27,26 @@ interface DeleteProjectDialogProps {
 }
 
 export function DeleteProjectDialog({ project, open, onOpenChange }: DeleteProjectDialogProps) {
-  const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
 
     try {
-      const result = await deleteProject(project.id);
-
-      if (result?.error) {
-        toast.error(result.error);
-        setIsDeleting(false);
+      await deleteProject(project.id);
+      // If we reach here, deleteProject redirected successfully
+      // The redirect throws a NEXT_REDIRECT error which is caught below
+    } catch (error: any) {
+      // Check if this is a Next.js redirect (which is expected and means success)
+      if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+        // Redirect was successful, show success toast
+        toast.success('Project deleted successfully');
+        onOpenChange(false);
         return;
       }
 
-      toast.success('Project deleted successfully');
-      onOpenChange(false);
-      router.refresh();
-    } catch (error) {
-      toast.error('An unexpected error occurred');
+      // Otherwise, it's an actual error
+      toast.error('Failed to delete project');
       console.error('[DeleteProjectDialog] Error:', error);
       setIsDeleting(false);
     }
@@ -63,14 +62,16 @@ export function DeleteProjectDialog({ project, open, onOpenChange }: DeleteProje
             </div>
             <AlertDialogTitle>Delete Project</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="space-y-2 pt-2">
-            <p>
-              Are you sure you want to delete <strong>{project.name}</strong>?
-            </p>
-            <p className="text-destructive font-medium">
-              This action cannot be undone. All pressure tests and related data
-              within this project will be permanently deleted.
-            </p>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 pt-2">
+              <div>
+                Are you sure you want to delete <strong>{project.name}</strong>?
+              </div>
+              <div className="text-destructive font-medium">
+                This action cannot be undone. All pressure tests and related data
+                within this project will be permanently deleted.
+              </div>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
