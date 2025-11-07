@@ -86,21 +86,70 @@ export function PressureTestPreview({
 
   // Add 1 hour padding (±1 hour) for time-based axis
   const paddingMs = 60 * 60 * 1000; // 1 hour in milliseconds
+  const paddingHours = 2; // Total padding: +1 hour before and +1 hour after
   const xAxisMin = useTimeBased ? startTime - paddingMs : 0;
   const xAxisMax = useTimeBased ? endTime + paddingMs : sanitizedDuration * 60;
 
-  // Calculate optimal X-axis interval based on test duration
-  const calculateXAxisInterval = (durationHours: number): number => {
-    if (durationHours <= 6) {
-      return 1 * 60; // 1 hour intervals for short tests
-    } else if (durationHours <= 24) {
-      return 2 * 60; // 2 hour intervals for daily tests
-    } else if (durationHours <= 72) {
-      return 4 * 60; // 4 hour intervals for 1-3 day tests
-    } else {
-      return 6 * 60; // 6 hour intervals for extended tests
+  /**
+   * Calculate optimal X-axis interval based on TOTAL display range (including padding)
+   *
+   * Algorithm: Aims for 8-15 tick marks on the axis for optimal readability
+   * Uses common interval values: 1h, 2h, 3h, 4h, 6h, 12h, 24h
+   * Prefers smaller intervals when multiple options are valid (better granularity)
+   *
+   * @param totalDisplayHours - Total hours displayed on axis (test duration + padding)
+   * @returns Interval in minutes
+   */
+  const calculateXAxisInterval = (totalDisplayHours: number): number => {
+    // Target tick count: aim for 10-12 ticks (comfortable range: 8-15)
+    const targetTicks = 10;
+
+    // Common interval values in hours (ordered from smallest to largest)
+    const commonIntervals = [1, 2, 3, 4, 6, 12, 24];
+
+    // Find all intervals that provide 8-15 ticks
+    const validIntervals: Array<{ interval: number; tickCount: number; diff: number }> = [];
+
+    for (const interval of commonIntervals) {
+      const tickCount = totalDisplayHours / interval;
+
+      // Check if tick count is in acceptable range (8-15 ticks)
+      if (tickCount >= 8 && tickCount <= 15) {
+        const diff = Math.abs(tickCount - targetTicks);
+        validIntervals.push({ interval, tickCount, diff });
+      }
     }
+
+    // If we have valid intervals, prefer smaller ones (better granularity)
+    if (validIntervals.length > 0) {
+      // Sort by interval size (prefer smaller for better granularity)
+      // This ensures 2h is chosen over 3h when both are valid
+      validIntervals.sort((a, b) => {
+        // Both intervals are already validated to be in 8-15 tick range
+        // Prefer smaller interval for better granularity and readability
+        return a.interval - b.interval;
+      });
+      return validIntervals[0].interval * 60; // Convert hours to minutes
+    }
+
+    // If no interval gives 8-15 ticks, find the one closest to target
+    let bestInterval = commonIntervals[0];
+    let bestDiff = Infinity;
+
+    for (const interval of commonIntervals) {
+      const tickCount = totalDisplayHours / interval;
+      const diff = Math.abs(tickCount - targetTicks);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestInterval = interval;
+      }
+    }
+
+    return bestInterval * 60; // Convert hours to minutes
   };
+
+  // Calculate total display range in hours (test duration + padding)
+  const totalDisplayHours = sanitizedDuration + paddingHours;
 
   // Calculate pressure profile data points
   const profileData = useMemo(() => {
@@ -270,12 +319,12 @@ export function PressureTestPreview({
             color: '#f0f0f0',
           },
         },
-        // Dynamic interval based on ACTUAL test duration (not padded range)
-        // For 24h test: 2h intervals = 120 min * 60 * 1000 = 7,200,000 ms
-        interval: calculateXAxisInterval(sanitizedDuration) * 60 * 1000,
+        // Dynamic interval based on TOTAL display range (test duration + padding)
+        // For 24h test (26h total): 2h intervals = 120 min * 60 * 1000 = 7,200,000 ms
+        interval: calculateXAxisInterval(totalDisplayHours) * 60 * 1000,
         // Ensure interval is strictly enforced (disable auto-adjustment)
-        minInterval: calculateXAxisInterval(sanitizedDuration) * 60 * 1000,
-        maxInterval: calculateXAxisInterval(sanitizedDuration) * 60 * 1000,
+        minInterval: calculateXAxisInterval(totalDisplayHours) * 60 * 1000,
+        maxInterval: calculateXAxisInterval(totalDisplayHours) * 60 * 1000,
         minorTick: {
           show: true,
           splitNumber: 4, // Creates minor ticks subdividing the main interval
@@ -297,7 +346,7 @@ export function PressureTestPreview({
         },
         min: 0,
         max: sanitizedDuration * 60, // Explicit max based on test duration in minutes
-        interval: calculateXAxisInterval(sanitizedDuration), // Dynamic interval based on duration
+        interval: calculateXAxisInterval(totalDisplayHours), // Dynamic interval based on total display range
         minInterval: 30, // Minimum 30 minutes
         axisLabel: {
           formatter: (value: number) => {
