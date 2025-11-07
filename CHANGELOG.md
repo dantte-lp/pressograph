@@ -7,7 +7,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Projects and Tests Page Enhancements (2025-11-07)
+
+**New Features:**
+
+1. **Confirmation Checkbox for Project Deletion**
+   - Added required confirmation checkbox to delete project dialog
+   - Delete button disabled until user checks "I understand this action cannot be undone"
+   - Prevents accidental project deletion
+   - Checkbox state resets when dialog closes
+   - **Files:** `/src/components/projects/delete-project-dialog.tsx`
+   - **Component:** `/src/components/ui/checkbox.tsx` (added from shadcn/ui)
+   - **Commit:** `19af301b`, `4bf418da`
+
+2. **Project Status Badge Display**
+   - All project cards now show prominent status badge
+   - Active projects: Green badge with "Active" label
+   - Archived projects: Gray badge with Archive icon
+   - Color-coded for quick visual identification
+   - Dark mode support with appropriate contrast
+   - **Files:** `/src/components/projects/project-card.tsx`
+   - **Commit:** `46245f56`
+
 ### Fixed
+
+#### Projects and Tests Page Critical Fixes (2025-11-07)
+
+**Five critical issues resolved:**
+
+1. **Delete Project - No Toast Notification**
+   - **Issue:** User reports "не видит уведомлений при удалении проекта" (no toast visible on delete)
+   - **Root Cause:** `redirect()` in server action prevented toast from rendering before redirect
+   - **Solution:**
+     - Changed `deleteProject()` to return success status instead of redirecting
+     - Client component now handles toast display and redirect
+     - Use `router.push()` for navigation after toast shows
+     - Toast displays before redirect occurs
+   - **Technical Details:**
+     - Removed `redirect()` from server action
+     - Added `useRouter` hook in client component
+     - Success flow: close dialog → show toast → redirect → refresh
+   - **Files Modified:**
+     - `/src/lib/actions/projects.ts` - Return success instead of redirect
+     - `/src/components/projects/delete-project-dialog.tsx` - Handle redirect client-side
+   - **Commit:** `4bf418da`
+
+2. **Archived Projects Filter Not Working**
+   - **Issue:** `/projects?archived=true` showed "Sample Project" which is active (not archived)
+   - **Root Cause:** ProjectsPage not reading `archived` query parameter
+   - **Solution:**
+     - Projects page now reads and parses `archived` query parameter
+     - Pass `isArchived` prop through component tree
+     - Update `getProjects()` action call with filter
+     - Different page header and empty state for archived view
+   - **Technical Details:**
+     - Added `ProjectsPageProps` interface with searchParams Promise
+     - Parse `archived` parameter: `params.archived === 'true'`
+     - ProjectList accepts `isArchived` prop
+     - ProjectEmpty shows appropriate message for archived view
+   - **Files Modified:**
+     - `/src/app/(dashboard)/projects/page.tsx` - Read query parameter
+     - `/src/components/projects/project-list.tsx` - Accept isArchived prop
+     - `/src/components/projects/project-empty.tsx` - Conditional rendering
+   - **Commit:** `4a09fed8`
+
+3. **Active Tests Filter Not Working**
+   - **Issue:** `/tests?status=active` showed no tests
+   - **Root Cause:** Database has no 'active' status (uses 'draft', 'ready', 'running', 'completed', 'failed', 'cancelled')
+   - **Solution:**
+     - Map 'active' filter to database statuses: ['running', 'ready']
+     - Update `getTests()` action to use `inArray()` for status filtering
+     - Filter works with comma-separated statuses
+   - **Technical Details:**
+     - Parse status parameter and map 'active' → ['running', 'ready']
+     - Replace `sql` template with `inArray(pressureTests.status, filters.status)`
+     - Import `inArray` from drizzle-orm
+   - **Files Modified:**
+     - `/src/app/(dashboard)/tests/page.tsx` - Map active to database statuses
+     - `/src/lib/actions/tests.ts` - Use inArray for status filtering
+   - **Commit:** `eacd8fee`
 
 #### Projects Page Critical Fixes (2025-11-07)
 
