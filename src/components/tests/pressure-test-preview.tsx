@@ -91,16 +91,16 @@ export function PressureTestPreview({
   const xAxisMax = useTimeBased ? endTime + paddingMs : sanitizedDuration * 60;
 
   /**
-   * Calculate optimal X-axis interval based on TOTAL display range (including padding)
+   * Calculate optimal X-axis interval based on display range
    *
    * Algorithm: Aims for 8-15 tick marks on the axis for optimal readability
    * Uses common interval values: 1h, 2h, 3h, 4h, 6h, 12h, 24h
    * Prefers smaller intervals when multiple options are valid (better granularity)
    *
-   * @param totalDisplayHours - Total hours displayed on axis (test duration + padding)
+   * @param displayHours - Total hours displayed on axis
    * @returns Interval in minutes
    */
-  const calculateXAxisInterval = (totalDisplayHours: number): number => {
+  const calculateXAxisInterval = (displayHours: number): number => {
     // Target tick count: aim for 10-12 ticks (comfortable range: 8-15)
     const targetTicks = 10;
 
@@ -111,7 +111,7 @@ export function PressureTestPreview({
     const validIntervals: Array<{ interval: number; tickCount: number; diff: number }> = [];
 
     for (const interval of commonIntervals) {
-      const tickCount = totalDisplayHours / interval;
+      const tickCount = displayHours / interval;
 
       // Check if tick count is in acceptable range (8-15 ticks)
       if (tickCount >= 8 && tickCount <= 15) {
@@ -137,7 +137,7 @@ export function PressureTestPreview({
     let bestDiff = Infinity;
 
     for (const interval of commonIntervals) {
-      const tickCount = totalDisplayHours / interval;
+      const tickCount = displayHours / interval;
       const diff = Math.abs(tickCount - targetTicks);
       if (diff < bestDiff) {
         bestDiff = diff;
@@ -148,8 +148,10 @@ export function PressureTestPreview({
     return bestInterval * 60; // Convert hours to minutes
   };
 
-  // Calculate total display range in hours (test duration + padding)
-  const totalDisplayHours = sanitizedDuration + paddingHours;
+  // Calculate display range in hours
+  // Time-based axis: includes ±1 hour padding (total: duration + 2 hours)
+  // Value-based axis: no padding (total: duration only)
+  const totalDisplayHours = useTimeBased ? sanitizedDuration + paddingHours : sanitizedDuration;
 
   // Calculate pressure profile data points
   const profileData = useMemo(() => {

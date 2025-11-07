@@ -8,24 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **X-Axis Interval Calculation for Padded Range** - Fixed interval calculation to consider total display range including padding
-  - Root cause: `calculateXAxisInterval()` was receiving test duration (e.g., 24h) but the actual X-axis displays with ±1 hour padding (26h total)
-  - For 24-hour test: Old algorithm calculated based on 24h, but ECharts displayed 26h range, causing incorrect intervals
-  - For 25-hour test: Was showing 4-hour intervals instead of appropriate 2-3 hour intervals
-  - **New auto-scaling algorithm:**
-    - Calculates based on TOTAL display range (test duration + 2 hours padding)
-    - Aims for 8-15 tick marks on axis for optimal readability
-    - Uses common interval values: 1h, 2h, 3h, 4h, 6h, 12h, 24h (no weird intervals)
-    - Prefers smaller intervals when multiple options are valid (better granularity)
-  - **Results:**
-    - 6-hour test (8h total): 1-hour intervals (8 ticks) ✓
-    - 12-hour test (14h total): 1-hour intervals (14 ticks) ✓
-    - 24-hour test (26h total): 2-hour intervals (13 ticks) ✓
-    - 25-hour test (27h total): 2-hour intervals (13.5 ticks) ✓
-    - 48-hour test (50h total): 4-hour intervals (12.5 ticks) ✓
-    - 72-hour test (74h total): 6-hour intervals (12.3 ticks) ✓
-  - Applies to both time-based (`type: 'time'`) and value-based (`type: 'value'`) X-axes
-  - User feedback: "For 24-hour tests with ±1 hour padding (26 hours total display range), the X-axis shows 1-hour intervals instead of 2-hour intervals" - resolved
+- **X-Axis Interval Regression for Value-Based Axis** - Fixed interval calculation mismatch between time-based and value-based axes
+  - **Root cause**: Previous fix (e36206ae) calculated intervals based on `totalDisplayHours` (duration + 2h padding) for BOTH axis types, but padding is ONLY applied to time-based axes. This caused:
+    - Value-based axis: Interval calculated for 40h (38h + 2h padding) but displayed range was only 38h
+    - ECharts auto-adjusted intervals back to 1-hour to fit the unpadded range
+    - User feedback: "в моменте было как надо, а потом опять промежуток 1 час стал" (intervals were correct, then reverted to 1 hour)
+  - **Fix**: Calculate intervals based on actual display range for each axis type:
+    - Time-based axis (`type: 'time'`): Uses `totalDisplayHours` (duration + 2h padding) - includes ±1 hour padding
+    - Value-based axis (`type: 'value'`): Uses `sanitizedDuration` (no padding) - displays exact test duration
+  - **New behavior (value-based axis without padding):**
+    - 24-hour test: 2-hour intervals (12 ticks) ✓
+    - 25-hour test: 2-hour intervals (12.5 ticks) ✓
+    - 38-hour test: 3-hour intervals (12.67 ticks) ✓ - User requirement: ">38h should use 3 or 4 hour intervals"
+    - 40-hour test: 3-hour intervals (13.33 ticks) ✓
+    - 48-hour test: 4-hour intervals (12 ticks) ✓
+    - 72-hour test: 6-hour intervals (12 ticks) ✓
+  - Algorithm remains: 8-15 tick target, common intervals (1h, 2h, 3h, 4h, 6h, 12h, 24h), prefer smaller when valid
+  - User feedback: "Если Test Duration больше 38, то нужно уже 3 или 4 часа промежуток ставить" - resolved
 
 ### Fixed
 - **Working Pressure 0 MPa Not Displaying Correctly** - Fixed graph line stuck at 10 MPa when working pressure is set to 0
