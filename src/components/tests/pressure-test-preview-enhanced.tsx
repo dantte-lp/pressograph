@@ -70,6 +70,9 @@ interface PressureTestPreviewEnhancedProps {
   intermediateStages?: IntermediateStage[];
   pressureUnit?: 'MPa' | 'Bar' | 'PSI';
   className?: string;
+  title?: string; // Custom graph title
+  showDescription?: boolean; // Show description section below graph
+  temperature?: number; // Operating temperature
 }
 
 /**
@@ -88,6 +91,9 @@ export function PressureTestPreviewEnhanced({
   intermediateStages = [],
   pressureUnit = 'MPa',
   className = '',
+  title,
+  showDescription = true,
+  temperature,
 }: PressureTestPreviewEnhancedProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
@@ -139,6 +145,14 @@ export function PressureTestPreviewEnhanced({
     // Add intermediate stages
     if (intermediateStages && intermediateStages.length > 0) {
       intermediateStages.forEach((stage) => {
+        // Drop from working pressure to stage pressure (if needed)
+        const dropStartTime = Math.max(currentTime, Math.min(stage.time - 0.5, totalMinutes - depressurizeDuration));
+        if (dropStartTime > currentTime) {
+          // Add point at working pressure before drop
+          dataPoints.push([dropStartTime, workingPressure]);
+          timeLabels.push(formatTime(dropStartTime));
+        }
+
         // Transition to stage pressure
         const stageStartTime = Math.min(stage.time, totalMinutes - depressurizeDuration);
         if (stageStartTime > currentTime) {
@@ -153,7 +167,14 @@ export function PressureTestPreviewEnhanced({
           timeLabels.push(formatTime(stageEndTime));
         }
 
-        currentTime = stageEndTime;
+        // Return to working pressure after stage
+        const returnTime = Math.min(stageEndTime + 0.5, totalMinutes - depressurizeDuration);
+        if (returnTime <= totalMinutes - depressurizeDuration) {
+          dataPoints.push([returnTime, workingPressure]);
+          timeLabels.push(formatTime(returnTime));
+        }
+
+        currentTime = returnTime;
       });
     }
 
@@ -215,7 +236,7 @@ export function PressureTestPreviewEnhanced({
     // Configure chart options (adapted from old Pressograph styling)
     const option: ECOption = {
       title: {
-        text: 'Pressure Test Profile Preview',
+        text: title || 'Pressure Test Profile Preview',
         left: 'center',
         textStyle: {
           fontSize: 14,
@@ -422,25 +443,40 @@ export function PressureTestPreviewEnhanced({
         style={{ height: '400px', minHeight: '300px' }}
       />
 
-      {/* Parameters Summary */}
-      <div className="mt-3 p-3 bg-muted/50 rounded-lg text-xs space-y-1">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Working Pressure:</span>
-          <span className="font-medium">{workingPressure} {pressureUnit}</span>
+      {/* Description Section (adapted from V1 styling) */}
+      {showDescription && (
+        <div className="mt-4 border-t pt-4">
+          <h4 className="text-sm font-semibold mb-3">Test Configuration</h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Working Pressure:</span>
+              <span className="font-medium">{workingPressure} {pressureUnit}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Max Pressure:</span>
+              <span className="font-medium">{maxPressure} {pressureUnit}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Test Duration:</span>
+              <span className="font-medium">{testDuration} hours</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Intermediate Stages:</span>
+              <span className="font-medium">{intermediateStages?.length || 0}</span>
+            </div>
+            {temperature !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Temperature:</span>
+                <span className="font-medium">{temperature}°C</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Pressure Unit:</span>
+              <span className="font-medium">{pressureUnit}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Max Pressure:</span>
-          <span className="font-medium">{maxPressure} {pressureUnit}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Test Duration:</span>
-          <span className="font-medium">{testDuration} hours</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Intermediate Stages:</span>
-          <span className="font-medium">{intermediateStages?.length || 0}</span>
-        </div>
-      </div>
+      )}
 
       {/* Graph Settings */}
       <Collapsible
