@@ -1,10 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Maximize2, X, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PressureTestPreview } from './pressure-test-preview';
 
 interface IntermediateStage {
   time: number;
@@ -25,22 +22,17 @@ interface PreviewDialogProps {
 }
 
 /**
- * Full-Screen Preview Dialog Component with A4 Landscape Format Support
+ * Preview Button Component
  *
- * Displays the pressure test graph in a truly full-screen modal dialog
- * with A4 landscape aspect ratio (1.414:1) for optimal print preview.
+ * Provides a button to open the pressure test preview in a new browser window.
+ * The full-screen modal dialog has been removed per user request due to
+ * landscape orientation issues.
  *
  * Features:
- * - True full-screen modal (width AND height maximized)
- * - A4 landscape format (297mm × 210mm aspect ratio)
- * - Button group with "Full Screen" and "Open in New Window" options
- * - Close button and ESC key support
- * - Responsive design with proper centering
- *
- * A4 Landscape Specifications:
- * - Aspect Ratio: √2:1 (approximately 1.414:1)
- * - Dimensions: 297mm × 210mm (width × height)
- * - Screen Equivalent: ~1123px × 794px
+ * - Opens preview in new browser window
+ * - A4 landscape format (297mm × 210mm)
+ * - Optimized window dimensions
+ * - Clean, print-ready display
  *
  * @example
  * ```typescript
@@ -65,14 +57,12 @@ export function PreviewDialog({
   endDateTime,
   triggerClassName,
 }: PreviewDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
   /**
    * Open preview in new browser window
    * Opens a dedicated A4 preview page with the test configuration
    *
-   * FIXED: Properly size popup window to landscape dimensions
-   * Uses comprehensive window features to ensure browser respects dimensions
+   * Window is sized for A4 landscape format (297mm × 210mm)
+   * with proper dimensions and positioning
    */
   const handleOpenInNewWindow = () => {
     // Prepare test configuration
@@ -130,85 +120,15 @@ export function PreviewDialog({
   };
 
   return (
-    <>
-      {/* Button Group: Full Screen + Open in New Window */}
-      <div className="inline-flex rounded-lg border border-input shadow-sm">
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={`rounded-r-none border-0 shadow-none ${triggerClassName || ''}`}
-            >
-              <Maximize2 className="h-4 w-4 mr-2" />
-              Full Screen
-            </Button>
-          </DialogTrigger>
-          <DialogContent
-            className="max-w-none w-screen h-screen flex flex-col p-8 rounded-none"
-            showCloseButton={false}
-          >
-            <DialogHeader className="flex-shrink-0 mb-4">
-              <DialogTitle className="text-2xl font-bold">
-                Pressure Test Preview - A4 Landscape Format
-              </DialogTitle>
-              <DialogDescription>
-                Full-screen preview in A4 landscape format (297mm × 210mm). Press ESC to close.
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* A4 Container - Centered and properly sized */}
-            <div className="flex-1 flex items-center justify-center overflow-auto">
-              <div
-                className="bg-background border-2 border-border shadow-2xl"
-                style={{
-                  width: '297mm',
-                  height: '210mm',
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  aspectRatio: '1.414 / 1',
-                  padding: '20mm',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {/* Graph Preview */}
-                <PressureTestPreview
-                  workingPressure={workingPressure}
-                  maxPressure={maxPressure}
-                  testDuration={testDuration}
-                  intermediateStages={intermediateStages}
-                  pressureUnit={pressureUnit}
-                  startDateTime={startDateTime}
-                  endDateTime={endDateTime}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
-            {/* Close button */}
-            <div className="flex justify-end gap-2 mt-4 flex-shrink-0">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                <X className="h-4 w-4 mr-2" />
-                Close (ESC)
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Open in New Window Button */}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleOpenInNewWindow}
-          className="rounded-l-none border-l-0 shadow-none"
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          New Window
-        </Button>
-      </div>
-    </>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={handleOpenInNewWindow}
+      className={triggerClassName || ''}
+    >
+      <ExternalLink className="h-4 w-4 mr-2" />
+      Open in New Window
+    </Button>
   );
 }
