@@ -71,7 +71,18 @@ const testFormSchema = z.object({
 
   // Template
   templateType: z.enum(['daily', 'extended', 'custom']).default('custom'),
-});
+}).refine(
+  (data) => {
+    // Validate that all intermediate stage pressures are >= working pressure
+    return data.intermediateStages.every(
+      (stage) => stage.pressure >= data.workingPressure
+    );
+  },
+  {
+    message: 'Intermediate stage pressure cannot be below working pressure',
+    path: ['intermediateStages'],
+  }
+);
 
 type TestFormData = z.infer<typeof testFormSchema>;
 
@@ -804,6 +815,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       </thead>
                       <tbody>
                         {watchedStages.map((_stage, index) => {
+                          const stagePressure = watchedStages[index]?.pressure || 0;
+                          const isPressureBelowWorking = stagePressure > 0 && stagePressure < workingPressure;
 
                           return (
                             <tr key={index} className="border-t hover:bg-muted/30">
@@ -811,12 +824,12 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                               <td className="px-3 py-1.5">
                                 <Input
                                   type="number"
-                                  step="0.5"
+                                  step="0.1"
                                   placeholder="0"
                                   className="h-8 w-20 text-xs"
                                   value={watchedStages[index]?.time || 0}
                                   onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
-                                  title="Time from test start in hours (e.g., 2.5 for 2h 30m)"
+                                  title="Time from test start in hours (e.g., 2.1 for 2h 6m)"
                                 />
                               </td>
                               <td className="px-3 py-1.5">
@@ -824,9 +837,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                   type="number"
                                   step="0.1"
                                   placeholder="0.0"
-                                  className="h-8 w-20 text-xs"
+                                  className={`h-8 w-20 text-xs ${isPressureBelowWorking ? 'border-destructive focus:ring-destructive' : ''}`}
                                   value={watchedStages[index]?.pressure || 0}
                                   onChange={(e) => handleUpdateStageField(index, 'pressure', parseFloat(e.target.value) || 0)}
+                                  title={isPressureBelowWorking ? `Pressure must be >= ${workingPressure} ${pressureUnit}` : ''}
+                                  aria-invalid={isPressureBelowWorking}
                                 />
                               </td>
                               <td className="px-3 py-1.5">
@@ -868,6 +883,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Add Stage
               </Button>
+
+              {/* Display intermediate stages validation error */}
+              {errors.intermediateStages && (
+                <FormError error={errors.intermediateStages.message || 'Invalid intermediate stages configuration'} />
+              )}
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button type="button" variant="outline" onClick={handlePrev}>
