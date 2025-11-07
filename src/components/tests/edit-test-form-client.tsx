@@ -77,7 +77,14 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
       temperature: test.config.temperature,
       allowablePressureDrop: test.config.allowablePressureDrop,
       pressureUnit: test.config.pressureUnit || 'MPa',
-      intermediateStages: test.config.intermediateStages || [],
+      // Transform database structure to form structure
+      // Database: { time, duration, pressure }
+      // Form: { duration, targetPressure, holdDuration }
+      intermediateStages: (test.config.intermediateStages || []).map((stage: any) => ({
+        duration: stage.time || 0, // time from DB becomes duration (time to reach stage)
+        targetPressure: stage.pressure || 0, // pressure from DB becomes targetPressure
+        holdDuration: stage.duration || 0, // duration from DB becomes holdDuration (time to hold at stage)
+      })),
       tags: test.tags?.join(', ') || '',
     },
   });
@@ -99,6 +106,15 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           : [];
 
         // Prepare update payload
+        // Transform form structure back to database structure
+        // Form: { duration, targetPressure, holdDuration }
+        // Database: { time, duration, pressure }
+        const transformedStages = (data.intermediateStages || []).map((stage) => ({
+          time: stage.duration, // duration from form becomes time (time to reach stage)
+          pressure: stage.targetPressure, // targetPressure from form becomes pressure
+          duration: stage.holdDuration, // holdDuration from form becomes duration (time to hold at stage)
+        }));
+
         const updatePayload = {
           name: data.name,
           description: data.description,
@@ -111,7 +127,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             temperature: data.temperature,
             allowablePressureDrop: data.allowablePressureDrop,
             pressureUnit: data.pressureUnit,
-            intermediateStages: data.intermediateStages || [],
+            intermediateStages: transformedStages,
           },
           tags,
         };
