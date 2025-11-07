@@ -9,6 +9,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Projects Page Critical Fixes (2025-11-07)
+
+**Four critical issues resolved:**
+
+1. **Test Number Prefix Uniqueness Validation**
+   - **Issue:** Multiple projects could use the same test number prefix, causing potential conflicts
+   - **Root Cause:** No uniqueness validation at database or application level for prefixes stored in JSONB settings
+   - **Solution Implemented:**
+     - Added `isTestNumberPrefixUnique()` helper to check uniqueness within organization
+     - Added `generateUniquePrefix()` to auto-generate timestamp-based unique prefixes
+     - Validates uniqueness on project creation and updates
+     - Returns user-friendly error: "Test number prefix 'XX' is already in use"
+     - Auto-generates unique prefix (e.g., "PT-8K4L") if not provided
+   - **Technical Details:**
+     - Database constraint not possible on JSONB field
+     - Application-level validation implemented with comprehensive checks
+     - Timestamp-based generation ensures uniqueness: `PT-{timestamp36}`
+   - **Files Modified:**
+     - `/src/lib/db/schema/projects.ts` - Added documentation
+     - `/src/lib/actions/projects.ts` - Added validation helpers
+     - `/src/components/projects/create-project-dialog.tsx` - Auto-generate default prefix
+   - **Commit:** `488400ab`
+
+2. **Nested `<p>` Tag Hydration Errors in Delete Dialog**
+   - **Issue:** React hydration errors: "In HTML, `<p>` cannot be a descendant of `<p>`"
+   - **Location:** Delete project confirmation dialog
+   - **Root Cause:** `AlertDialogDescription` renders as `<p>`, nested `<p>` tags inside caused invalid HTML
+   - **Solution:**
+     - Used `asChild` prop on AlertDialogDescription
+     - Replaced nested `<p>` tags with `<div>` elements
+     - Removed unused `useRouter` import
+   - **Impact:** Eliminated console hydration errors, valid HTML structure
+   - **Files Modified:** `/src/components/projects/delete-project-dialog.tsx`
+   - **Commit:** `79f79a5f`
+
+3. **Delete Success Shows "Failed" Toast**
+   - **Issue:** After successfully deleting project, user sees "Failed to delete project" toast
+   - **Root Cause:** `deleteProject()` uses Next.js `redirect()` which throws NEXT_REDIRECT error
+   - **Previous Code:** Dialog treated redirect as error, showing failure toast
+   - **Solution:**
+     - Added check for `error?.digest?.startsWith('NEXT_REDIRECT')`
+     - Recognize Next.js redirect as success, not error
+     - Show success toast when redirect detected
+     - Only show error toast for actual failures
+   - **Impact:** Users now see correct "Project deleted successfully" message
+   - **Files Modified:** `/src/components/projects/delete-project-dialog.tsx`
+   - **Commit:** `79f79a5f` (included with hydration fix)
+
+4. **Dashboard Navigation Reorganization**
+   - **Issue:** Quick actions were unorganized buttons without clear hierarchy
+   - **Requirements:** Use button-group pattern, add "List" prefix, make sections non-clickable headers
+   - **Solution Implemented:**
+     - Split quick actions into two separate cards: "Projects" and "Tests"
+     - Added section headers with icons (non-clickable as requested)
+     - Renamed buttons: "List Projects", "List Tests"
+     - Added new navigation: "Archived Projects", "Active Tests"
+     - Improved visual hierarchy following shadcn/ui design patterns
+   - **User Experience:** Better information architecture, clearer navigation options
+   - **Files Modified:** `/src/app/(dashboard)/dashboard/page.tsx`
+   - **Commit:** `643f58f7`
+
+**Testing:**
+- ✅ Build successful with zero TypeScript errors
+- ✅ All 19 routes compiled successfully
+- ✅ Prefix uniqueness validation working correctly
+- ✅ No hydration errors in console
+- ✅ Delete action shows correct success/error toasts
+- ✅ Dashboard navigation improved and functional
+
 #### Critical Navigation and Next.js 16 Compatibility Issues (2025-11-07)
 
 **Three critical bugs fixed in production:**
