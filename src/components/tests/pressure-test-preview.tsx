@@ -49,12 +49,6 @@ import {
   convertToMinutes,
 } from '@/lib/utils/pressure-drift-simulator';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
-import {
-  calculateZoomedTimeWindow,
-  getZoomInterval,
-  type TimeScale,
-  type TimeWindow,
-} from '@/lib/utils/time-zoom';
 
 // Register ECharts components (tree-shaking optimization)
 echarts.use([
@@ -122,10 +116,6 @@ interface PressureTestPreviewProps {
   enableCanvasStyle?: boolean;
   /** Theme for Canvas style (light or dark) */
   canvasTheme?: 'light' | 'dark';
-  /** Time scale zoom level (default: 'auto' - full test duration) */
-  timeScale?: TimeScale;
-  /** Custom time window (overrides timeScale if provided) */
-  timeWindow?: TimeWindow;
 }
 
 /**
@@ -206,8 +196,6 @@ export function PressureTestPreview({
   enableDrift = false,
   enableCanvasStyle = false,
   canvasTheme = 'light',
-  timeScale = 'auto',
-  timeWindow,
 }: PressureTestPreviewProps) {
   // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
@@ -283,24 +271,10 @@ export function PressureTestPreview({
     return sanitizedDuration;
   }, [useTimeBased, startTime, endTime, sanitizedDuration, paddingHours]);
 
-  /**
-   * Calculate zoomed time window using utility function
-   */
-  const zoomedTimeWindow = useMemo(() => {
-    return calculateZoomedTimeWindow(sanitizedDuration, timeScale, timeWindow);
-  }, [sanitizedDuration, timeScale, timeWindow]);
-
   // Memoize the calculated interval to avoid excessive recalculations
-  // Use zoomed display hours if zoom is active, otherwise use full display hours
   const xAxisInterval = useMemo(() => {
-    const displayHours = zoomedTimeWindow.isZoomed
-      ? zoomedTimeWindow.durationHours
-      : totalDisplayHours;
-    // Use optimized zoom interval calculation
-    return zoomedTimeWindow.isZoomed
-      ? getZoomInterval(displayHours)
-      : calculateXAxisInterval(displayHours);
-  }, [calculateXAxisInterval, zoomedTimeWindow, totalDisplayHours]);
+    return calculateXAxisInterval(totalDisplayHours);
+  }, [calculateXAxisInterval, totalDisplayHours]);
 
   /**
    * Calculate data extent (actual test start/end minutes with non-zero pressure)
@@ -545,9 +519,9 @@ export function PressureTestPreview({
       grid: {
         left: '12%',
         right: '8%',
-        bottom: '20%', // Increased from 18% to provide more space for zoom slider
-        top: '22%',
-        containLabel: false,
+        bottom: '25%', // Increased to make room for X-axis + spacing + slider
+        top: '15%',
+        containLabel: true, // Changed to true to include axis labels in grid
       },
 
       // X-axis configuration with tick marks
@@ -560,10 +534,10 @@ export function PressureTestPreview({
           fontSize: 11,
           color: '#4b5563',
         },
-        min: useTimeBased ? -paddingHours * 60 : zoomedTimeWindow.min,
+        min: useTimeBased ? -paddingHours * 60 : 0,
         max: useTimeBased
           ? (endTime - startTime) / (60 * 1000) + paddingHours * 60 // Total range with padding
-          : zoomedTimeWindow.max,
+          : sanitizedDuration * 60,
         interval: xAxisInterval,
         minInterval: xAxisInterval,
         maxInterval: xAxisInterval,
@@ -725,8 +699,8 @@ export function PressureTestPreview({
             ? ((dataExtent.max + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
             : (dataExtent.max / (sanitizedDuration * 60)) * 100,
           handleSize: 8,
-          height: 30,
-          bottom: 80, // Increased from 60 to 80 for better visual separation
+          height: 25,
+          bottom: 10, // Changed to 10 - now correctly at bottom with spacing
           // Let ECharts built-in theme handle colors for consistency
           borderRadius: 4,
         },
@@ -786,19 +760,9 @@ export function PressureTestPreview({
           itemStyle: {
             color: '#3b82f6',
           },
-          // Area fill with gradient
+          // Area fill with solid color (no gradient)
           areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' },
-              ],
-            },
+            color: 'rgba(59, 130, 246, 0.15)', // Solid semi-transparent blue
           },
           // Emphasis (hover) state
           emphasis: {
@@ -894,7 +858,6 @@ export function PressureTestPreview({
     enableCanvasStyle,
     canvasTheme,
     dataExtent,
-    zoomedTimeWindow,
     // Note: isDark removed - ECharts theme handles color automatically
   ]);
 
@@ -941,38 +904,94 @@ export function PressureTestPreview({
 
     window.addEventListener('resize', handleResize);
 
+    // Setup automatic time scale adaptation based on zoom level
+    // Listen to dataZoom changes and adjust axis formatting dynamically
+    if (useTimeBased) {
+      chart.on('dataZoom', (params: any) => {
+        // Get current zoom range from dataZoom state
+        const option = chart.getOption() as any;
+        const dataZoom = option.dataZoom?.[0];
+        if (!dataZoom) return;
+
+        const start = dataZoom.start || 0;
+        const end = dataZoom.end || 100;
+
+        // Calculate visible time range in hours
+        const totalMinutes = (endTime - startTime) / (60 * 1000);
+        const visibleMinutes = ((end - start) / 100) * totalMinutes;
+        const visibleHours = visibleMinutes / 60;
+
+        // Determine appropriate interval and formatter based on zoom level
+        let newInterval: number;
+        let newFormatter: (value: number) => string;
+        let minorSplitNumber: number;
+
+        if (visibleHours > 48) {
+          // Wide view: Daily marks
+          newInterval = 24 * 60; // 24 hours
+          minorSplitNumber = 4; // 6h minor ticks
+          newFormatter = (value: number) => {
+            const timestamp = startTime + value * 60 * 1000;
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('ru-RU', {
+              day: '2-digit',
+              month: 'short',
+            });
+          };
+        } else if (visibleHours > 6) {
+          // Medium view: Hourly marks
+          newInterval = 60; // 1 hour
+          minorSplitNumber = 6; // 10min minor ticks
+          newFormatter = (value: number) => {
+            const timestamp = startTime + value * 60 * 1000;
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+          };
+        } else {
+          // Close view: 15-30 minute marks
+          newInterval = visibleHours > 3 ? 30 : 15; // 30min or 15min
+          minorSplitNumber = 3; // 5min or 10min minor ticks
+          newFormatter = (value: number) => {
+            const timestamp = startTime + value * 60 * 1000;
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+          };
+        }
+
+        // Update chart with new axis configuration
+        chart.setOption({
+          xAxis: {
+            interval: newInterval,
+            minInterval: newInterval,
+            maxInterval: newInterval,
+            minorTick: {
+              show: true,
+              splitNumber: minorSplitNumber,
+            },
+            axisLabel: {
+              formatter: newFormatter,
+              fontSize: visibleHours > 48 ? 10 : 9,
+            },
+          },
+        });
+      });
+    }
+
     // Cleanup function
     return () => {
       handleResize.cancel(); // Cancel pending debounced calls
       window.removeEventListener('resize', handleResize);
+      if (useTimeBased && chart) {
+        chart.off('dataZoom');
+      }
     };
-  }, [chartOption, theme]); // Re-run when theme changes
-
-  /**
-   * Integrate dataZoom with Time Scale Zoom presets
-   *
-   * When timeScale changes, programmatically update dataZoom to show the selected range.
-   * This creates a complementary relationship:
-   * - Time Scale dropdown sets the initial zoom preset
-   * - Interactive dataZoom allows further adjustment
-   */
-  useEffect(() => {
-    if (!chartInstance.current || !zoomedTimeWindow.isZoomed) return;
-
-    const chart = chartInstance.current;
-    const totalMinutes = sanitizedDuration * 60;
-
-    // Calculate percentage of total duration
-    const startPercent = (zoomedTimeWindow.min / totalMinutes) * 100;
-    const endPercent = (zoomedTimeWindow.max / totalMinutes) * 100;
-
-    // Apply zoom programmatically using dispatchAction
-    chart.dispatchAction({
-      type: 'dataZoom',
-      start: startPercent,
-      end: endPercent,
-    });
-  }, [timeScale, timeWindow, sanitizedDuration, zoomedTimeWindow]);
+  }, [chartOption, theme, useTimeBased, startTime, endTime]); // Re-run when theme changes
 
   /**
    * Cleanup on unmount

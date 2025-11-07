@@ -380,9 +380,9 @@ export function A4PreviewGraph({
       grid: {
         left: '15%',
         right: '10%',
-        bottom: '22%', // Increased from 20% to provide more space for zoom slider
+        bottom: '25%', // Increased to make room for X-axis + spacing + slider
         top: '25%',
-        containLabel: false,
+        containLabel: true, // Changed to true to include axis labels in grid
       },
 
       /**
@@ -570,8 +570,8 @@ export function A4PreviewGraph({
           start: 0,
           end: 100,
           handleSize: 8,
-          height: 30,
-          bottom: 80, // Increased from 60 to 80 for better visual separation
+          height: 25,
+          bottom: 10, // Changed to 10 - now correctly at bottom with spacing
           // Let ECharts built-in theme handle colors for consistency
           borderRadius: 4,
         },
@@ -626,18 +626,9 @@ export function A4PreviewGraph({
             borderWidth: 2,
             borderColor: '#ffffff',
           },
+          // Area fill with solid color (no gradient)
           areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: 'rgba(59, 130, 246, 0.35)' },
-                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' },
-              ],
-            },
+            color: 'rgba(59, 130, 246, 0.15)', // Solid semi-transparent blue
           },
           markLine: {
             silent: true,
@@ -745,14 +736,96 @@ export function A4PreviewGraph({
     const chart = chartInstance.current;
     chart.setOption(chartOption, { notMerge: true });
 
+    // Setup automatic time scale adaptation based on zoom level
+    // Listen to dataZoom changes and adjust axis formatting dynamically
+    if (useTimeBased) {
+      chart.on('dataZoom', (params: any) => {
+        // Get current zoom range from dataZoom state
+        const option = chart.getOption() as any;
+        const dataZoom = option.dataZoom?.[0];
+        if (!dataZoom) return;
+
+        const start = dataZoom.start || 0;
+        const end = dataZoom.end || 100;
+
+        // Calculate visible time range in hours
+        const totalMinutes = (endTime - startTime) / (60 * 1000);
+        const visibleMinutes = ((end - start) / 100) * totalMinutes;
+        const visibleHours = visibleMinutes / 60;
+
+        // Determine appropriate interval and formatter based on zoom level
+        let newInterval: number;
+        let newFormatter: (value: number) => string;
+        let minorSplitNumber: number;
+
+        if (visibleHours > 48) {
+          // Wide view: Daily marks
+          newInterval = 24 * 60; // 24 hours
+          minorSplitNumber = 4; // 6h minor ticks
+          newFormatter = (value: number) => {
+            const timestamp = startTime + value * 60 * 1000;
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('ru-RU', {
+              day: '2-digit',
+              month: 'short',
+            });
+          };
+        } else if (visibleHours > 6) {
+          // Medium view: Hourly marks
+          newInterval = 60; // 1 hour
+          minorSplitNumber = 6; // 10min minor ticks
+          newFormatter = (value: number) => {
+            const timestamp = startTime + value * 60 * 1000;
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+          };
+        } else {
+          // Close view: 15-30 minute marks
+          newInterval = visibleHours > 3 ? 30 : 15; // 30min or 15min
+          minorSplitNumber = 3; // 5min or 10min minor ticks
+          newFormatter = (value: number) => {
+            const timestamp = startTime + value * 60 * 1000;
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+          };
+        }
+
+        // Update chart with new axis configuration
+        chart.setOption({
+          xAxis: {
+            interval: newInterval,
+            minInterval: newInterval,
+            maxInterval: newInterval,
+            minorTick: {
+              show: true,
+              splitNumber: minorSplitNumber,
+            },
+            axisLabel: {
+              formatter: newFormatter,
+              fontSize: visibleHours > 48 ? 11 : 10,
+            },
+          },
+        });
+      });
+    }
+
     // Cleanup
     return () => {
       if (chartInstance.current) {
+        if (useTimeBased) {
+          chartInstance.current.off('dataZoom');
+        }
         chartInstance.current.dispose();
         chartInstance.current = null;
       }
     };
-  }, [chartOption, theme]); // Re-run when theme changes
+  }, [chartOption, theme, useTimeBased, startTime, endTime]); // Re-run when theme changes
 
   return (
     <div className="w-full h-full p-8 print:p-6" style={{ minHeight: '210mm' }}>
