@@ -9,6 +9,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Create Test Form with Multi-Step Wizard (2025-11-07)
+
+**CRITICAL BUG FIX: /tests/new Route Conflict Resolved**
+
+**Problem:**
+- Accessing `/tests/new` or `/tests/new?duplicate={ID}` triggered database query error
+- Next.js was treating "new" as a dynamic route parameter via `/tests/[id]/page.tsx`
+- Error showed: `where ("pressure_tests"."id" = "new")` - attempting to query for test ID "new"
+
+**Root Cause:**
+- Next.js App Router matches routes in order: static routes first, then dynamic routes
+- Missing static `/tests/new` route meant `/tests/[id]` was catching all `/tests/*` paths
+
+**Solution Implemented:**
+
+1. **Created Static /tests/new Route** (`/src/app/(dashboard)/tests/new/page.tsx`)
+   - Server Component that pre-fetches projects for dropdown
+   - Handles `?duplicate={testId}` query parameter for test duplication
+   - Pre-fills form with source test data when duplicating
+   - Proper error handling for missing projects or failed test fetch
+   - Breadcrumb navigation showing "Create New Test" or "Duplicate: {testNumber}"
+
+2. **Multi-Step Form Component** (`/src/components/tests/create-test-form.tsx`)
+   - **Step 1: Basic Information**
+     - Test name (required)
+     - Project selection dropdown (required)
+     - Description (optional textarea)
+     - Tags system with add/remove functionality
+     - Template type selection (daily/extended/custom)
+
+   - **Step 2: Core Parameters**
+     - Working pressure with unit selector (MPa/Bar/PSI)
+     - Max pressure
+     - Test duration in hours
+     - Temperature with unit selector (°C/°F)
+     - Allowable pressure drop
+     - Equipment ID (optional)
+     - Operator name (optional)
+     - Additional notes (optional)
+
+   - **Step 3: Intermediate Stages (Optional)**
+     - Add/remove pressure steps dynamically
+     - Each stage: time (minutes), pressure, hold duration
+     - Visual stage cards with delete buttons
+     - Empty state when no stages added
+
+   - **Step 4: Review & Create**
+     - Summary of all configured settings
+     - Review basic info, core parameters, and stage count
+     - Two submission options:
+       - "Save as Draft" - Creates test with status='draft'
+       - "Create Test" - Creates test with status='ready'
+
+3. **Form Validation with Zod Schema**
+   - Full TypeScript type safety throughout form
+   - React Hook Form integration with zodResolver
+   - Field-level validation with error messages
+   - Step-by-step validation before navigation
+   - Prevents invalid data submission
+
+4. **Progressive UI Features**
+   - Step progress indicator showing current step
+   - Completed steps marked with checkboxes
+   - Previous/Next navigation between steps
+   - Form state preserved when navigating steps
+   - Loading states with transitions
+   - Toast notifications on success/error
+
+5. **Server Action: createTest** (`/src/lib/actions/tests.ts`)
+   - Validates project ownership
+   - Auto-generates unique test numbers using project prefix
+   - Format: `{prefix}-{timestamp}` (e.g., "PT-ABC123")
+   - Inserts test into database with all configuration
+   - Returns success/error with test ID for navigation
+   - Proper error handling and logging
+
+6. **Duplicate Test Functionality**
+   - Fetches source test via `getTestById()`
+   - Pre-fills all form fields with source data
+   - Appends " (Copy)" to test name
+   - Preserves all configuration including intermediate stages
+   - Generates new test number automatically
+
+**Dependencies Installed:**
+- @radix-ui/react-scroll-area 1.2.10 (for shadcn/ui scroll-area component)
+
+**Files Created:**
+- `/src/app/(dashboard)/tests/new/page.tsx` - Create test page (Server Component)
+- `/src/components/tests/create-test-form.tsx` - Multi-step form (Client Component)
+
+**Files Modified:**
+- `/src/lib/actions/tests.ts` - Added `createTest()` server action
+- `/src/components/dashboard/activity-feed.tsx` - Fixed TypeScript errors (unused variable, Link href type)
+- `/src/components/ui/form-error.tsx` - Uses `error` prop (not `message`)
+
+**Technical Details:**
+- Uses React Hook Form v7 with Zod validation
+- Controller component for shadcn/ui Select components
+- Proper async/await with Next.js 16 `params` Promise handling
+- Client-side state management with useState for multi-step flow
+- Server Actions with useTransition for loading states
+- Type-safe form data with TypeScript 5.9.3 strict mode
+
+**User Experience:**
+- Clean, intuitive 4-step wizard interface
+- Visual progress indicator
+- Field validation with inline error messages
+- Ability to save as draft or create ready-to-run test
+- Support for test duplication to speed up similar test creation
+- Responsive design works on mobile and desktop
+- Consistent with shadcn/ui design system
+
+**Testing:**
+- TypeScript type checking passes successfully
+- All form validations working correctly
+- Navigation between steps preserves state
+- Duplicate functionality tested with query parameters
+
+**Impact:**
+- CRITICAL: Fixes route conflict preventing test creation
+- Enables core workflow: Create → Configure → Save test
+- Supports test duplication for efficiency
+- Foundation for edit test functionality
+- Completes major user story from PAGES_STRUCTURE_AND_FUNCTIONALITY.md
+
+**Next Steps:**
+- Implement Edit Test Form (similar structure to create form)
+- Add Run Test functionality
+- Implement graph generation with ECharts
+- Build share link management
+- Add batch operations for multiple tests
+
+---
+
 #### Sprint 2 GitHub Issues Management (2025-11-07)
 
 **GitHub Issues and Milestones:**

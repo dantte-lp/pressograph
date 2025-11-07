@@ -50,17 +50,11 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
         <div className="space-y-4">
           {activities.map((activity) => {
             const Icon = activityIcons[activity.type];
-            const initials = activity.title
-              .split(' ')
-              .map((word) => word[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2);
 
             return (
               <Link
                 key={activity.id}
-                href={activity.link}
+                href={activity.link as any}
                 className="flex items-start space-x-4 rounded-lg p-3 transition-colors hover:bg-muted/50"
               >
                 <Avatar className="h-9 w-9">

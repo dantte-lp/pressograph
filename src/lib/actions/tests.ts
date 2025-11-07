@@ -479,6 +479,71 @@ export async function getTestRuns(
 }
 
 /**
+ * Create a new pressure test
+ */
+export async function createTest(data: {
+  name: string;
+  projectId: string;
+  description: string | null;
+  tags: string[];
+  templateType: 'daily' | 'extended' | 'custom';
+  config: any;
+  status: 'draft' | 'ready';
+  userId: string;
+  organizationId: string;
+}): Promise<{ success: boolean; test?: any; error?: string }> {
+  try {
+    const session = await requireAuth();
+    const userId = session.user.id;
+
+    // Verify project ownership
+    const project = await db
+      .select({ id: projects.id, settings: projects.settings })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, data.projectId),
+          eq(projects.ownerId, userId)
+        )
+      )
+      .limit(1);
+
+    if (!project[0]) {
+      return { success: false, error: 'Project not found or access denied' };
+    }
+
+    // Generate test number
+    const projectSettings = project[0].settings as any;
+    const prefix = projectSettings?.testNumberPrefix || 'PT';
+    const timestamp = Date.now().toString(36).toUpperCase().slice(-6);
+    const testNumber = `${prefix}-${timestamp}`;
+
+    // Insert new test
+    const result = await db
+      .insert(pressureTests)
+      .values({
+        testNumber,
+        name: data.name,
+        description: data.description,
+        projectId: data.projectId,
+        createdBy: userId,
+        organizationId: data.organizationId,
+        templateType: data.templateType,
+        config: data.config,
+        tags: data.tags,
+        status: data.status,
+        isPublic: false,
+      })
+      .returning();
+
+    return { success: true, test: result[0] };
+  } catch (error) {
+    console.error('Error creating test:', error);
+    return { success: false, error: 'Failed to create test' };
+  }
+}
+
+/**
  * Delete a test
  */
 export async function deleteTest(testId: string): Promise<{ success: boolean; error?: string }> {
