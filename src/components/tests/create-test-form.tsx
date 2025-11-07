@@ -774,8 +774,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   testDuration={debouncedTestDuration}
                   intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
-                  startDateTime={startDateTime}
-                  endDateTime={watch('endDateTime')}
+                  startDateTime={startDateTime || undefined}
+                  endDateTime={watch('endDateTime') || undefined}
                 />
               </CardContent>
             </Card>
@@ -952,8 +952,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   testDuration={debouncedTestDuration}
                   intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
-                  startDateTime={startDateTime}
-                  endDateTime={watch('endDateTime')}
+                  startDateTime={startDateTime || undefined}
+                  endDateTime={watch('endDateTime') || undefined}
                 />
               </CardContent>
             </Card>
@@ -1104,8 +1104,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   testDuration={debouncedTestDuration}
                   intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
-                  startDateTime={startDateTime}
-                  endDateTime={watch('endDateTime')}
+                  startDateTime={startDateTime || undefined}
+                  endDateTime={watch('endDateTime') || undefined}
                 />
               </CardContent>
             </Card>

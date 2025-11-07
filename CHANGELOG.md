@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **X-Axis Interval Display** - Fixed 1-hour intervals showing for 24h and 28h tests instead of 2 hours
+  - **Root Cause**: Form cache was restoring previous test data that included `startDateTime` and `endDateTime` values
+  - Empty string `startDateTime`/`endDateTime` from cached data was being passed to `PressureTestPreview` component
+  - `Boolean('') === false` but the component still received the empty strings, making `useTimeBased = Boolean(startDateTime && endDateTime)` evaluate to `true`
+  - This forced the preview to use time-based axis with padding, causing display range mismatch
+  - **Solution**: Changed to `startDateTime || undefined` and `endDateTime || undefined` so empty strings become `undefined`
+  - Now `Boolean(undefined && undefined) === false`, correctly using value-based axis when no dates are entered
+  - Verified fix with 24h test: now correctly shows 2-hour intervals instead of 1-hour intervals
+
 ### Added
 - **ECharts Configuration Debug Logging** - Added detailed logging to track exact values passed to ECharts
   - Logs `useTimeBased` value to verify axis type selection
