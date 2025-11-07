@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConicalIcon, PlusIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { TestsTable } from '@/components/tests/tests-table';
 import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
@@ -51,7 +51,7 @@ export default function TestsPage({ searchParams }: TestsPageProps) {
           </p>
         </div>
         <Button asChild>
-          <Link href="/tests/new">
+          <Link href={"/tests/new" as any}>
             <PlusIcon className="mr-2 h-4 w-4" />
             Create Test
           </Link>

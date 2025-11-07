@@ -76,13 +76,13 @@ export default async function ProjectDetailPage({
         </div>
         <div className="flex gap-2">
           <Button asChild>
-            <Link href={`/tests/new?project=${project.id}`}>
+            <Link href={`/tests/new?project=${project.id}` as any}>
               <PlusIcon className="mr-2 h-4 w-4" />
               Create Test
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href={`/projects/${project.id}/settings`}>
+            <Link href={`/projects/${project.id}/settings` as any}>
               <SettingsIcon className="mr-2 h-4 w-4" />
               Settings
             </Link>

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { toggleArchiveProject, deleteProject } from '@/lib/actions/projects';
+import { toggleArchiveProject } from '@/lib/actions/projects';
 import { EditProjectDialog } from './edit-project-dialog';
 import { DeleteProjectDialog } from './delete-project-dialog';
 import type { Project } from '@/lib/db/schema/projects';
@@ -121,7 +121,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               </Badge>
             )}
             <Badge variant="outline">
-              {project.settings.testNumberPrefix || 'PT'}
+              {project.settings?.testNumberPrefix || 'PT'}
             </Badge>
           </div>
         </CardContent>

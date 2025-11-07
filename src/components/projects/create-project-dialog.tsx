@@ -42,13 +42,13 @@ const formSchema = z.object({
     .min(1, 'Project name is required')
     .max(255, 'Project name is too long'),
   description: z.string().optional(),
-  autoNumberTests: z.boolean().default(true),
+  autoNumberTests: z.boolean(),
   testNumberPrefix: z
     .string()
     .min(1, 'Prefix is required')
     .max(10, 'Prefix is too long')
     .regex(/^[A-Z0-9-]+$/, 'Prefix must contain only uppercase letters, numbers, and hyphens'),
-  requireNotes: z.boolean().default(false),
+  requireNotes: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;

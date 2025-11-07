@@ -98,7 +98,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
             : 'Create your first pressure test to get started'}
         </p>
         <Button asChild>
-          <Link href="/tests/new">Create Test</Link>
+          <Link href={"/tests/new" as any}>Create Test</Link>
         </Button>
       </div>
     );
@@ -127,7 +127,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                 <TableCell className="font-medium">{test.testNumber}</TableCell>
                 <TableCell>
                   <Link
-                    href={`/tests/${test.id}`}
+                    href={`/tests/${test.id}` as any}
                     className="hover:underline"
                   >
                     {test.name}
@@ -135,7 +135,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                 </TableCell>
                 <TableCell>
                   <Link
-                    href={`/projects/${test.projectId}`}
+                    href={`/projects/${test.projectId}` as any}
                     className="text-muted-foreground hover:underline"
                   >
                     {test.projectName}
@@ -169,20 +169,20 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/tests/${test.id}`}>
+                        <Link href={`/tests/${test.id}` as any}>
                           <EyeIcon className="mr-2 h-4 w-4" />
                           View Details
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/tests/${test.id}/runs`}>
+                        <Link href={`/tests/${test.id}/runs` as any}>
                           <PlayIcon className="mr-2 h-4 w-4" />
                           View Runs
                         </Link>
                       </DropdownMenuItem>
                       {test.latestGraphSize && (
                         <DropdownMenuItem asChild>
-                          <Link href={`/api/tests/${test.id}/download`}>
+                          <Link href={`/api/tests/${test.id}/download` as any}>
                             <DownloadIcon className="mr-2 h-4 w-4" />
                             Download Graph ({formatBytes(test.latestGraphSize)})
                           </Link>
@@ -193,7 +193,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                         Create Share Link
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/tests/${test.id}/duplicate`}>
+                        <Link href={`/tests/${test.id}/duplicate` as any}>
                           <CopyIcon className="mr-2 h-4 w-4" />
                           Duplicate Test
                         </Link>
@@ -230,7 +230,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               asChild
               disabled={data.page <= 1}
             >
-              <Link href={buildPageUrl(data.page - 1)}>
+              <Link href={buildPageUrl(data.page - 1) as any}>
                 <ChevronLeftIcon className="h-4 w-4" />
                 Previous
               </Link>
@@ -244,7 +244,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               asChild
               disabled={data.page >= data.totalPages}
             >
-              <Link href={buildPageUrl(data.page + 1)}>
+              <Link href={buildPageUrl(data.page + 1) as any}>
                 Next
                 <ChevronRightIcon className="h-4 w-4" />
               </Link>

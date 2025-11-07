@@ -66,9 +66,9 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     defaultValues: {
       name: project.name,
       description: project.description || '',
-      autoNumberTests: project.settings.autoNumberTests,
-      testNumberPrefix: project.settings.testNumberPrefix,
-      requireNotes: project.settings.requireNotes,
+      autoNumberTests: project.settings?.autoNumberTests ?? true,
+      testNumberPrefix: project.settings?.testNumberPrefix ?? 'PT',
+      requireNotes: project.settings?.requireNotes ?? false,
     },
   });
 
@@ -77,9 +77,9 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     form.reset({
       name: project.name,
       description: project.description || '',
-      autoNumberTests: project.settings.autoNumberTests,
-      testNumberPrefix: project.settings.testNumberPrefix,
-      requireNotes: project.settings.requireNotes,
+      autoNumberTests: project.settings?.autoNumberTests ?? true,
+      testNumberPrefix: project.settings?.testNumberPrefix ?? 'PT',
+      requireNotes: project.settings?.requireNotes ?? false,
     });
   }, [project, form]);
 
@@ -94,7 +94,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
           autoNumberTests: values.autoNumberTests,
           testNumberPrefix: values.testNumberPrefix,
           requireNotes: values.requireNotes,
-          defaultTemplateType: project.settings.defaultTemplateType,
+          defaultTemplateType: project.settings?.defaultTemplateType ?? 'pdf',
         },
       });
 

@@ -140,7 +140,7 @@ export default async function DashboardPage() {
               {activities.map((activity) => (
                 <Link
                   key={activity.id}
-                  href={activity.link}
+                  href={activity.link as any}
                   className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 >
                   <div className="mt-1">

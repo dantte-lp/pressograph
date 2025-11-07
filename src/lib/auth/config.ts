@@ -24,6 +24,7 @@ declare module 'next-auth' {
       name?: string | null;
       image?: string | null;
       role: string;
+      organizationId?: string | null;
       createdAt?: string | null;
       lastLoginAt?: string | null;
     };
@@ -32,6 +33,7 @@ declare module 'next-auth' {
   interface User {
     username?: string | null;
     role: string;
+    organizationId?: string | null;
     createdAt?: Date;
     lastLoginAt?: Date | null;
   }
@@ -42,6 +44,7 @@ declare module 'next-auth/jwt' {
     id: string;
     username?: string | null;
     role: string;
+    organizationId?: string | null;
     createdAt?: string | null;
     lastLoginAt?: string | null;
   }
@@ -114,6 +117,7 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             image: user.image,
             role: user.role,
+            organizationId: user.organizationId,
             createdAt: user.createdAt,
             lastLoginAt: user.lastLoginAt,
           };
@@ -159,6 +163,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.username = token.username as string;
         session.user.role = token.role;
+        session.user.organizationId = token.organizationId;
         session.user.createdAt = token.createdAt;
         session.user.lastLoginAt = token.lastLoginAt;
       }
@@ -170,6 +175,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.username = user.username;
         token.role = user.role || 'user';
+        token.organizationId = user.organizationId;
         token.createdAt = user.createdAt?.toISOString();
         token.lastLoginAt = user.lastLoginAt?.toISOString();
       }

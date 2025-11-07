@@ -148,7 +148,7 @@ export async function createProject(data: {
 }) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id || !session?.user?.organizationId) {
+  if (!session?.user?.id) {
     return { project: null, error: 'Unauthorized' };
   }
 
@@ -172,6 +172,11 @@ export async function createProject(data: {
       defaultTemplateType: 'daily',
       ...settings,
     };
+
+    // Ensure user has an organization
+    if (!session.user.organizationId) {
+      return { project: null, error: 'User must belong to an organization to create projects' };
+    }
 
     // Insert new project
     const newProject: NewProject = {
