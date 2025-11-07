@@ -180,10 +180,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const pressureUnit = watch('pressureUnit') || 'MPa';
 
   // Debounce graph updates for better performance (300ms delay)
-  // Add fallback values to prevent undefined/0 from causing incorrect interval calculations
-  const debouncedWorkingPressure = useDebounce(workingPressure || 10, 300);
-  const debouncedMaxPressure = useDebounce(maxPressure || 15, 300);
-  const debouncedTestDuration = useDebounce(testDuration || 24, 300);
+  // Use nullish coalescing (??) to allow 0 values while providing defaults for undefined/null
+  const debouncedWorkingPressure = useDebounce(workingPressure ?? 10, 300);
+  const debouncedMaxPressure = useDebounce(maxPressure ?? 15, 300);
+  const debouncedTestDuration = useDebounce(testDuration ?? 24, 300);
   const debouncedStages = useDebounce(watchedStages, 300);
 
   // Add tag

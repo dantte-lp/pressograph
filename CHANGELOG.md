@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Working Pressure 0 MPa Not Displaying Correctly** - Fixed graph line stuck at 10 MPa when working pressure is set to 0
+  - Root cause: Logical OR (`||`) treats 0 as falsy, so `0 || 10` returns 10
+  - Applied to debounced values in create form (lines 184-186)
+  - Applied to preview props in edit form (lines 326, 433-434)
+  - **Fix**: Changed from `workingPressure || 10` to `workingPressure ?? 10` (nullish coalescing)
+  - Nullish coalescing (`??`) only returns fallback for `null`/`undefined`, NOT for `0`
+  - Now correctly displays 0 MPa working pressure in graph
+  - Same fix applied to `maxPressure` and `testDuration` for consistency
+  - User feedback: "Линия графика почему-то зафиксировалась на 10МПа, хотя Working Pressure - 0" - resolved
 - **Preview Graph Interval Display Bug (Create and Edit Forms)** - Fixed 1-hour intervals showing for 24-hour tests
   - Root cause: Missing fallback values in debounced form values caused undefined/0 to be passed to preview
   - When `testDuration` is undefined/0, preview would sanitize to 24h but interval calculation already completed
