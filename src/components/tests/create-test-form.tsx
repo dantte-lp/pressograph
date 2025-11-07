@@ -30,9 +30,11 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
 import { PreviewDialog } from '@/components/tests/preview-dialog';
+import { ImportConfigButton } from '@/components/tests/import-config-button';
 import { createTest } from '@/lib/actions/tests';
 import type { TestDetail } from '@/lib/actions/tests';
 import type { Project } from '@/lib/db/schema/projects';
+import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 
 /**
  * Form validation schema
@@ -250,6 +252,24 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     }
   };
 
+  // Handle imported configuration
+  const handleImportConfig = (config: Partial<PressureTestConfig>) => {
+    // Update form fields with imported values
+    if (config.workingPressure !== undefined) setValue('workingPressure', config.workingPressure);
+    if (config.maxPressure !== undefined) setValue('maxPressure', config.maxPressure);
+    if (config.testDuration !== undefined) setValue('testDuration', config.testDuration);
+    if (config.temperature !== undefined) setValue('temperature', config.temperature);
+    if (config.allowablePressureDrop !== undefined) setValue('allowablePressureDrop', config.allowablePressureDrop);
+    if (config.pressureUnit) setValue('pressureUnit', config.pressureUnit);
+    if (config.temperatureUnit) setValue('temperatureUnit', config.temperatureUnit);
+    if (config.equipmentId) setValue('equipmentId', config.equipmentId);
+    if (config.operatorName) setValue('operatorName', config.operatorName);
+    if (config.notes) setValue('notes', config.notes);
+    if (config.startDateTime) setValue('startDateTime', config.startDateTime);
+    if (config.endDateTime) setValue('endDateTime', config.endDateTime);
+    if (config.intermediateStages) setValue('intermediateStages', config.intermediateStages);
+  };
+
   // Watch for changes in start date/time or duration to auto-calculate end date/time
   const startDateTime = watch('startDateTime');
   const watchedDuration = watch('testDuration');
@@ -407,11 +427,14 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
           {/* Step 1: Basic Information */}
           {currentStep === 1 && (
           <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>
-                Provide a name, select a project, and add optional details
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div className="space-y-1">
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>
+                  Provide a name, select a project, and add optional details
+                </CardDescription>
+              </div>
+              <ImportConfigButton onImport={handleImportConfig} size="sm" />
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField

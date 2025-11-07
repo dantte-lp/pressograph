@@ -11,6 +11,7 @@ import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
 import { PressureTestPreviewEnhanced } from '@/components/tests/pressure-test-preview-enhanced';
 import { EmulationExportDialog } from '@/components/tests/emulation-export-dialog';
+import { ExportConfigButton } from '@/components/tests/export-config-button';
 import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 /**
@@ -203,6 +204,15 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   testNumber={test.testNumber}
                   testName={test.name}
                   config={test.config}
+                />
+                <ExportConfigButton
+                  config={test.config}
+                  testNumber={test.testNumber}
+                  testName={test.name}
+                  description={test.description || undefined}
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
                 />
                 <Button variant="outline" size="sm" className="w-full justify-start" disabled>
                   <Share2Icon className="mr-2 h-4 w-4" />
