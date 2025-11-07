@@ -184,7 +184,7 @@ export function PressureTestPreview({
   }, [startDateTime, endDateTime]);
 
   // Calculate time bounds for the chart
-  const { startTime, endTime, paddingMs, paddingHours } = useMemo(() => {
+  const { startTime, paddingHours } = useMemo(() => {
     const start = useTimeBased && startDateTime ? new Date(startDateTime).getTime() : 0;
     const end = useTimeBased && endDateTime
       ? new Date(endDateTime).getTime()

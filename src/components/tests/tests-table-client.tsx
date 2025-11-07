@@ -30,14 +30,13 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   FileDownIcon,
-  Loader2Icon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { formatBytes } from '@/lib/utils/format';
 import type { PaginatedTests, TestFilters, PaginationParams } from '@/lib/actions/tests';
-import { deleteTest, batchDeleteTests } from '@/lib/actions/tests';
+import { DeleteTestDialog } from './delete-test-dialog';
+import { BatchDeleteTestsDialog } from './batch-delete-tests-dialog';
 
 interface TestsTableClientProps {
   data: PaginatedTests;
@@ -55,30 +54,14 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export function TestsTableClient({ data, filters, pagination }: TestsTableClientProps) {
-  const router = useRouter();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
+  const [testToDelete, setTestToDelete] = useState<{ id: string; number: string; name?: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [batchProcessing, setBatchProcessing] = useState(false);
 
-  const handleDelete = async (testId: string, testNumber: string) => {
-    if (!confirm(`Are you sure you want to delete test ${testNumber}? This action cannot be undone.`)) {
-      return;
-    }
-
-    setDeletingId(testId);
-    try {
-      const result = await deleteTest(testId);
-      if (result.success) {
-        router.refresh();
-      } else {
-        alert(result.error ?? 'Failed to delete test');
-      }
-    } catch (error) {
-      console.error('Error deleting test:', error);
-      alert('Failed to delete test');
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDeleteClick = (testId: string, testNumber: string, testName?: string) => {
+    setTestToDelete({ id: testId, number: testNumber, name: testName });
+    setDeleteDialogOpen(true);
   };
 
   const toggleSelectAll = () => {
@@ -99,27 +82,12 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
     setSelectedIds(newSelected);
   };
 
-  const handleBatchDelete = async () => {
-    const count = selectedIds.size;
-    if (!confirm(`Are you sure you want to delete ${count} test${count > 1 ? 's' : ''}? This action cannot be undone.`)) {
-      return;
-    }
+  const handleBatchDeleteClick = () => {
+    setBatchDeleteDialogOpen(true);
+  };
 
-    setBatchProcessing(true);
-    try {
-      const result = await batchDeleteTests(Array.from(selectedIds));
-      if (result.success) {
-        setSelectedIds(new Set());
-        router.refresh();
-      } else {
-        alert(result.error ?? 'Failed to delete tests');
-      }
-    } catch (error) {
-      console.error('Error deleting tests:', error);
-      alert('Failed to delete tests');
-    } finally {
-      setBatchProcessing(false);
-    }
+  const handleBatchDeleteSuccess = () => {
+    setSelectedIds(new Set());
   };
 
   const handleBatchExportCSV = () => {
@@ -194,7 +162,6 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               variant="outline"
               size="sm"
               onClick={handleBatchExportCSV}
-              disabled={batchProcessing}
             >
               <FileDownIcon className="mr-2 h-4 w-4" />
               Export CSV
@@ -202,20 +169,10 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleBatchDelete}
-              disabled={batchProcessing}
+              onClick={handleBatchDeleteClick}
             >
-              {batchProcessing ? (
-                <>
-                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2Icon className="mr-2 h-4 w-4" />
-                  Delete
-                </>
-              )}
+              <Trash2Icon className="mr-2 h-4 w-4" />
+              Delete
             </Button>
           </div>
         </div>
@@ -292,7 +249,6 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled={deletingId === test.id}
                       >
                         <MoreHorizontalIcon className="h-4 w-4" />
                         <span className="sr-only">Actions</span>
@@ -332,11 +288,10 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive"
-                        onClick={() => handleDelete(test.id, test.testNumber)}
-                        disabled={deletingId === test.id}
+                        onClick={() => handleDeleteClick(test.id, test.testNumber, test.name)}
                       >
                         <Trash2Icon className="mr-2 h-4 w-4" />
-                        {deletingId === test.id ? 'Deleting...' : 'Delete'}
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -383,6 +338,25 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
           </div>
         </div>
       )}
+
+      {/* Delete Test Dialog */}
+      {testToDelete && (
+        <DeleteTestDialog
+          testId={testToDelete.id}
+          testNumber={testToDelete.number}
+          testName={testToDelete.name}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+        />
+      )}
+
+      {/* Batch Delete Dialog */}
+      <BatchDeleteTestsDialog
+        testIds={Array.from(selectedIds)}
+        open={batchDeleteDialogOpen}
+        onOpenChange={setBatchDeleteDialogOpen}
+        onSuccess={handleBatchDeleteSuccess}
+      />
     </div>
   );
 }
