@@ -194,11 +194,9 @@ export function PressureTestPreview({
     const dataPoints: [number, number][] = [];
     const timeLabels: string[] = [];
 
-    // Helper to convert minutes to X value (timestamp or minutes)
+    // ALWAYS use minutes for X-axis (value-based approach)
+    // This gives us full control over intervals regardless of date selection
     const minutesToX = (minutes: number): number => {
-      if (useTimeBased) {
-        return startTime + minutes * 60 * 1000;
-      }
       return minutes;
     };
 
@@ -326,64 +324,40 @@ export function PressureTestPreview({
         bottom: '18%',
         top: '22%',
       },
-      xAxis: useTimeBased ? {
-        type: 'time',
-        name: 'Дата и время',
-        nameLocation: 'middle',
-        nameGap: 25,
-        nameTextStyle: {
-          fontSize: 11,
-        },
-        min: xAxisMin,
-        max: xAxisMax,
-        // CRITICAL: For time-based axes, use splitNumber to control the number of ticks
-        // splitNumber tells ECharts how many segments to divide the axis into
-        // Formula: totalRange / intervalSize
-        // Example: 26h range / 2h interval = 13 ticks
-        splitNumber: Math.ceil((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)),
-        axisLabel: {
-          formatter: (value: number) => {
-            const date = new Date(value);
-            const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-            const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            return `${dateStr}\n${timeStr}`;
-          },
-          fontSize: 9,
-          rotate: 0,
-          showMinLabel: true, // Always show first label
-          showMaxLabel: true, // Always show last label
-        },
-        splitLine: {
-          show: true,
-          lineStyle: {
-            type: 'dashed',
-            color: '#f0f0f0',
-          },
-        },
-      } : {
+      xAxis: {
         type: 'value',
-        name: 'Время',
+        name: useTimeBased ? 'Дата и время' : 'Время',
         nameLocation: 'middle',
         nameGap: 25,
         nameTextStyle: {
           fontSize: 11,
         },
-        min: 0,
-        max: sanitizedDuration * 60, // Explicit max based on test duration in minutes
-        interval: xAxisInterval, // Dynamic interval based on total display range
-        // Ensure interval is strictly enforced (disable auto-adjustment) - same as time-based axis
+        min: useTimeBased ? -paddingHours * 60 : 0, // With padding for time-based
+        max: useTimeBased ? (sanitizedDuration + paddingHours) * 60 : sanitizedDuration * 60,
+        interval: xAxisInterval,
         minInterval: xAxisInterval,
         maxInterval: xAxisInterval,
         axisLabel: {
           formatter: (value: number) => {
-            if (value === 0) return '0';
-            const hours = Math.floor(value / 60);
-            const mins = Math.round(value % 60);
-            if (hours === 0) return `${mins}m`;
-            if (mins === 0) return `${hours}h`;
-            return `${hours}h ${mins}m`;
+            if (useTimeBased) {
+              // Convert minutes offset to actual date/time
+              const timestamp = startTime + value * 60 * 1000;
+              const date = new Date(timestamp);
+              const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+              const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+              return `${dateStr}\n${timeStr}`;
+            } else {
+              // Show duration format
+              if (value === 0) return '0';
+              const hours = Math.floor(value / 60);
+              const mins = Math.round(value % 60);
+              if (hours === 0) return `${mins}m`;
+              if (mins === 0) return `${hours}h`;
+              return `${hours}h ${mins}m`;
+            }
           },
-          fontSize: 10,
+          fontSize: useTimeBased ? 9 : 10,
+          rotate: 0,
         },
         splitLine: {
           show: true,
@@ -490,16 +464,18 @@ export function PressureTestPreview({
     console.log(`[ECharts Config] xAxisInterval: ${xAxisInterval} minutes`);
 
     if (useTimeBased) {
-      const intervalMs = xAxisInterval * 60 * 1000;
-      const splitNumber = Math.ceil((xAxisMax - xAxisMin) / intervalMs);
-      console.log(`[ECharts Config] Time-based axis - desired interval: ${intervalMs}ms (${xAxisInterval / 60}h)`);
-      console.log(`[ECharts Config] Time-based axis - splitNumber: ${splitNumber} ticks`);
-      console.log(`[ECharts Config] Time-based axis - xAxisMin: ${xAxisMin}, xAxisMax: ${xAxisMax}`);
-      console.log(`[ECharts Config] Time-based axis - Display range: ${(xAxisMax - xAxisMin) / (1000 * 60 * 60)} hours`);
+      const minMinutes = -paddingHours * 60;
+      const maxMinutes = (sanitizedDuration + paddingHours) * 60;
+      console.log(`[ECharts Config] Value-based axis with time formatting`);
+      console.log(`[ECharts Config] interval: ${xAxisInterval}, minInterval: ${xAxisInterval}, maxInterval: ${xAxisInterval}`);
+      console.log(`[ECharts Config] min: ${minMinutes} minutes, max: ${maxMinutes} minutes`);
+      console.log(`[ECharts Config] Display range: ${maxMinutes - minMinutes} minutes (${(maxMinutes - minMinutes) / 60} hours)`);
+      console.log(`[ECharts Config] Start time: ${new Date(startTime).toLocaleString('ru-RU')}`);
     } else {
-      console.log(`[ECharts Config] Value-based axis - interval: ${xAxisInterval}, minInterval: ${xAxisInterval}, maxInterval: ${xAxisInterval}`);
-      console.log(`[ECharts Config] Value-based axis - min: 0, max: ${sanitizedDuration * 60} minutes`);
-      console.log(`[ECharts Config] Value-based axis - Display range: ${sanitizedDuration} hours`);
+      console.log(`[ECharts Config] Value-based axis with duration formatting`);
+      console.log(`[ECharts Config] interval: ${xAxisInterval}, minInterval: ${xAxisInterval}, maxInterval: ${xAxisInterval}`);
+      console.log(`[ECharts Config] min: 0, max: ${sanitizedDuration * 60} minutes`);
+      console.log(`[ECharts Config] Display range: ${sanitizedDuration} hours`);
     }
 
     // Log the EXACT xAxis configuration being passed to ECharts

@@ -8,28 +8,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **X-Axis Time-Based Interval FINAL FIX (ATTEMPT 3)** - Complete architecture change to use value-based axis for both cases
+  - **Problem with splitNumber Approach**: `splitNumber` is only a **suggestion** for time-based axes
+    - ECharts ignores `splitNumber` and chooses "nice" time boundaries (00:00, 01:00, 02:00...)
+    - Result: 24h test with `splitNumber: 13` still showed 1-hour intervals
+    - Confirmed: ALL interval control properties are ignored for `type: 'time'` axes
+  - **FINAL SOLUTION**: Always use `type: 'value'` axis with custom formatter
+    - X-axis data is ALWAYS in minutes (not timestamps)
+    - When dates selected: formatter converts minutes to date/time display
+    - Full control over intervals using `interval`/`minInterval`/`maxInterval` (these WORK for value axes)
+    - Padding handled by min/max range (e.g., min: -60, max: 1500 for 24h + 1h padding)
+  - **Implementation**:
+    ```typescript
+    // BEFORE (BROKEN - type: 'time' ignores interval controls):
+    type: 'time',
+    min: timestamp,
+    max: timestamp,
+    splitNumber: 13,  // IGNORED!
+
+    // AFTER (WORKING - type: 'value' respects interval controls):
+    type: 'value',
+    min: -60,         // minutes (with padding)
+    max: 1500,        // minutes (with padding)
+    interval: 120,    // 2 hours in minutes - RESPECTED!
+    axisLabel: {
+      formatter: (value) => {
+        // Convert minutes to timestamp and format as date/time
+        const timestamp = startTime + value * 60 * 1000;
+        return formatDateTime(timestamp);
+      }
+    }
+    ```
+  - Updated debug logging to show value-based approach
+  - **Status**: Testing required
+
+### Fixed
 - **X-Axis Time-Based Interval Critical Fix (ATTEMPT 2)** - Using `splitNumber` instead of `axisLabel.interval`
   - **Problem with Previous Fix**: `axisLabel.interval` was calculated incorrectly
     - Formula `Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)) - 1` calculated how many intervals fit
     - But `axisLabel.interval` means "show every Nth label" where ECharts generates labels automatically
     - ECharts generates ~1-hour labels by default, so `interval: 12` meant "show every 13th hour" = 13-hour spacing!
     - Result: 24h test showed 4-hour intervals instead of 2 hours
-  - **New Approach**: Use `splitNumber` to control tick count
+  - **Attempted Approach**: Use `splitNumber` to control tick count
     - `splitNumber` tells ECharts how many segments to divide the axis into
     - Formula: `Math.ceil((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000))`
     - Example: 26h range / 2h interval = 13 ticks
-    - This should force ECharts to generate exactly 13 ticks with ~2h spacing
-  - Updated debug logging to show `splitNumber` value
-  - **Status**: Testing in progress
+    - **FAILED**: ECharts still ignored `splitNumber` for time-based axes
 
 ### Fixed
 - **X-Axis Time-Based Interval Critical Fix (ATTEMPT 1)** - Previously tried using `axisLabel.interval` but discovered calculation error
   - **Root Cause Discovery**: ECharts `interval`, `minInterval`, `maxInterval` properties **DO NOT WORK** for time-based axes
   - Despite documentation suggesting these properties exist, ECharts completely ignores them for `type: 'time'` axes
   - ECharts automatically calculates "nice" time intervals regardless of these settings
-  - Previous attempts using `interval`, `minInterval`, `maxInterval` all failed
-  - **Attempted Solution (INCORRECT)**: Tried `axisLabel.interval` but miscalculated how it works
-  - Removed non-functional properties from time-based axis configuration
+  - **FAILED**: Attempted using `axisLabel.interval` but miscalculated how it works
 
 ### Fixed
 - **X-Axis Interval Display** - Fixed 1-hour intervals showing for 24h and 28h tests instead of 2 hours
