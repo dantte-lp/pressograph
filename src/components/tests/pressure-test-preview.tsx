@@ -191,7 +191,16 @@ export function PressureTestPreview({
         trigger: 'axis',
         formatter: (params: any) => {
           const point = params[0];
-          const minutes = point.data[0];
+          let minutes: number;
+
+          // Handle both time-based and value-based axes
+          if (useTimeBased) {
+            const timestamp = point.data[0];
+            minutes = (timestamp - startTime) / (60 * 1000);
+          } else {
+            minutes = point.data[0];
+          }
+
           const pressure = point.data[1];
 
           const hours = Math.floor(minutes / 60);
@@ -277,7 +286,7 @@ export function PressureTestPreview({
             const mins = Math.round(value % 60);
             if (hours === 0) return `${mins}m`;
             if (mins === 0) return `${hours}h`;
-            return `${hours}h${mins}m`;
+            return `${hours}h ${mins}m`;
           },
           fontSize: 10,
         },
