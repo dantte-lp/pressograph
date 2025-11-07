@@ -67,6 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Bundle Size**: Reduced runtime overhead by removing debug logging (estimated 3-5KB reduction)
 
 ### Fixed
+- **Black Vertical Line in Padding Area** - Removed unwanted vertical line at test start
+  - **Problem**: Black vertical line appeared at test start time (e.g., 22:35) when using time-based display
+  - **Root Cause**: Padding data points at -60min and end created visible line segments
+  - **Solution**: Removed padding data points - axis min/max already provides visual padding
+  - **Result**: Clean graph with no unwanted lines, padding handled purely by axis range
+
 - **Tooltip Time Display Bug** - Fixed incorrect tooltip display for time-based axis
   - **Problem**: Tooltip showed negative minutes ("-35m") in padding region before test start
   - **Root Cause**: Tooltip formatter incorrectly treated data[0] as timestamp instead of minutes
