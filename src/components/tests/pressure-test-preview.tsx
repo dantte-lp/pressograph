@@ -336,13 +336,14 @@ export function PressureTestPreview({
         },
         min: xAxisMin,
         max: xAxisMax,
-        // CRITICAL: For time-based axes in ECharts, splitNumber is only a SUGGESTION
-        // ECharts will override it to show "nice" time values (hour boundaries, etc.)
-        // To FORCE exact intervals, we must use interval property in milliseconds
-        interval: xAxisInterval * 60 * 1000, // Convert minutes to milliseconds
-        minInterval: xAxisInterval * 60 * 1000, // Prevent auto-adjustment to smaller intervals
-        maxInterval: xAxisInterval * 60 * 1000, // Prevent auto-adjustment to larger intervals
+        // CRITICAL: For time-based axes, interval/minInterval/maxInterval DO NOT WORK
+        // ECharts ignores these properties and calculates "nice" intervals automatically
+        // Instead, we must use axisLabel.interval to control label spacing
         axisLabel: {
+          // Calculate how many intervals fit in the range, then show every Nth label
+          // Formula: floor(totalRange / intervalSize) - 1
+          // Example: 26h range / 2h interval = 13 ticks, interval = 12 (show every 12th + first/last)
+          interval: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)) - 1,
           formatter: (value: number) => {
             const date = new Date(value);
             const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
@@ -351,6 +352,8 @@ export function PressureTestPreview({
           },
           fontSize: 9,
           rotate: 0,
+          showMinLabel: true, // Always show first label
+          showMaxLabel: true, // Always show last label
         },
         splitLine: {
           show: true,
@@ -359,7 +362,6 @@ export function PressureTestPreview({
             color: '#f0f0f0',
           },
         },
-        // Remove minorTick and minorSplitLine as they interfere with interval control
       } : {
         type: 'value',
         name: 'Время',
@@ -491,9 +493,11 @@ export function PressureTestPreview({
 
     if (useTimeBased) {
       const intervalMs = xAxisInterval * 60 * 1000;
-      const expectedSplits = Math.floor((xAxisMax - xAxisMin) / intervalMs);
-      console.log(`[ECharts Config] Time-based axis - interval: ${intervalMs}ms (${xAxisInterval / 60}h)`);
-      console.log(`[ECharts Config] Time-based axis - Expected splits: ${expectedSplits}`);
+      const axisLabelInterval = Math.floor((xAxisMax - xAxisMin) / intervalMs) - 1;
+      const expectedLabels = Math.ceil((xAxisMax - xAxisMin) / intervalMs / (axisLabelInterval + 1));
+      console.log(`[ECharts Config] Time-based axis - desired interval: ${intervalMs}ms (${xAxisInterval / 60}h)`);
+      console.log(`[ECharts Config] Time-based axis - axisLabel.interval: ${axisLabelInterval} (show every ${axisLabelInterval + 1} labels)`);
+      console.log(`[ECharts Config] Time-based axis - Expected visible labels: ~${expectedLabels}`);
       console.log(`[ECharts Config] Time-based axis - xAxisMin: ${xAxisMin}, xAxisMax: ${xAxisMax}`);
       console.log(`[ECharts Config] Time-based axis - Display range: ${(xAxisMax - xAxisMin) / (1000 * 60 * 60)} hours`);
     } else {

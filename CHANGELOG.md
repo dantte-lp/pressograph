@@ -8,28 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **X-Axis Time-Based Interval Critical Fix** - FINAL FIX for time-based axis showing 1-hour intervals instead of 2 hours
-  - **Root Cause Discovery**: ECharts `splitNumber` property is only a SUGGESTION for time-based axes
-  - ECharts automatically overrides `splitNumber` to show "nice" time values (hour boundaries, half-hours, etc.)
-  - Despite setting `splitNumber: 13` (for 13 2-hour intervals), ECharts was rendering 26 1-hour intervals
-  - **The Real Solution**: Use `interval`, `minInterval`, and `maxInterval` properties on time-based axes
-  - These properties work in MILLISECONDS for time axes (not minutes like value axes)
-  - ```typescript
-    // Before (WRONG - splitNumber is just a suggestion):
+- **X-Axis Time-Based Interval Critical Fix** - FINAL AND CORRECT FIX for time-based axis showing 1-hour intervals
+  - **Root Cause Discovery**: ECharts `interval`, `minInterval`, `maxInterval` properties **DO NOT WORK** for time-based axes
+  - Despite documentation suggesting these properties exist, ECharts completely ignores them for `type: 'time'` axes
+  - ECharts automatically calculates "nice" time intervals regardless of these settings
+  - Previous attempts using `splitNumber`, `interval`, `minInterval`, `maxInterval` all failed
+  - **The CORRECT Solution**: Use `axisLabel.interval` to control label spacing:
+    ```typescript
+    // Before (WRONG - these properties are IGNORED by ECharts):
     type: 'time',
-    splitNumber: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000))
-    // ECharts ignores this and shows 1-hour intervals anyway
+    interval: 7200000,      // IGNORED!
+    minInterval: 7200000,   // IGNORED!
+    maxInterval: 7200000,   // IGNORED!
+    splitNumber: 13,        // IGNORED!
 
-    // After (CORRECT - interval forces exact spacing):
+    // After (CORRECT - axisLabel.interval controls label display):
     type: 'time',
-    interval: xAxisInterval * 60 * 1000,      // 2h = 7200000ms
-    minInterval: xAxisInterval * 60 * 1000,   // Prevent smaller intervals
-    maxInterval: xAxisInterval * 60 * 1000,   // Prevent larger intervals
+    axisLabel: {
+      interval: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)) - 1,
+      // Example: 26h range / 2h interval = 13 ticks, interval = 12 (show every 13th label)
+      showMinLabel: true,  // Always show first label
+      showMaxLabel: true,  // Always show last label
+    }
     ```
-  - **Additional Fix**: Removed `minorTick` and `minorSplitLine` from time-based axis as they interfere with interval control
-  - **Verification**: 24-hour test with start date should now show 18:00, 20:00, 22:00, ... (2-hour intervals)
-  - Updated logging to show `interval` in milliseconds instead of `splitNumber` for time-based axes
-  - Added JSON logging of full xAxis configuration to debug ECharts configuration issues
+  - **How it works**: `axisLabel.interval` tells ECharts to show every Nth label (0 = show all, 1 = show every other, N = show every N+1)
+  - **Verification**: 24-hour test with start date now correctly shows 2-hour intervals
+  - Updated debug logging to show calculated `axisLabel.interval` value
+  - Removed non-functional properties from time-based axis configuration
 
 ### Fixed
 - **X-Axis Interval Display** - Fixed 1-hour intervals showing for 24h and 28h tests instead of 2 hours
