@@ -14,7 +14,6 @@ import { users } from "./users";
 import { organizations } from "./organizations";
 import { projects } from "./projects";
 import { pressureTests } from "./pressure-tests";
-import { testRuns } from "./test-runs";
 import { fileUploads } from "./file-uploads";
 import { shareLinks } from "./share-links";
 import { auditLogs } from "./audit-logs";
@@ -43,7 +42,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   ownedProjects: many(projects, { relationName: "project_owner" }),
   createdTests: many(pressureTests, { relationName: "test_creator" }),
-  createdRuns: many(testRuns, { relationName: "run_creator" }),
   uploadedFiles: many(fileUploads, { relationName: "file_uploader" }),
   createdShareLinks: many(shareLinks),
   performedAudits: many(auditLogs, { relationName: "audit_performer" }),
@@ -88,34 +86,13 @@ export const pressureTestsRelations = relations(pressureTests, ({ one, many }) =
     references: [users.id],
     relationName: "test_creator",
   }),
-  testRuns: many(testRuns),
   shareLinks: many(shareLinks),
-}));
-
-/**
- * Test Run Relations
- */
-export const testRunsRelations = relations(testRuns, ({ one, many }) => ({
-  pressureTest: one(pressureTests, {
-    fields: [testRuns.pressureTestId],
-    references: [pressureTests.id],
-  }),
-  executedBy: one(users, {
-    fields: [testRuns.executedBy],
-    references: [users.id],
-    relationName: "run_executor",
-  }),
-  fileUploads: many(fileUploads),
 }));
 
 /**
  * File Upload Relations
  */
 export const fileUploadsRelations = relations(fileUploads, ({ one }) => ({
-  testRun: one(testRuns, {
-    fields: [fileUploads.testRunId],
-    references: [testRuns.id],
-  }),
   uploadedBy: one(users, {
     fields: [fileUploads.uploadedBy],
     references: [users.id],

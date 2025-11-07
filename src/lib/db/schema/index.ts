@@ -11,8 +11,6 @@ export * from "./user-preferences";
 export * from "./organizations";
 export * from "./projects";
 export * from "./pressure-tests";
-export * from "./test-runs";
-export * from "./test-measurements";
 export * from "./file-uploads";
 export * from "./share-links";
 

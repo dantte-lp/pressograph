@@ -1,6 +1,5 @@
 import { pgTable, uuid, varchar, integer, boolean, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { pressureTests } from "./pressure-tests";
-import { testRuns } from "./test-runs";
 import { users } from "./users";
 import { organizations } from "./organizations";
 
@@ -23,7 +22,6 @@ export const fileUploads = pgTable(
     pressureTestId: uuid("pressure_test_id").references(() => pressureTests.id, {
       onDelete: "set null",
     }),
-    testRunId: uuid("test_run_id").references(() => testRuns.id, { onDelete: "set null" }),
     uploadedBy: uuid("uploaded_by")
       .references(() => users.id, { onDelete: "restrict" })
       .notNull(),
@@ -48,7 +46,6 @@ export const fileUploads = pgTable(
   },
   (table) => ({
     testIdIdx: index("file_uploads_test_id_idx").on(table.pressureTestId),
-    runIdIdx: index("file_uploads_run_id_idx").on(table.testRunId),
     uploadedByIdx: index("file_uploads_uploaded_by_idx").on(table.uploadedBy),
     storageKeyIdx: uniqueIndex("file_uploads_storage_key_idx").on(table.storageKey),
     createdAtIdx: index("file_uploads_created_at_idx").on(table.createdAt),

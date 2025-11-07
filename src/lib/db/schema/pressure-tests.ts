@@ -51,10 +51,10 @@ export interface PressureTestConfig {
  * Pressure Tests Table
  *
  * Main entity representing a pressure test configuration.
- * Can be executed multiple times (see test_runs table).
+ * Used for graph generation and visualization.
  *
  * Supports:
- * - Draft/Ready/Running/Completed/Failed/Cancelled states
+ * - Draft/Ready states for test configuration
  * - Public sharing via token
  * - Template-based creation
  * - Complex multi-stage tests
@@ -88,9 +88,9 @@ export const pressureTests = pgTable(
 
     // Status
     status: varchar("status", { length: 50 }).default("draft").notNull(),
-    // 'draft' | 'ready' | 'running' | 'completed' | 'failed' | 'cancelled'
+    // 'draft' | 'ready'
 
-    // Execution tracking
+    // Tracking (optional for future use)
     startedAt: timestamp("started_at", { mode: "date" }),
     completedAt: timestamp("completed_at", { mode: "date" }),
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -82,7 +82,6 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
     watch,
     control,
     setValue,
-    trigger,
   } = useForm<TestFormData>({
     resolver: zodResolver(testSchema),
     defaultValues: {

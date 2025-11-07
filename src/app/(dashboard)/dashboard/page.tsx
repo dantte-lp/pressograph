@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FolderIcon, FlaskConicalIcon, BarChart3Icon, ActivityIcon, HardDriveIcon, Archive } from 'lucide-react';
+import { FolderIcon, FlaskConicalIcon, ActivityIcon, HardDriveIcon, Archive } from 'lucide-react';
 import { getDashboardStats, getRecentActivity } from '@/lib/actions/dashboard';
 import { formatBytes } from '@/lib/utils/format';
 import Link from 'next/link';
@@ -65,14 +65,14 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Recent Runs
+              Total Tests
             </CardTitle>
             <ActivityIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.recentTestRuns}</div>
+            <div className="text-2xl font-bold">{stats.totalTests}</div>
             <p className="text-muted-foreground text-xs">
-              Last 30 days
+              {stats.totalTests === 0 ? 'No tests yet' : 'All test configurations'}
             </p>
           </CardContent>
         </Card>
@@ -178,9 +178,6 @@ export default async function DashboardPage() {
                     )}
                     {activity.type === 'test_created' && (
                       <FlaskConicalIcon className="text-muted-foreground h-5 w-5" />
-                    )}
-                    {activity.type === 'test_run' && (
-                      <BarChart3Icon className="text-muted-foreground h-5 w-5" />
                     )}
                   </div>
                   <div className="flex-1 space-y-1">

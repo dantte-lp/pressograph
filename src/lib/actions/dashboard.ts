@@ -3,9 +3,8 @@
 import { db } from '@/lib/db';
 import { projects } from '@/lib/db/schema/projects';
 import { pressureTests } from '@/lib/db/schema/pressure-tests';
-import { testRuns } from '@/lib/db/schema/test-runs';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
-import { eq, and, count, desc, sql, gte } from 'drizzle-orm';
+import { eq, and, count, desc, sql } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/server-auth';
 
 /**
@@ -14,7 +13,7 @@ import { requireAuth } from '@/lib/auth/server-auth';
 export interface DashboardStats {
   totalProjects: number;
   activeTests: number;
-  recentTestRuns: number;
+  totalTests: number;
   storageUsed: number; // bytes
 }
 
@@ -23,7 +22,7 @@ export interface DashboardStats {
  */
 export interface RecentActivity {
   id: string;
-  type: 'test_run' | 'test_created' | 'project_created';
+  type: 'test_created' | 'project_created';
   title: string;
   description: string;
   timestamp: Date;
@@ -54,19 +53,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       )
     );
 
-  // Get recent test runs count (last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const recentRunsResult = await db
+  // Get total tests count
+  const totalTestsResult = await db
     .select({ count: count() })
-    .from(testRuns)
-    .where(
-      and(
-        eq(testRuns.executedBy, userId),
-        gte(testRuns.startedAt, thirtyDaysAgo)
-      )
-    );
+    .from(pressureTests)
+    .where(eq(pressureTests.createdBy, userId));
 
   // Get storage usage (sum of file sizes)
   const storageResult = await db
@@ -79,7 +70,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   return {
     totalProjects: projectsResult[0]?.count ?? 0,
     activeTests: activeTestsResult[0]?.count ?? 0,
-    recentTestRuns: recentRunsResult[0]?.count ?? 0,
+    totalTests: totalTestsResult[0]?.count ?? 0,
     storageUsed: Number(storageResult[0]?.total ?? 0),
   };
 }
@@ -92,33 +83,6 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
   const userId = session.user.id;
 
   const activities: RecentActivity[] = [];
-
-  // Get recent test runs (last 5)
-  const recentRuns = await db
-    .select({
-      id: testRuns.id,
-      pressureTestId: testRuns.pressureTestId,
-      status: testRuns.status,
-      startedAt: testRuns.startedAt,
-      testNumber: pressureTests.testNumber,
-      testName: pressureTests.name,
-    })
-    .from(testRuns)
-    .innerJoin(pressureTests, eq(testRuns.pressureTestId, pressureTests.id))
-    .where(eq(testRuns.executedBy, userId))
-    .orderBy(desc(testRuns.startedAt))
-    .limit(5);
-
-  for (const run of recentRuns) {
-    activities.push({
-      id: run.id,
-      type: 'test_run',
-      title: `Test Run: ${run.testNumber}`,
-      description: `${run.testName} - ${run.status}`,
-      timestamp: run.startedAt,
-      link: `/tests/${run.pressureTestId}/runs/${run.id}`,
-    });
-  }
 
   // Get recently created tests (last 5)
   const recentTests = await db

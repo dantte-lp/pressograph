@@ -9,14 +9,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeTime } from '@/lib/utils/format';
 import { RecentActivity } from '@/lib/actions/dashboard';
-import { FlaskConical, FolderPlus, PlayCircle } from 'lucide-react';
+import { FlaskConical, FolderPlus } from 'lucide-react';
 
 interface ActivityFeedProps {
   activities: RecentActivity[];
 }
 
 const activityIcons = {
-  test_run: PlayCircle,
   test_created: FlaskConical,
   project_created: FolderPlus,
 } as const;

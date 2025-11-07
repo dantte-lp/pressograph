@@ -14,7 +14,7 @@ export interface DashboardStats {
 
 export interface ActivityItem {
   id: string;
-  type: 'test_created' | 'test_run' | 'graph_generated' | 'project_created' | 'test_completed' | 'test_failed';
+  type: 'test_created' | 'graph_generated' | 'project_created';
   title: string;
   description: string;
   userId: string;
@@ -26,7 +26,6 @@ export interface ActivityItem {
     testNumber?: string;
     projectId?: string;
     projectName?: string;
-    runId?: string;
     status?: string;
   };
 }

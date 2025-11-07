@@ -17,15 +17,30 @@
 import { useMemo } from 'react';
 import { ThemedChart, useChartColors } from '@/components/charts';
 import type { EChartsOption } from 'echarts';
-import { type TestRunResults } from '@/lib/db/schema/test-runs';
 import { type PressureTestConfig } from '@/lib/db/schema/pressure-tests';
+
+/**
+ * Measurement data structure for graph visualization
+ */
+export interface GraphMeasurementData {
+  measurements: Array<{
+    timestamp: number; // epoch ms
+    pressure: number; // MPa
+    temperature?: number; // °C
+  }>;
+  // Optional calculated metrics
+  finalPressure?: number;
+  pressureDrop?: number;
+  averagePressure?: number;
+  passed?: boolean;
+}
 
 interface PressureGraphProps {
   /** Test configuration (defines parameters and stages) */
   config: PressureTestConfig;
 
-  /** Measurement data from test execution */
-  results?: TestRunResults;
+  /** Measurement data for visualization */
+  results?: GraphMeasurementData;
 
   /** Height of the graph container (default: 400px) */
   height?: number;
@@ -368,40 +383,47 @@ export function PressureGraph({
       />
 
       {/* Graph statistics */}
-      {results && (
+      {results && (results.finalPressure !== undefined || results.pressureDrop !== undefined || results.averagePressure !== undefined || results.passed !== undefined) && (
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-sm text-muted-foreground">Final Pressure</p>
-            <p className="text-lg font-semibold text-foreground">
-              {results.finalPressure.toFixed(2)} {config.pressureUnit}
-            </p>
-          </div>
+          {results.finalPressure !== undefined && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-sm text-muted-foreground">Final Pressure</p>
+              <p className="text-lg font-semibold text-foreground">
+                {results.finalPressure.toFixed(2)} {config.pressureUnit}
+              </p>
+            </div>
+          )}
 
-          <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-sm text-muted-foreground">Pressure Drop</p>
-            <p className="text-lg font-semibold text-foreground">
-              {results.pressureDrop.toFixed(2)} {config.pressureUnit}
-            </p>
-          </div>
+          {results.pressureDrop !== undefined && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-sm text-muted-foreground">Pressure Drop</p>
+              <p className="text-lg font-semibold text-foreground">
+                {results.pressureDrop.toFixed(2)} {config.pressureUnit}
+              </p>
+            </div>
+          )}
 
-          <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-sm text-muted-foreground">Average Pressure</p>
-            <p className="text-lg font-semibold text-foreground">
-              {results.averagePressure?.toFixed(2) ?? 'N/A'}{' '}
-              {config.pressureUnit}
-            </p>
-          </div>
+          {results.averagePressure !== undefined && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-sm text-muted-foreground">Average Pressure</p>
+              <p className="text-lg font-semibold text-foreground">
+                {results.averagePressure.toFixed(2)} {config.pressureUnit}
+              </p>
+            </div>
+          )}
 
-          <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-sm text-muted-foreground">Test Status</p>
-            <p
-              className={`text-lg font-semibold ${
-                results.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }`}
-            >
-              {results.passed ? 'PASSED' : 'FAILED'}
-            </p>
-          </div>
+          {results.passed !== undefined && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-sm text-muted-foreground">Test Status</p>
+              <p
+                className={`text-lg font-semibold ${
+                  results.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                }`}
+              >
+                {results.passed ? 'PASSED' : 'FAILED'}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -5,8 +5,7 @@ import { users } from "./users";
  * Notifications Table
  *
  * In-app notification system for user alerts:
- * - Test completion
- * - Test failure
+ * - Test created
  * - Share link expiration
  * - System announcements
  *
@@ -24,7 +23,7 @@ export const notifications = pgTable(
 
     // Content
     type: varchar("type", { length: 50 }).notNull(),
-    // 'test_completed' | 'test_failed' | 'share_expired' | 'system_announcement'
+    // 'test_created' | 'share_expired' | 'system_announcement'
     title: varchar("title", { length: 255 }).notNull(),
     message: text("message").notNull(),
 
@@ -37,7 +36,7 @@ export const notifications = pgTable(
     readAt: timestamp("read_at", { mode: "date" }),
 
     // Related resource (for navigation)
-    resourceType: varchar("resource_type", { length: 50 }), // 'pressure_test' | 'test_run' | 'project'
+    resourceType: varchar("resource_type", { length: 50 }), // 'pressure_test' | 'project'
     resourceId: uuid("resource_id"),
 
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

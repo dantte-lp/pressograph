@@ -107,12 +107,6 @@ export function TestActionsDropdown({ test }: TestActionsDropdownProps) {
                 <p>
                   Are you sure you want to delete test <strong>{test.testNumber}</strong>?
                 </p>
-                {test.runCount > 0 && (
-                  <p className="text-destructive">
-                    This test has {test.runCount} execution{test.runCount !== 1 ? 's' : ''}.
-                    All test runs and associated data will be permanently deleted.
-                  </p>
-                )}
                 <p>This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>
