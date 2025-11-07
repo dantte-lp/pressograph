@@ -336,6 +336,11 @@ export function PressureTestPreview({
         },
         min: xAxisMin,
         max: xAxisMax,
+        // For time-based axes, ECharts ignores interval/minInterval/maxInterval
+        // Instead, use splitNumber to control the number of intervals
+        // splitNumber = total display range / desired interval
+        // Example: 26h total / 2h interval = 13 splits
+        splitNumber: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)),
         axisLabel: {
           formatter: (value: number) => {
             const date = new Date(value);
@@ -353,12 +358,6 @@ export function PressureTestPreview({
             color: '#f0f0f0',
           },
         },
-        // Dynamic interval based on TOTAL display range (test duration + padding)
-        // For 24h test (26h total): 2h intervals = 120 min * 60 * 1000 = 7,200,000 ms
-        interval: xAxisInterval * 60 * 1000,
-        // Ensure interval is strictly enforced (disable auto-adjustment)
-        minInterval: xAxisInterval * 60 * 1000,
-        maxInterval: xAxisInterval * 60 * 1000,
         minorTick: {
           show: true,
           splitNumber: 4, // Creates minor ticks subdividing the main interval
@@ -501,7 +500,8 @@ export function PressureTestPreview({
 
     if (useTimeBased) {
       const intervalMs = xAxisInterval * 60 * 1000;
-      console.log(`[ECharts Config] Time-based axis - interval: ${intervalMs}ms, minInterval: ${intervalMs}ms, maxInterval: ${intervalMs}ms`);
+      const splitNumber = Math.floor((xAxisMax - xAxisMin) / intervalMs);
+      console.log(`[ECharts Config] Time-based axis - splitNumber: ${splitNumber} (${xAxisInterval / 60}h intervals)`);
       console.log(`[ECharts Config] Time-based axis - xAxisMin: ${xAxisMin}, xAxisMax: ${xAxisMax}`);
       console.log(`[ECharts Config] Time-based axis - Display range: ${(xAxisMax - xAxisMin) / (1000 * 60 * 60)} hours`);
     } else {

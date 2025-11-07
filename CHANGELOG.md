@@ -46,7 +46,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - TODO: Remove debug logging after issue is confirmed resolved
 
 ### Fixed
-- **X-Axis Interval ECharts Auto-Adjustment Bug (FINAL FIX)** - Fixed value-based axis allowing ECharts to override calculated intervals
+- **X-Axis Interval Time-Based Axis Bug (COMPLETE FIX)** - Fixed time-based axis showing 1-hour intervals instead of 2 hours for 24h tests
+  - **Root cause**: Time-based axes (`type: 'time'`) in ECharts **do not support** `interval`, `minInterval`, or `maxInterval` properties
+  - These properties are only valid for value-based axes (`type: 'value'`)
+  - ECharts was silently ignoring our interval configuration and using its own automatic calculation
+  - **The problem flow:**
+    1. User enters start date/time in Test Schedule Optional section
+    2. Component uses time-based axis with `type: 'time'`
+    3. Code sets `interval: 7200000` (2 hours in ms), `minInterval: 7200000`, `maxInterval: 7200000`
+    4. ECharts ignores these properties completely (they don't exist for time axes)
+    5. ECharts calculates its own automatic interval (1 hour for 26h range)
+    6. User sees 1-hour intervals despite correct 2-hour calculation
+  - **The fix**: Use `splitNumber` instead of `interval` for time-based axes:
+    ```typescript
+    // Before (WRONG - properties ignored by ECharts):
+    type: 'time',
+    interval: xAxisInterval * 60 * 1000,      // Ignored!
+    minInterval: xAxisInterval * 60 * 1000,   // Ignored!
+    maxInterval: xAxisInterval * 60 * 1000,   // Ignored!
+
+    // After (CORRECT - splitNumber controls intervals):
+    type: 'time',
+    splitNumber: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000))
+    // Example: 26h total / 2h interval = 13 splits
+    ```
+  - **Why this works**: `splitNumber` tells ECharts exactly how many intervals to create, forcing our desired interval spacing
+  - **Verified behavior (time-based axis with start date):**
+    - 24-hour test (26h with padding): 2-hour intervals - 13 splits
+    - Intervals now match value-based axis behavior (when no dates entered)
+  - Updated debug logging to show `splitNumber` instead of ignored interval properties for time-based axes
+
+- **X-Axis Interval ECharts Auto-Adjustment Bug (VALUE-BASED FIX)** - Fixed value-based axis allowing ECharts to override calculated intervals
   - **Root cause**: Value-based axis had `minInterval: 30` (hardcoded) while time-based axis had `minInterval` and `maxInterval` set to the calculated interval value. This inconsistency allowed ECharts to auto-adjust the value-based axis intervals despite correct calculations.
   - **The problem flow:**
     1. Algorithm correctly calculates 120-minute (2-hour) interval for 24-hour test
