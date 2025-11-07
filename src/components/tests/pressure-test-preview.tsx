@@ -80,6 +80,11 @@ export function PressureTestPreview({
   const startTime = useTimeBased ? new Date(startDateTime!).getTime() : 0;
   const endTime = useTimeBased ? new Date(endDateTime!).getTime() : testDuration * 60;
 
+  // Add 1 hour padding (±1 hour) for time-based axis
+  const paddingMs = 60 * 60 * 1000; // 1 hour in milliseconds
+  const xAxisMin = useTimeBased ? startTime - paddingMs : 0;
+  const xAxisMax = useTimeBased ? endTime + paddingMs : testDuration * 60;
+
   // Calculate optimal X-axis interval based on test duration
   const calculateXAxisInterval = (durationHours: number): number => {
     if (durationHours <= 6) {
@@ -249,8 +254,8 @@ export function PressureTestPreview({
         nameTextStyle: {
           fontSize: 11,
         },
-        min: startTime,
-        max: endTime,
+        min: xAxisMin,
+        max: xAxisMax,
         axisLabel: {
           formatter: (value: number) => {
             const date = new Date(value);
@@ -415,7 +420,7 @@ export function PressureTestPreview({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [workingPressure, maxPressure, testDuration, intermediateStages, pressureUnit, profileData, useTimeBased, startTime, endTime]);
+  }, [workingPressure, maxPressure, testDuration, intermediateStages, pressureUnit, profileData, useTimeBased, startTime, endTime, xAxisMin, xAxisMax]);
 
   // Cleanup on unmount
   useEffect(() => {
