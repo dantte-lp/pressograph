@@ -23,19 +23,13 @@ export const locales = ['en', 'ru'] as const;
 export type Locale = (typeof locales)[number];
 
 /**
- * Locale display names
+ * Locale display names with country codes
+ * Note: Using text instead of emoji flags for better cross-browser compatibility
+ * (emoji flags don't render consistently in all browsers, especially Chrome on Windows)
  */
 const LOCALE_NAMES: Record<Locale, string> = {
-  en: 'English',
-  ru: 'Русский',
-};
-
-/**
- * Locale emoji flags for visual distinction
- */
-const LOCALE_FLAGS: Record<Locale, string> = {
-  en: '🇬🇧',
-  ru: '🇷🇺',
+  en: 'EN | English',
+  ru: 'RU | Русский',
 };
 
 interface LocaleSwitcherProps {
@@ -44,12 +38,6 @@ interface LocaleSwitcherProps {
    * @required
    */
   currentLocale: Locale;
-
-  /**
-   * Whether to show flag emoji next to language name
-   * @default true
-   */
-  showFlags?: boolean;
 
   /**
    * Custom className for the Select trigger
@@ -85,16 +73,12 @@ interface LocaleSwitcherProps {
  *   return <LocaleSwitcher currentLocale={locale} />;
  * }
  *
- * // Without flags
- * <LocaleSwitcher currentLocale={locale} showFlags={false} />
- *
  * // With custom styling
  * <LocaleSwitcher currentLocale={locale} className="w-[180px]" size="sm" />
  * ```
  */
 export function LocaleSwitcher({
   currentLocale,
-  showFlags = true,
   className,
   size = 'default',
 }: LocaleSwitcherProps) {
@@ -128,14 +112,12 @@ export function LocaleSwitcher({
         aria-label="Select language"
       >
         <SelectValue>
-          {showFlags && LOCALE_FLAGS[locale]}{' '}
           {LOCALE_NAMES[locale]}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {locales.map((loc) => (
           <SelectItem key={loc} value={loc}>
-            {showFlags && LOCALE_FLAGS[loc]}{' '}
             {LOCALE_NAMES[loc]}
           </SelectItem>
         ))}
