@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Edit Test Form (#95 - 1c762240)** - Full test configuration editing with 3-tab interface (Basic Info, Parameters, Preview)
+  - updateTest server action with ownership and status validation
+  - Live graph preview during editing
+  - Support for all test parameters including intermediate stages
+  - Restricted editing to draft/ready status tests
+- **Run Test Interface (#96 - d8922f01)** - Comprehensive test execution and real-time monitoring
+  - test_measurements table for time-series data storage
+  - Manual measurement input with pressure and temperature
+  - Real-time ECharts graph with working/max pressure lines
+  - Elapsed time counter and status monitoring
+  - Pass/fail calculation based on pressure drop
+  - CSV data export functionality
+  - Pause/Resume and Complete test controls
+  - Auto-redirect to results page on completion
+  - Server actions: startTestRun(), recordMeasurement(), completeTestRun()
+
 ### Fixed
 - DateTimeSettings component useTranslations error by removing next-intl dependency and using hardcoded English text
 - LocaleSwitcher emoji flags not rendering in Chrome by replacing with text-based country codes (EN | English, RU | Русский)
@@ -14,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DashboardHeader refactored to Client Component with locale passed from parent layout
 - UserMenu extracted to separate client component for better separation of concerns
 
-### Added
+### Previously Added
 - LocaleSwitcher component to dashboard header for language switching
 - DateTimeSettings integration in profile page for timezone and format preferences
 - Custom title and description props to PressureTestPreviewEnhanced component
