@@ -593,51 +593,53 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {watchedStages.map((_, index) => (
                     <Card key={index} className="border-muted">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">Stage {index + 1}</CardTitle>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveStage(index)}
-                          >
-                            <TrashIcon className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="grid gap-4 md:grid-cols-3">
-                        <div className="space-y-2">
-                          <Label htmlFor={`stage-${index}-time`}>Time (minutes)</Label>
+                      <div className="px-4 py-3 flex items-center justify-between border-b">
+                        <h4 className="text-sm font-medium">Stage {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveStage(index)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <TrashIcon className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                      <CardContent className="px-4 py-3 grid gap-3 md:grid-cols-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`stage-${index}-time`} className="text-xs">Time (minutes)</Label>
                           <Input
                             id={`stage-${index}-time`}
                             type="number"
                             step="1"
+                            className="h-9"
                             {...register(`intermediateStages.${index}.time` as const, {
                               valueAsNumber: true,
                             })}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`stage-${index}-pressure`}>Pressure</Label>
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`stage-${index}-pressure`} className="text-xs">Pressure</Label>
                           <Input
                             id={`stage-${index}-pressure`}
                             type="number"
                             step="0.1"
+                            className="h-9"
                             {...register(`intermediateStages.${index}.pressure` as const, {
                               valueAsNumber: true,
                             })}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`stage-${index}-duration`}>Hold Duration (min)</Label>
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`stage-${index}-duration`} className="text-xs">Hold Duration (min)</Label>
                           <Input
                             id={`stage-${index}-duration`}
                             type="number"
                             step="1"
+                            className="h-9"
                             {...register(`intermediateStages.${index}.duration` as const, {
                               valueAsNumber: true,
                             })}
