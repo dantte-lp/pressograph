@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PlayIcon, PauseIcon, StopCircleIcon, DownloadIcon, SaveIcon } from 'lucide-react';
@@ -42,7 +42,7 @@ export function RunTestInterfaceClient({ test }: RunTestInterfaceClientProps) {
   const router = useRouter();
   const [runId, setRunId] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'starting' | 'running' | 'paused' | 'completing' | 'completed'>('idle');
-  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [_startTime, setStartTime] = useState<Date | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [currentPressure, setCurrentPressure] = useState<number>(0);
@@ -464,7 +464,6 @@ export function RunTestInterfaceClient({ test }: RunTestInterfaceClientProps) {
                 <Button
                   variant="outline"
                   onClick={handlePauseTest}
-                  disabled={status === 'completing'}
                 >
                   <PauseIcon className="mr-2 h-4 w-4" />
                   {status === 'paused' ? 'Resume Test' : 'Pause Test'}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -144,7 +144,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const maxPressure = watch('maxPressure') || 15;
   const testDuration = watch('testDuration') || 24;
   const pressureUnit = watch('pressureUnit') || 'MPa';
-  const temperature = watch('temperature') || 20;
 
   // Debounce graph updates for better performance (300ms delay)
   const debouncedWorkingPressure = useDebounce(workingPressure, 300);
@@ -645,7 +644,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                         </tr>
                       </thead>
                       <tbody>
-                        {watchedStages.map((stage, index) => {
+                        {watchedStages.map((_stage, index) => {
                           // Calculate cumulative time
                           const cumulativeTime = watchedStages
                             .slice(0, index + 1)

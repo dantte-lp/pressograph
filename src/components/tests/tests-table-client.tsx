@@ -29,7 +29,6 @@ import {
   Trash2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  PackageIcon,
   FileDownIcon,
   Loader2Icon,
 } from 'lucide-react';

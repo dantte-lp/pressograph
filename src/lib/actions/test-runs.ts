@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { testRuns } from '@/lib/db/schema/test-runs';
 import { testMeasurements } from '@/lib/db/schema/test-measurements';
 import { pressureTests } from '@/lib/db/schema/pressure-tests';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/server-auth';
 
 /**
@@ -51,7 +51,7 @@ export async function startTestRun(testId: string): Promise<{
         executedBy: userId,
         status: 'running',
         startedAt: new Date(),
-        results: { measurements: [] },
+        results: { measurements: [], finalPressure: 0, pressureDrop: 0, passed: false, notes: '' },
       })
       .returning();
 
@@ -116,8 +116,8 @@ export async function recordMeasurement(
     await db.insert(testMeasurements).values({
       testRunId: runId,
       timestamp: data.timestamp || new Date(),
-      pressure: data.pressure,
-      temperature: data.temperature,
+      pressure: String(data.pressure),
+      temperature: data.temperature ? String(data.temperature) : undefined,
     });
 
     return { success: true };
@@ -179,7 +179,7 @@ export async function completeTestRun(
     }
 
     // Calculate metrics
-    const finalPressure = measurements[measurements.length - 1]?.pressure || 0;
+    const finalPressure = Number(measurements[measurements.length - 1]?.pressure || 0);
     const pressureDrop = config.workingPressure - finalPressure;
     const passed = pressureDrop <= config.allowablePressureDrop;
 
@@ -190,16 +190,16 @@ export async function completeTestRun(
 
     const results = {
       measurements: measurements.map(m => ({
-        timestamp: m.timestamp,
-        pressure: m.pressure,
-        temperature: m.temperature,
+        timestamp: new Date(m.timestamp).getTime(),
+        pressure: Number(m.pressure),
+        temperature: m.temperature ? Number(m.temperature) : 0,
       })),
       finalPressure,
       pressureDrop,
       holdDuration: durationMinutes,
       passed,
       failureReason: passed ? undefined : 'Pressure drop exceeded allowable limit',
-      notes,
+      notes: notes || '',
     };
 
     // Update test_run

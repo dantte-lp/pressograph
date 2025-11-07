@@ -152,7 +152,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               placeholder="e.g., Daily Pressure Test - Pipeline A"
               aria-invalid={!!errors.name}
             />
-            {errors.name && <FormError message={errors.name.message} />}
+            {errors.name && <FormError error={errors.name.message} />}
           </div>
 
           {/* Description */}
@@ -164,7 +164,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               placeholder="Optional description of the test purpose..."
               rows={4}
             />
-            {errors.description && <FormError message={errors.description.message} />}
+            {errors.description && <FormError error={errors.description.message} />}
           </div>
 
           {/* Template Type */}
@@ -219,7 +219,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                     aria-invalid={!!errors.workingPressure}
                   />
                   {errors.workingPressure && (
-                    <FormError message={errors.workingPressure.message} />
+                    <FormError error={errors.workingPressure.message} />
                   )}
                 </div>
 
@@ -233,7 +233,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                     {...register('maxPressure', { valueAsNumber: true })}
                     aria-invalid={!!errors.maxPressure}
                   />
-                  {errors.maxPressure && <FormError message={errors.maxPressure.message} />}
+                  {errors.maxPressure && <FormError error={errors.maxPressure.message} />}
                 </div>
 
                 {/* Allowable Pressure Drop */}
@@ -247,7 +247,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                     aria-invalid={!!errors.allowablePressureDrop}
                   />
                   {errors.allowablePressureDrop && (
-                    <FormError message={errors.allowablePressureDrop.message} />
+                    <FormError error={errors.allowablePressureDrop.message} />
                   )}
                 </div>
 
@@ -289,7 +289,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                     {...register('testDuration', { valueAsNumber: true })}
                     aria-invalid={!!errors.testDuration}
                   />
-                  {errors.testDuration && <FormError message={errors.testDuration.message} />}
+                  {errors.testDuration && <FormError error={errors.testDuration.message} />}
                 </div>
 
                 {/* Temperature */}
@@ -400,7 +400,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                 workingPressure={formValues.workingPressure || 0}
                 maxPressure={formValues.maxPressure || 0}
                 testDuration={formValues.testDuration || 0}
-                intermediateStages={formValues.intermediateStages || []}
+                intermediateStages={(formValues.intermediateStages || []).map(stage => ({ time: stage.duration || 0, pressure: stage.targetPressure || 0, duration: stage.holdDuration || 0 }))}
                 pressureUnit={formValues.pressureUnit || 'MPa'}
               />
             </CardContent>
