@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Preview Graph Interval Display Bug (Create and Edit Forms)** - Fixed 1-hour intervals showing for 24-hour tests
+  - Root cause: Missing fallback values in debounced form values caused undefined/0 to be passed to preview
+  - When `testDuration` is undefined/0, preview would sanitize to 24h but interval calculation already completed
+  - Create form: Added fallbacks to debounced values (workingPressure || 10, maxPressure || 15, testDuration || 24)
+  - Edit form: Updated fallbacks in preview props from || 0 to proper defaults (1440 minutes = 24 hours)
+  - This ensures preview always receives valid values and calculates correct intervals:
+    - ≤6h tests: 1-hour intervals
+    - ≤24h tests: 2-hour intervals (now working correctly)
+    - ≤72h tests: 4-hour intervals
+    - >72h tests: 6-hour intervals
+  - User feedback: "Preview до сих пор отображается с промежутком в 1 час" - resolved
 - **Edit Form Test Duration Unit Mismatch** - Fixed 1-hour intervals showing instead of 2-hour for 24-hour tests in edit form
   - Root cause: Edit form uses MINUTES internally but was loading hours from database without conversion
   - Database stores testDuration in hours (set by create form)

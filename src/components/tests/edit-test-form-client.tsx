@@ -323,9 +323,9 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               </CardHeader>
               <CardContent>
                 <PressureTestPreviewEnhanced
-                  workingPressure={formValues.workingPressure || 0}
-                  maxPressure={formValues.maxPressure || 0}
-                  testDuration={(formValues.testDuration || 0) / 60}
+                  workingPressure={formValues.workingPressure || 10}
+                  maxPressure={formValues.maxPressure || 15}
+                  testDuration={(formValues.testDuration || 1440) / 60}
                   intermediateStages={(formValues.intermediateStages || []).map(stage => ({
                     time: stage.duration || 0,
                     pressure: stage.targetPressure || 0,
@@ -430,9 +430,9 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             </CardHeader>
             <CardContent>
               <PressureTestPreviewEnhanced
-                workingPressure={formValues.workingPressure || 0}
-                maxPressure={formValues.maxPressure || 0}
-                testDuration={(formValues.testDuration || 0) / 60}
+                workingPressure={formValues.workingPressure || 10}
+                maxPressure={formValues.maxPressure || 15}
+                testDuration={(formValues.testDuration || 1440) / 60}
                 intermediateStages={(formValues.intermediateStages || []).map(stage => ({
                   time: stage.duration || 0,
                   pressure: stage.targetPressure || 0,

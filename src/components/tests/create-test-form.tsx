@@ -173,16 +173,17 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     enabled: !sourceTest, // Disable cache when duplicating existing test
   });
 
-  // Watch form values for graph preview (no fallback values to avoid default ranges)
+  // Watch form values for graph preview
   const workingPressure = watch('workingPressure');
   const maxPressure = watch('maxPressure');
   const testDuration = watch('testDuration');
   const pressureUnit = watch('pressureUnit') || 'MPa';
 
   // Debounce graph updates for better performance (300ms delay)
-  const debouncedWorkingPressure = useDebounce(workingPressure, 300);
-  const debouncedMaxPressure = useDebounce(maxPressure, 300);
-  const debouncedTestDuration = useDebounce(testDuration, 300);
+  // Add fallback values to prevent undefined/0 from causing incorrect interval calculations
+  const debouncedWorkingPressure = useDebounce(workingPressure || 10, 300);
+  const debouncedMaxPressure = useDebounce(maxPressure || 15, 300);
+  const debouncedTestDuration = useDebounce(testDuration || 24, 300);
   const debouncedStages = useDebounce(watchedStages, 300);
 
   // Add tag
