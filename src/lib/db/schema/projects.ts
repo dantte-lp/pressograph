@@ -49,6 +49,8 @@ export const projects = pgTable(
     orgIdIdx: index("projects_org_id_idx").on(table.organizationId),
     ownerIdIdx: index("projects_owner_id_idx").on(table.ownerId),
     archivedIdx: index("projects_archived_idx").on(table.isArchived),
+    // Note: Cannot create unique index on JSONB field directly
+    // Uniqueness is enforced at application level in server actions
   })
 );
 

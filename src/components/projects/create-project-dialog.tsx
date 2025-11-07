@@ -6,7 +6,7 @@
  * Modal form for creating a new project.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -68,10 +68,18 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
       name: '',
       description: '',
       autoNumberTests: true,
-      testNumberPrefix: 'PT',
+      testNumberPrefix: '',
       requireNotes: false,
     },
   });
+
+  // Generate unique prefix when dialog opens
+  useEffect(() => {
+    if (open && !form.getValues('testNumberPrefix')) {
+      const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
+      form.setValue('testNumberPrefix', `PT-${timestamp}`);
+    }
+  }, [open, form]);
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);

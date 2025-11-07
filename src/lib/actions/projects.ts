@@ -10,11 +10,84 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
-import { eq, and, desc, ilike, or } from 'drizzle-orm';
+import { eq, and, desc, ilike, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { projects, type Project, type NewProject, type ProjectSettings } from '@/lib/db/schema/projects';
 import { users } from '@/lib/db/schema/users';
 import { authOptions } from '@/lib/auth/config';
+
+/**
+ * Check if a test number prefix is already in use within an organization
+ */
+export async function checkTestNumberPrefixUnique(
+  organizationId: string,
+  prefix: string,
+  excludeProjectId?: string
+): Promise<{ isUnique: boolean; error: string | null }> {
+  try {
+    const isUnique = await isTestNumberPrefixUnique(organizationId, prefix, excludeProjectId);
+    return { isUnique, error: null };
+  } catch (error) {
+    console.error('[checkTestNumberPrefixUnique] Error:', error);
+    return { isUnique: false, error: 'Failed to check prefix uniqueness' };
+  }
+}
+
+/**
+ * Internal function to check if a test number prefix is unique
+ */
+async function isTestNumberPrefixUnique(
+  organizationId: string,
+  prefix: string,
+  excludeProjectId?: string
+): Promise<boolean> {
+  try {
+    const conditions = [
+      eq(projects.organizationId, organizationId),
+    ];
+
+    if (excludeProjectId) {
+      conditions.push(sql`${projects.id} != ${excludeProjectId}`);
+    }
+
+    const existing = await db
+      .select()
+      .from(projects)
+      .where(and(...conditions));
+
+    // Check if any project has the same prefix in settings
+    const hasDuplicate = existing.some((project) => {
+      const settings = project.settings as ProjectSettings;
+      return settings?.testNumberPrefix?.toUpperCase() === prefix.toUpperCase();
+    });
+
+    return !hasDuplicate;
+  } catch (error) {
+    console.error('[isTestNumberPrefixUnique] Error:', error);
+    return false;
+  }
+}
+
+/**
+ * Generate a unique test number prefix for an organization
+ */
+async function generateUniquePrefix(organizationId: string): Promise<string> {
+  const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
+  let prefix = `PT-${timestamp}`;
+  let counter = 1;
+
+  while (!(await isTestNumberPrefixUnique(organizationId, prefix))) {
+    prefix = `PT-${timestamp}-${counter}`;
+    counter++;
+    if (counter > 10) {
+      // Fallback to random if too many collisions
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      prefix = `PT-${random}`;
+    }
+  }
+
+  return prefix;
+}
 
 /**
  * Get all projects for the current user
@@ -164,15 +237,6 @@ export async function createProject(data: {
       return { project: null, error: 'Project name is too long (max 255 characters)' };
     }
 
-    // Prepare default settings
-    const defaultSettings: ProjectSettings = {
-      autoNumberTests: true,
-      testNumberPrefix: 'PT',
-      requireNotes: false,
-      defaultTemplateType: 'daily',
-      ...settings,
-    };
-
     // Get organizationId - if not in session, fetch from database
     let organizationId = session.user.organizationId;
 
@@ -194,6 +258,32 @@ export async function createProject(data: {
         };
       }
     }
+
+    // Handle test number prefix - generate unique if not provided
+    let testNumberPrefix = settings?.testNumberPrefix?.trim() || '';
+
+    if (!testNumberPrefix) {
+      // Generate unique prefix if not provided
+      testNumberPrefix = await generateUniquePrefix(organizationId);
+    } else {
+      // Validate uniqueness if provided
+      const isUnique = await isTestNumberPrefixUnique(organizationId, testNumberPrefix);
+      if (!isUnique) {
+        return {
+          project: null,
+          error: `Test number prefix "${testNumberPrefix}" is already in use. Please choose a different prefix.`
+        };
+      }
+    }
+
+    // Prepare default settings
+    const defaultSettings: ProjectSettings = {
+      autoNumberTests: true,
+      testNumberPrefix,
+      requireNotes: false,
+      defaultTemplateType: 'daily',
+      ...settings,
+    };
 
     // Insert new project
     const newProject: NewProject = {
@@ -271,10 +361,28 @@ export async function updateProject(
     }
 
     if (data.settings !== undefined) {
-      updateData.settings = {
+      const newSettings = {
         ...existing[0].settings,
         ...data.settings,
       } as ProjectSettings;
+
+      // If testNumberPrefix is being changed, validate uniqueness
+      if (data.settings.testNumberPrefix &&
+          data.settings.testNumberPrefix !== (existing[0].settings as ProjectSettings)?.testNumberPrefix) {
+        const isUnique = await isTestNumberPrefixUnique(
+          existing[0].organizationId,
+          data.settings.testNumberPrefix,
+          projectId
+        );
+        if (!isUnique) {
+          return {
+            project: null,
+            error: `Test number prefix "${data.settings.testNumberPrefix}" is already in use. Please choose a different prefix.`
+          };
+        }
+      }
+
+      updateData.settings = newSettings;
     }
 
     // Update project
