@@ -9,6 +9,191 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Enhanced Graph Preview with Manual Recalculation and Axis Scaling (2025-11-07)
+
+**Major Enhancement: Advanced Graph Configuration**
+
+Significantly improved the pressure test graph preview component with professional features adapted from Pressograph v1.
+
+**New Component: PressureTestPreviewEnhanced**
+- Location: `/src/components/tests/pressure-test-preview-enhanced.tsx`
+- All features from original PressureTestPreview plus:
+
+**Manual Recalculate Button:**
+- RefreshCw icon button next to "Preview" title
+- Forces graph regeneration on click
+- Useful when editing intermediate stage values
+- Loading state during recalculation
+- Clean UI integration without cluttering preview area
+
+**Axis Scaling Configuration:**
+- Collapsible "Graph Settings" section below preview
+- Y-Axis Controls:
+  - Auto Scale toggle (default: ON)
+  - Manual Y-Axis Min input (default: 0)
+  - Manual Y-Axis Max input
+  - When auto-scale is OFF, user can set exact bounds
+  - Adapted calculation from v1: `Math.ceil(maxPressure * 1.1 / 5) * 5`
+- X-Axis Controls:
+  - Auto Scale toggle (default: ON)
+  - Manual X-Axis Max input (minutes)
+  - 5% time buffer when auto-scaling (adapted from v1)
+- Uses shadcn/ui Collapsible component
+- Changes apply immediately to graph
+- Settings persist in component state
+
+**Old Pressograph v1 Styling Adapted to ECharts 6.0:**
+- Professional color scheme:
+  - Line color: `#0066cc` (adapted from v1)
+  - Area fill: `rgba(173, 216, 230, 0.3)` (lightblue gradient)
+  - Grid lines: Light gray with proper contrast
+- Axis formatting identical to v1:
+  - Y-axis rounds to nearest 5 MPa increment
+  - X-axis shows hours and minutes
+  - Proper margins and spacing
+- Reference lines with dashed style
+- Clean, industrial visualization aesthetic
+
+**Technical Implementation:**
+- TypeScript strict mode with full type safety
+- State management for graph settings
+- useMemo hooks for performance optimization
+- Proper ECharts axis.min/max configuration
+- Responsive collapsible UI
+- No performance regression
+
+**User Experience:**
+- See graph updates when manually recalculating
+- Fine-tune axis bounds for specific pressure ranges
+- Hide/show settings to save screen space
+- Professional appearance matching old Pressograph
+- Immediate visual feedback on setting changes
+
+#### Internationalization Support with next-intl (2025-11-07)
+
+**Major Feature: Multi-Language Support**
+
+Implemented comprehensive internationalization infrastructure supporting English and Russian languages.
+
+**next-intl Configuration:**
+- Location: `/src/i18n.ts`
+- Supported locales: English (en), Russian (ru)
+- Default locale: English
+- Locale detection via cookies
+- Server-side configuration for optimal performance
+
+**Middleware Integration:**
+- Location: `/src/middleware.ts`
+- Automatic locale detection and management
+- No locale prefix in URLs (cleaner URLs)
+- Cookie-based locale persistence
+- Theme header injection preserved
+
+**Translation Files:**
+- Location: `/messages/en.json` and `/messages/ru.json`
+- Comprehensive translations for:
+  - Common UI elements (save, cancel, delete, etc.)
+  - Navigation (dashboard, projects, tests, etc.)
+  - Test creation workflow (all steps and fields)
+  - Project management
+  - Authentication flows
+  - Settings and preferences
+  - Error messages and validation
+  - Graph components
+- Structured namespaces for easy maintenance
+- 150+ translation keys per language
+
+**Language Switcher Component:**
+- Location: `/src/components/ui/language-switcher.tsx`
+- Dropdown menu with flag icons
+- English: GB flag, Russian: RU flag
+- Persists selection via cookie
+- Smooth language switching with page reload
+- Responsive design (full name on desktop, flag only on mobile)
+- Integration with next-intl useLocale hook
+
+**Usage in Components:**
+```typescript
+import { useTranslations } from 'next-intl';
+
+function MyComponent() {
+  const t = useTranslations('tests.create');
+  return <h1>{t('title')}</h1>; // "Create Pressure Test" or "Создать испытание"
+}
+```
+
+**Coverage:**
+- All UI text translatable
+- Form labels and placeholders
+- Error messages and validation
+- Button text and tooltips
+- Navigation and breadcrumbs
+- Empty states and help text
+
+#### Timezone and Date/Time Format Configuration (2025-11-07)
+
+**Major Feature: User Preferences for Date/Time Display**
+
+Implemented comprehensive date/time formatting system with timezone support.
+
+**Date/Time Utility Library:**
+- Location: `/src/lib/utils/date-time.ts`
+- Powered by date-fns and date-fns-tz
+- Supports multiple date formats:
+  - MM/DD/YYYY (US format)
+  - DD.MM.YYYY (EU/RU format)
+  - YYYY-MM-DD (ISO format)
+- Supports time formats:
+  - 12-hour with AM/PM
+  - 24-hour format
+- Timezone conversion with 11 common timezones:
+  - UTC, Moscow, London, Berlin
+  - New York, Chicago, Los Angeles
+  - Tokyo, Shanghai, Dubai, Sydney
+
+**Key Functions:**
+- `formatDate()`: Format date with user preference
+- `formatTime()`: Format time with 12h/24h preference
+- `formatDateTime()`: Combined formatting with timezone
+- `toUserTimezone()`: Convert to user's timezone
+- `formatRelativeTime()`: "2 hours ago", "in 3 days"
+- `getUserDateTimeConfig()`: Load preferences from localStorage
+- `setUserDateTimeConfig()`: Save preferences
+
+**Settings Component:**
+- Location: `/src/components/settings/date-time-settings.tsx`
+- Interactive UI for configuring:
+  - Timezone (dropdown with 11 options)
+  - Date format (3 options with examples)
+  - Time format (12h/24h with examples)
+- Live preview of selected format
+- Automatic save to localStorage
+- Toast notifications on save
+- Translatable using next-intl
+
+**Storage:**
+- Preferences stored in browser localStorage
+- Key: `dateTimeConfig`
+- Persists across sessions
+- Server-side rendering falls back to defaults
+
+**Default Configuration:**
+```typescript
+{
+  dateFormat: 'YYYY-MM-DD',
+  timeFormat: '24h',
+  timezone: 'UTC'
+}
+```
+
+**Integration:**
+- All timestamp displays can use these utilities
+- Test creation/modification dates
+- Test run timestamps
+- Activity feed timestamps
+- Report generation times
+- Audit log entries
+
 #### Real-Time Pressure Test Graph Preview with ECharts (2025-11-07)
 
 **Major Feature: Interactive Test Profile Visualization**
