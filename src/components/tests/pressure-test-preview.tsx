@@ -129,17 +129,17 @@ export function PressureTestPreview({
 
     let currentTime = rampUpDuration;
 
-    // Add intermediate stages
+    // Add intermediate stages (time is relative to previous stage end)
     if (intermediateStages && intermediateStages.length > 0) {
       intermediateStages.forEach((stage) => {
-        // Transition to stage pressure
-        const stageStartTime = Math.min(stage.time, totalMinutes - depressurizeDuration);
+        // Calculate stage start time (relative offset from current time)
+        const stageStartTime = Math.min(currentTime + stage.time, totalMinutes - depressurizeDuration);
         if (stageStartTime > currentTime) {
           dataPoints.push([minutesToX(stageStartTime), stage.pressure]);
           timeLabels.push(formatTime(stageStartTime));
         }
 
-        // Hold at stage pressure
+        // Hold at stage pressure for specified duration
         const stageEndTime = Math.min(stageStartTime + stage.duration, totalMinutes - depressurizeDuration);
         if (stageEndTime > stageStartTime) {
           dataPoints.push([minutesToX(stageEndTime), stage.pressure]);
@@ -221,11 +221,10 @@ export function PressureTestPreview({
         show: false, // Disabled to avoid series name mismatch errors
       },
       grid: {
-        left: '10%',
-        right: '10%',
-        bottom: '15%',
-        top: '20%',
-        containLabel: true,
+        left: '12%',
+        right: '8%',
+        bottom: '18%',
+        top: '22%',
       },
       xAxis: useTimeBased ? {
         type: 'time',

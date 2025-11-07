@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Maximize2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PressureTestPreview } from './pressure-test-preview';
 
 interface IntermediateStage {
@@ -71,11 +71,14 @@ export function PreviewDialog({
           Full Screen Preview
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] w-[95vw] h-[85vh] flex flex-col p-6">
+      <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] flex flex-col p-6">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold">
             Pressure Test Preview
           </DialogTitle>
+          <DialogDescription>
+            Full-screen preview of the pressure test profile with interactive graph
+          </DialogDescription>
         </DialogHeader>
 
         {/* Scrollable content area */}

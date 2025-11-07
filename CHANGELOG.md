@@ -8,6 +8,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Preview Dialog Full-Screen Orientation** - Enhanced full-screen preview to maximum viewport dimensions (98vw × 95vh)
+  - Increased from 95vw to 98vw width for truly full-width display
+  - Increased from 85vh to 95vh height for maximum vertical space
+  - Added DialogDescription to fix accessibility warning
+  - Optimized for viewing pressure test graphs in landscape mode
+  - Improves visualization of long-duration tests
+- **Graph Time Range Default Values** - Removed fallback values causing fixed 2h 24m to 22h 48m range
+  - Removed `|| 24` fallback from testDuration watch
+  - Removed `|| 10` and `|| 15` fallbacks from pressure values
+  - Graph now uses actual form values without defaults
+  - Prevents confusing time ranges in empty/new forms
+  - X-axis now correctly displays 0 to actual test duration
+- **Intermediate Stages Time Calculation** - Changed time field to relative offset from previous stage
+  - Renamed "Time" column to "Offset" to clarify it's relative, not absolute
+  - Added "Cumulative" column showing absolute time from test start
+  - Updated graph data generation to use cumulative time calculation
+  - Fixed both PressureTestPreview and PressureTestPreviewEnhanced components
+  - Time field now represents minutes after previous stage ends
+- **Select Component Controlled Warnings** - Fixed React controlled component warnings
+  - Added `|| ''` fallback to projectId Select value
+  - Added `|| 'MPa'` fallback to pressureUnit Select value
+  - Added `|| 'C'` fallback to temperatureUnit Select value
+  - Added `|| 'daily'` fallback to templateType Select value
+  - Ensures all Select components always have defined values
+- **Form Default Values** - Added complete default values to prevent undefined warnings
+  - Added empty string defaults for name, projectId, description
+  - Added empty string defaults for equipmentId, operatorName, notes
+  - Added empty string defaults for startDateTime, endDateTime
+  - Ensures all form fields have defined initial values
+  - Prevents controlled/uncontrolled component switching warnings
+- **ECharts Deprecated API** - Removed deprecated grid.containLabel configuration
+  - Replaced `containLabel: true` with explicit margin values
+  - Updated grid to use left: 12%, right: 8%, bottom: 18%, top: 22%
+  - Fixed deprecation warning in both preview components
+  - Maintains identical visual appearance
+  - Follows ECharts 6.0 modern API guidelines
 - **Preview Dialog Landscape Orientation** - Full-screen preview now uses wide layout (95vw × 85vh)
   - Changed from portrait max-w-screen-2xl to landscape 95vw width
   - Reduced height from 90vh to 85vh for better screen fit

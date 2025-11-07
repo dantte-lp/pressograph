@@ -116,15 +116,23 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
         templateType: (sourceTest.templateType as 'daily' | 'extended' | 'custom') || 'custom',
       }
     : {
+        name: '',
+        projectId: '',
+        description: '',
         workingPressure: 10,
         maxPressure: 15,
         testDuration: 24,
         temperature: 20,
         allowablePressureDrop: 0.5,
-        pressureUnit: 'MPa',
-        temperatureUnit: 'C',
+        pressureUnit: 'MPa' as const,
+        temperatureUnit: 'C' as const,
+        equipmentId: '',
+        operatorName: '',
+        notes: '',
+        startDateTime: '',
+        endDateTime: '',
         intermediateStages: [],
-        templateType: 'daily',
+        templateType: 'daily' as const,
         tags: [],
       };
 
@@ -154,10 +162,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     enabled: !sourceTest, // Disable cache when duplicating existing test
   });
 
-  // Watch form values for graph preview
-  const workingPressure = watch('workingPressure') || 10;
-  const maxPressure = watch('maxPressure') || 15;
-  const testDuration = watch('testDuration') || 24;
+  // Watch form values for graph preview (no fallback values to avoid default ranges)
+  const workingPressure = watch('workingPressure');
+  const maxPressure = watch('maxPressure');
+  const testDuration = watch('testDuration');
   const pressureUnit = watch('pressureUnit') || 'MPa';
 
   // Debounce graph updates for better performance (300ms delay)
@@ -421,7 +429,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     <FormLabel>
                       Project <span className="text-destructive">*</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a project" />
@@ -494,7 +502,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   name="templateType"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || 'daily'}>
                       <SelectTrigger id="templateType">
                         <SelectValue />
                       </SelectTrigger>
@@ -555,7 +563,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                           name="pressureUnit"
                           render={({ field: unitField }) => (
                             <FormItem>
-                              <Select onValueChange={unitField.onChange} value={unitField.value}>
+                              <Select onValueChange={unitField.onChange} value={unitField.value || 'MPa'}>
                                 <FormControl>
                                   <SelectTrigger className="w-24">
                                     <SelectValue />
@@ -629,7 +637,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       name="temperatureUnit"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || 'C'}>
                           <SelectTrigger className="w-16">
                             <SelectValue />
                           </SelectTrigger>
@@ -786,19 +794,25 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">#</th>
-                          <th className="px-3 py-2 text-left font-medium">Time (min)</th>
+                          <th className="px-3 py-2 text-left font-medium" title="Time after previous stage (minutes)">
+                            Offset (min)
+                          </th>
                           <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
                           <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
-                          <th className="px-3 py-2 text-left font-medium">Cumulative</th>
+                          <th className="px-3 py-2 text-left font-medium" title="Absolute time from test start">
+                            Cumulative (min)
+                          </th>
                           <th className="px-3 py-2 text-center font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {watchedStages.map((_stage, index) => {
-                          // Calculate cumulative time
-                          const cumulativeTime = watchedStages
-                            .slice(0, index + 1)
-                            .reduce((sum, s) => sum + (s.time || 0) + (s.duration || 0), 0);
+                          // Calculate cumulative time (relative to test start)
+                          // For stage i: cumulative = sum of all previous (time + duration) + current time + current duration
+                          let cumulativeTime = 0;
+                          for (let i = 0; i <= index; i++) {
+                            cumulativeTime += (watchedStages[i]?.time || 0) + (watchedStages[i]?.duration || 0);
+                          }
 
                           return (
                             <tr key={index} className="border-t hover:bg-muted/30">
