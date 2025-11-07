@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **JSON Export/Import for Test Configurations** - Complete backup and restore functionality for pressure test settings
+  - Created `test-config-io.ts` utility module with comprehensive validation
+    - `exportTestConfig`: Export configuration to pretty-printed JSON with metadata
+    - `importTestConfig`: Import and validate JSON files with user-friendly error messages
+    - `validateTestConfig`: Standalone validation for programmatic use
+    - Zod schema validation with detailed field-level error reporting
+  - Created `ExportConfigButton` component
+    - One-click export with timestamp-based file naming
+    - Includes test metadata (number, name, description)
+    - Toast notifications for success/error feedback
+    - Customizable button styles (variant, size)
+  - Created `ImportConfigButton` component
+    - File input with validation (JSON only, 1MB maximum)
+    - Auto-fills all form fields with imported values
+    - Validates structure and data types before import
+    - Clear error messages for validation failures
+  - Integration points:
+    - Export button in test detail page (Quick Actions card)
+    - Import button in test creation form (Step 1 header)
+    - Works seamlessly with test duplication feature
+  - Features:
+    - Type-safe implementation with TypeScript strict mode
+    - Supports all test configuration fields (including optional)
+    - Partial import support (handles missing optional fields)
+    - Pretty-printed JSON output (2-space indentation)
+    - Export metadata tracking (version 2.0.0, timestamp, source)
+    - File size validation (1MB limit for security)
+    - Comprehensive error handling with user guidance
+  - Closes #93 (High Priority feature from Sprint 4)
+
 ### Fixed
 - **Test Deletion Dialog UX** - Replaced native browser confirm dialogs with shadcn AlertDialog components
   - Created `DeleteTestDialog` component with checkbox confirmation pattern
