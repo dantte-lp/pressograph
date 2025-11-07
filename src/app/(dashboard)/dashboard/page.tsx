@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FolderIcon, FlaskConicalIcon, BarChart3Icon, ActivityIcon, HardDriveIcon } from 'lucide-react';
+import { FolderIcon, FlaskConicalIcon, BarChart3Icon, ActivityIcon, HardDriveIcon, Archive } from 'lucide-react';
 import { getDashboardStats, getRecentActivity } from '@/lib/actions/dashboard';
 import { formatBytes } from '@/lib/utils/format';
 import Link from 'next/link';
@@ -93,32 +93,61 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Navigation - Projects */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <div className="flex items-center gap-2">
+            <FolderIcon className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>Projects</CardTitle>
+          </div>
           <CardDescription>
-            Start creating pressure test graphs
+            Manage your pressure test projects
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
-          <Button asChild>
-            <Link href="/projects">
-              <FolderIcon className="mr-2 h-4 w-4" />
-              Create Project
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/tests">
-              <FlaskConicalIcon className="mr-2 h-4 w-4" />
-              Create Test
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/docs">
-              View Documentation
-            </Link>
-          </Button>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/projects">
+                <FolderIcon className="mr-2 h-4 w-4" />
+                List Projects
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/projects?archived=true">
+                <Archive className="mr-2 h-4 w-4" />
+                Archived Projects
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Navigation - Tests */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FlaskConicalIcon className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>Tests</CardTitle>
+          </div>
+          <CardDescription>
+            View and create pressure tests
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/tests">
+                <FlaskConicalIcon className="mr-2 h-4 w-4" />
+                List Tests
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/tests?status=active">
+                <ActivityIcon className="mr-2 h-4 w-4" />
+                Active Tests
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
