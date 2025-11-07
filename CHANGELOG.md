@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Graph X-Axis Time Display** - Fixed X-axis not respecting test duration parameter
+  - Added explicit min/max bounds to X-axis (0 to testDuration * 60 minutes)
+  - Graph now correctly displays 0-60min for 1-hour tests, 0-180min for 3-hour tests, etc.
+  - Previously X-axis would auto-scale causing inconsistent time ranges
+  - Added grid lines to both X and Y axes for better readability
+  - Confirmed hot reload functionality works correctly for intermediate stages (300ms debounce)
+
 ### Added
 - **ECharts-Based Graph Export System** - Complete rewrite of graph export using ECharts native capabilities
   - New graph-export-echarts.ts module using ECharts getDataURL() method

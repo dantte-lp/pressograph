@@ -200,6 +200,8 @@ export function PressureTestPreview({
         nameTextStyle: {
           fontSize: 11,
         },
+        min: 0,
+        max: testDuration * 60, // Explicit max based on test duration in minutes
         axisLabel: {
           formatter: (value: number) => {
             if (value === 0) return '0';
@@ -211,6 +213,13 @@ export function PressureTestPreview({
           },
           fontSize: 10,
         },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dashed',
+            color: '#f0f0f0',
+          },
+        },
       },
       yAxis: {
         type: 'value',
@@ -220,11 +229,19 @@ export function PressureTestPreview({
         nameTextStyle: {
           fontSize: 11,
         },
+        min: 0,
+        max: Math.ceil(maxPressure * 1.1), // 10% above max pressure
         axisLabel: {
           formatter: '{value}',
           fontSize: 10,
         },
-        max: Math.ceil(maxPressure * 1.1), // 10% above max pressure
+        splitLine: {
+          show: true,
+          lineStyle: {
+            type: 'solid',
+            color: '#f0f0f0',
+          },
+        },
       },
       series: [
         {
