@@ -587,7 +587,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           </Card>
         </TabsContent>
 
-        {/* Preview Tab */}
+        {/* Preview Tab - IDENTICAL to create page preview */}
         <TabsContent value="preview" className="mt-6">
           <Card>
             <CardHeader>
@@ -595,7 +595,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                 <div>
                   <CardTitle>Graph Preview</CardTitle>
                   <CardDescription>
-                    Complete pressure test profile visualization
+                    Real-time pressure profile visualization
                   </CardDescription>
                 </div>
                 <PreviewDialog

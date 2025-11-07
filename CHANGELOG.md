@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Edit Page Graph Preview Consistency** - Ensured edit page "Graph Preview" tab uses identical component as create page
+  - Both create and edit pages now use `PressureTestPreview` component with identical props
+  - Removed any usage of `PressureTestPreviewEnhanced` from edit page preview tabs
+  - Verified consistency: same graph visualization, same tooltips, same styling
+  - Updated tab description to match create page: "Real-time pressure profile visualization"
+  - Tested with test ID: `5ccdd3d3-96f0-49b2-9a7f-788215714632`
+  - Result: Edit page preview now pixel-perfect identical to create page preview
+
+### Added
+- **ECharts-Based Graph Export** - New export option using ECharts native rendering alongside custom export
+  - Created `EChartsExportDialog` component for ECharts-based PNG export
+  - Uses ECharts canvas rendering directly (getDataURL method)
+  - Exports high-quality PNG (2x pixel ratio) with white background
+  - Added to test detail page Quick Actions card
+  - Provides alternative to custom canvas-based export in `EmulationExportDialog`
+  - Both export methods available side-by-side:
+    - "Export Emulation" - Custom canvas rendering with V1 styling
+    - "Export Graph (ECharts)" - Direct ECharts rendering for consistency
+  - Benefits:
+    - Same graph component used for preview and export
+    - No visual discrepancies between preview and export
+    - Simpler implementation using ECharts built-in functionality
+    - Consistent with preview graph styling and layout
+  - Export format: PNG with timestamp-based filename
+  - Dialog includes graph preview, export details, and test configuration
+  - Location: `/src/components/tests/echarts-export-dialog.tsx`
+
+### Fixed
 - **Test Editing - Complete Parity with Create Form** - Major refactor of test editing page to match create form functionality and fix multiple critical issues (Issues #6.2, #6.3, #7)
   - **Issue 6.2 - Preview Tab Graph Rendering**: Replaced `PressureTestPreviewEnhanced` with standard `PressureTestPreview` component
     - Edit page now uses the same graph component and preview dialog as create page

@@ -11,6 +11,7 @@ import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
 import { PressureTestPreviewEnhanced } from '@/components/tests/pressure-test-preview-enhanced';
 import { EmulationExportDialog } from '@/components/tests/emulation-export-dialog';
+import { EChartsExportDialog } from '@/components/tests/echarts-export-dialog';
 import { ExportConfigButton } from '@/components/tests/export-config-button';
 import { formatDate, formatDateTime } from '@/lib/utils/format';
 
@@ -201,6 +202,11 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   </Link>
                 </Button>
                 <EmulationExportDialog
+                  testNumber={test.testNumber}
+                  testName={test.name}
+                  config={test.config}
+                />
+                <EChartsExportDialog
                   testNumber={test.testNumber}
                   testName={test.name}
                   config={test.config}
