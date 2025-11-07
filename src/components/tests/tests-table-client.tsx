@@ -124,14 +124,16 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
           <TableBody>
             {data.tests.map((test) => (
               <TableRow key={test.id}>
-                <TableCell className="font-medium">{test.testNumber}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium">
                   <Link
                     href={`/tests/${test.id}` as any}
-                    className="hover:underline"
+                    className="hover:underline text-primary"
                   >
-                    {test.name}
+                    {test.testNumber}
                   </Link>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {test.name}
                 </TableCell>
                 <TableCell>
                   <Link
