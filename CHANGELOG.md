@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **X-Axis Interval Calculation Debug Logging** - Enhanced diagnostics for interval selection algorithm
+  - Added comprehensive console logging to track interval calculation process
+  - Logs display hours, all tested intervals (1h, 2h, 3h, 4h, 6h, 12h, 24h), tick counts, and validity
+  - Shows which intervals are valid (8-15 tick range) with ✓/✗ indicators
+  - Displays selected interval and final returned value in minutes
+  - Memoized calculation to prevent excessive logging on re-renders
+  - Expected behavior for 24h test with time-based axis (26h total with padding):
+    - 1h → 26 ticks (too many, > 15)
+    - 2h → 13 ticks (✓ VALID, selected)
+    - 3h → 8.67 ticks (✓ VALID)
+    - 4h+ → too few ticks (< 8)
+    - Final result: 120 minutes (2-hour intervals)
+  - TODO: Remove debug logging after issue is confirmed resolved
+
 ### Fixed
 - **X-Axis Interval ECharts Auto-Adjustment Bug (FINAL FIX)** - Fixed value-based axis allowing ECharts to override calculated intervals
   - **Root cause**: Value-based axis had `minInterval: 30` (hardcoded) while time-based axis had `minInterval` and `maxInterval` set to the calculated interval value. This inconsistency allowed ECharts to auto-adjust the value-based axis intervals despite correct calculations.

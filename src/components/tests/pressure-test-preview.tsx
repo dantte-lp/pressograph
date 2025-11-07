@@ -107,14 +107,29 @@ export function PressureTestPreview({
     // Common interval values in hours (ordered from smallest to largest)
     const commonIntervals = [1, 2, 3, 4, 6, 12, 24];
 
+    // TODO: Remove debug logging after X-axis interval issue is resolved
+    // Expected behavior for 24h test (26h total with padding):
+    //   - 1h → 26 ticks (too many)
+    //   - 2h → 13 ticks (✓ VALID)
+    //   - 3h → 8.67 ticks (✓ VALID)
+    //   - 4h+ → too few ticks
+    //   - Should select 2h (smallest valid interval)
+    console.log(`[X-Axis Interval] Display hours: ${displayHours.toFixed(2)}`);
+
     // Find all intervals that provide 8-15 ticks
     const validIntervals: Array<{ interval: number; tickCount: number; diff: number }> = [];
 
     for (const interval of commonIntervals) {
       const tickCount = displayHours / interval;
+      const isValid = tickCount >= 8 && tickCount <= 15;
+
+      console.log(
+        `Testing ${interval}h interval: ${tickCount.toFixed(2)} ticks ` +
+        `(valid range: 8-15) ${isValid ? '✓ VALID' : '✗ invalid'}`
+      );
 
       // Check if tick count is in acceptable range (8-15 ticks)
-      if (tickCount >= 8 && tickCount <= 15) {
+      if (isValid) {
         const diff = Math.abs(tickCount - targetTicks);
         validIntervals.push({ interval, tickCount, diff });
       }
@@ -122,6 +137,8 @@ export function PressureTestPreview({
 
     // If we have valid intervals, prefer smaller ones (better granularity)
     if (validIntervals.length > 0) {
+      console.log(`Found ${validIntervals.length} valid intervals:`, validIntervals);
+
       // Sort by interval size (prefer smaller for better granularity)
       // This ensures 2h is chosen over 3h when both are valid
       validIntervals.sort((a, b) => {
@@ -129,10 +146,17 @@ export function PressureTestPreview({
         // Prefer smaller interval for better granularity and readability
         return a.interval - b.interval;
       });
-      return validIntervals[0].interval * 60; // Convert hours to minutes
+
+      const selected = validIntervals[0];
+      console.log(`Selected interval: ${selected.interval}h (${selected.tickCount.toFixed(2)} ticks)`);
+      console.log(`Returning: ${selected.interval * 60} minutes`);
+
+      return selected.interval * 60; // Convert hours to minutes
     }
 
     // If no interval gives 8-15 ticks, find the one closest to target
+    console.log('No valid intervals found. Finding closest to target...');
+
     let bestInterval = commonIntervals[0];
     let bestDiff = Infinity;
 
@@ -145,6 +169,9 @@ export function PressureTestPreview({
       }
     }
 
+    console.log(`Fallback: Selected ${bestInterval}h interval (closest to target)`);
+    console.log(`Returning: ${bestInterval * 60} minutes`);
+
     return bestInterval * 60; // Convert hours to minutes
   };
 
@@ -152,6 +179,11 @@ export function PressureTestPreview({
   // Time-based axis: includes ±1 hour padding (total: duration + 2 hours)
   // Value-based axis: no padding (total: duration only)
   const totalDisplayHours = useTimeBased ? sanitizedDuration + paddingHours : sanitizedDuration;
+
+  // Memoize the calculated interval to avoid excessive console logging on re-renders
+  const xAxisInterval = useMemo(() => {
+    return calculateXAxisInterval(totalDisplayHours);
+  }, [totalDisplayHours]);
 
   // Calculate pressure profile data points
   const profileData = useMemo(() => {
@@ -323,10 +355,10 @@ export function PressureTestPreview({
         },
         // Dynamic interval based on TOTAL display range (test duration + padding)
         // For 24h test (26h total): 2h intervals = 120 min * 60 * 1000 = 7,200,000 ms
-        interval: calculateXAxisInterval(totalDisplayHours) * 60 * 1000,
+        interval: xAxisInterval * 60 * 1000,
         // Ensure interval is strictly enforced (disable auto-adjustment)
-        minInterval: calculateXAxisInterval(totalDisplayHours) * 60 * 1000,
-        maxInterval: calculateXAxisInterval(totalDisplayHours) * 60 * 1000,
+        minInterval: xAxisInterval * 60 * 1000,
+        maxInterval: xAxisInterval * 60 * 1000,
         minorTick: {
           show: true,
           splitNumber: 4, // Creates minor ticks subdividing the main interval
@@ -348,10 +380,10 @@ export function PressureTestPreview({
         },
         min: 0,
         max: sanitizedDuration * 60, // Explicit max based on test duration in minutes
-        interval: calculateXAxisInterval(totalDisplayHours), // Dynamic interval based on total display range
+        interval: xAxisInterval, // Dynamic interval based on total display range
         // Ensure interval is strictly enforced (disable auto-adjustment) - same as time-based axis
-        minInterval: calculateXAxisInterval(totalDisplayHours),
-        maxInterval: calculateXAxisInterval(totalDisplayHours),
+        minInterval: xAxisInterval,
+        maxInterval: xAxisInterval,
         axisLabel: {
           formatter: (value: number) => {
             if (value === 0) return '0';
