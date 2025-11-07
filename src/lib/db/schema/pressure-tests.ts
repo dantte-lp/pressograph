@@ -26,6 +26,10 @@ export interface PressureTestConfig {
   temperature: number; // °C
   allowablePressureDrop: number; // MPa
 
+  // Test schedule (NEW: for date/time tracking)
+  startDateTime?: string; // ISO 8601 string (e.g., "2025-11-07T10:00:00")
+  endDateTime?: string; // ISO 8601 string (auto-calculated or manual override)
+
   // Intermediate stages (from "Add Stages" step)
   intermediateStages: Array<{
     time: number; // minutes from start

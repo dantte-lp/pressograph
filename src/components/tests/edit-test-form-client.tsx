@@ -135,10 +135,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
           <TabsTrigger value="parameters">Parameters</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="stages">Stages</TabsTrigger>
+          <TabsTrigger value="preview">Graph Preview</TabsTrigger>
         </TabsList>
 
         {/* Basic Info Tab */}
@@ -199,15 +200,18 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           </div>
         </TabsContent>
 
-        {/* Parameters Tab */}
-        <TabsContent value="parameters" className="space-y-6 mt-6">
-          {/* Pressure Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Pressure Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+        {/* Parameters Tab - Made More Compact with Preview */}
+        <TabsContent value="parameters" className="space-y-4 mt-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left Column: Parameters */}
+            <div className="space-y-4">
+              {/* Pressure Settings */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Pressure Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3 md:grid-cols-2">
                 {/* Working Pressure */}
                 <div className="space-y-2">
                   <Label htmlFor="workingPressure">Working Pressure *</Label>
@@ -267,18 +271,18 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                       <SelectItem value="PSI">PSI</SelectItem>
                     </SelectContent>
                   </Select>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Duration and Temperature */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Test Duration & Environment</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+            {/* Duration and Temperature */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Duration & Temperature</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
                 {/* Test Duration */}
                 <div className="space-y-2">
                   <Label htmlFor="testDuration">Test Duration (minutes) *</Label>
@@ -302,12 +306,41 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                     {...register('temperature', { valueAsNumber: true })}
                     placeholder="Optional"
                   />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Intermediate Stages */}
+          {/* Right Column: Graph Preview */}
+          <div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Live Preview</CardTitle>
+                <CardDescription className="text-xs">
+                  Real-time visualization of test configuration
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PressureTestPreviewEnhanced
+                  workingPressure={formValues.workingPressure || 0}
+                  maxPressure={formValues.maxPressure || 0}
+                  testDuration={(formValues.testDuration || 0) / 60}
+                  intermediateStages={(formValues.intermediateStages || []).map(stage => ({
+                    time: stage.duration || 0,
+                    pressure: stage.targetPressure || 0,
+                    duration: stage.holdDuration || 0
+                  }))}
+                  pressureUnit={formValues.pressureUnit || 'MPa'}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        </TabsContent>
+
+        {/* Stages Tab - Moved from Parameters */}
+        <TabsContent value="stages" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Intermediate Stages</CardTitle>
@@ -399,8 +432,12 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               <PressureTestPreviewEnhanced
                 workingPressure={formValues.workingPressure || 0}
                 maxPressure={formValues.maxPressure || 0}
-                testDuration={formValues.testDuration || 0}
-                intermediateStages={(formValues.intermediateStages || []).map(stage => ({ time: stage.duration || 0, pressure: stage.targetPressure || 0, duration: stage.holdDuration || 0 }))}
+                testDuration={(formValues.testDuration || 0) / 60}
+                intermediateStages={(formValues.intermediateStages || []).map(stage => ({
+                  time: stage.duration || 0,
+                  pressure: stage.targetPressure || 0,
+                  duration: stage.holdDuration || 0
+                }))}
                 pressureUnit={formValues.pressureUnit || 'MPa'}
               />
             </CardContent>

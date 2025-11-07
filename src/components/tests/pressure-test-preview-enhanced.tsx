@@ -217,6 +217,7 @@ export function PressureTestPreviewEnhanced({
       yMin: graphSettings.yAxisMin,
       yMax,
       xMax,
+      yInterval: 5, // Always use 5 MPa intervals
     };
   }, [maxPressure, testDuration, graphSettings]);
 
@@ -317,6 +318,7 @@ export function PressureTestPreviewEnhanced({
         },
         min: axisBounds.yMin,
         max: axisBounds.yMax,
+        interval: axisBounds.yInterval, // 5 MPa intervals
         axisLabel: {
           formatter: '{value}',
           fontSize: 10,

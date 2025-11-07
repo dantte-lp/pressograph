@@ -59,6 +59,10 @@ const testFormSchema = z.object({
   operatorName: z.string().optional(),
   notes: z.string().optional(),
 
+  // Test schedule
+  startDateTime: z.string().optional(),
+  endDateTime: z.string().optional(),
+
   // Step 3: Intermediate Stages
   intermediateStages: z.array(intermediateStageSchema).default([]),
 
@@ -180,8 +184,60 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const handleRemoveStage = (index: number) => {
     setValue(
       'intermediateStages',
-      watchedStages.filter((_, i) => i !== index)
+      watchedStages.filter((_, i) => i !== index),
+      { shouldValidate: true, shouldDirty: true, shouldTouch: true }
     );
+  };
+
+  // Update intermediate stage field
+  const handleUpdateStageField = (index: number, field: 'time' | 'pressure' | 'duration', value: number) => {
+    const updatedStages = watchedStages.map((stage, i) =>
+      i === index ? { ...stage, [field]: value } : stage
+    );
+    setValue('intermediateStages', updatedStages, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+  };
+
+  // Calculate end date/time based on start date/time and duration
+  const calculateEndDateTime = (startDateTime: string, durationHours: number): string => {
+    if (!startDateTime || !durationHours) return '';
+    try {
+      const start = new Date(startDateTime);
+      const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+      // Return in ISO format compatible with datetime-local input
+      const year = end.getFullYear();
+      const month = String(end.getMonth() + 1).padStart(2, '0');
+      const day = String(end.getDate()).padStart(2, '0');
+      const hours = String(end.getHours()).padStart(2, '0');
+      const minutes = String(end.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
+
+  // Watch for changes in start date/time or duration to auto-calculate end date/time
+  const startDateTime = watch('startDateTime');
+  const watchedDuration = watch('testDuration');
+
+  // Auto-update end date/time when start or duration changes
+  const handleStartDateTimeChange = (value: string) => {
+    setValue('startDateTime', value);
+    if (value && watchedDuration) {
+      const calculatedEnd = calculateEndDateTime(value, watchedDuration);
+      setValue('endDateTime', calculatedEnd);
+    }
+  };
+
+  const handleDurationChange = (value: number) => {
+    setValue('testDuration', value, { valueAsNumber: true } as any);
+    if (startDateTime && value) {
+      const calculatedEnd = calculateEndDateTime(startDateTime, value);
+      setValue('endDateTime', calculatedEnd);
+    }
   };
 
   // Navigate between steps
@@ -234,6 +290,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             notes: data.notes,
             equipmentId: data.equipmentId,
             operatorName: data.operatorName,
+            startDateTime: data.startDateTime || undefined,
+            endDateTime: data.endDateTime || undefined,
           },
           status: saveAsDraft ? 'draft' : 'ready',
           userId,
@@ -506,7 +564,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     id="testDuration"
                     type="number"
                     step="0.1"
-                    {...register('testDuration', { valueAsNumber: true })}
+                    value={watchedDuration || 0}
+                    onChange={(e) => handleDurationChange(parseFloat(e.target.value) || 0)}
                     aria-invalid={!!errors.testDuration}
                   />
                   {errors.testDuration && <FormError error={errors.testDuration.message} />}
@@ -562,6 +621,40 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
               <Separator />
 
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Test Schedule (Optional)</h4>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDateTime">Start Date & Time</Label>
+                    <Input
+                      id="startDateTime"
+                      type="datetime-local"
+                      value={startDateTime || ''}
+                      onChange={(e) => handleStartDateTimeChange(e.target.value)}
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When the test should begin
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endDateTime">End Date & Time (Auto-calculated)</Label>
+                    <Input
+                      id="endDateTime"
+                      type="datetime-local"
+                      {...register('endDateTime')}
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Calculated from start + duration, or set manually
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="equipmentId">Equipment ID</Label>
@@ -606,6 +699,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   testDuration={debouncedTestDuration}
                   intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
+                  startDateTime={startDateTime}
+                  endDateTime={watch('endDateTime')}
                 />
               </CardContent>
             </Card>
@@ -659,9 +754,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                   step="1"
                                   placeholder="0"
                                   className="h-8 w-20 text-xs"
-                                  {...register(`intermediateStages.${index}.time` as const, {
-                                    valueAsNumber: true,
-                                  })}
+                                  value={watchedStages[index]?.time || 0}
+                                  onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
                                 />
                               </td>
                               <td className="px-3 py-1.5">
@@ -670,9 +764,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                   step="0.1"
                                   placeholder="0.0"
                                   className="h-8 w-20 text-xs"
-                                  {...register(`intermediateStages.${index}.pressure` as const, {
-                                    valueAsNumber: true,
-                                  })}
+                                  value={watchedStages[index]?.pressure || 0}
+                                  onChange={(e) => handleUpdateStageField(index, 'pressure', parseFloat(e.target.value) || 0)}
                                 />
                               </td>
                               <td className="px-3 py-1.5">
@@ -681,9 +774,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                   step="1"
                                   placeholder="0"
                                   className="h-8 w-20 text-xs"
-                                  {...register(`intermediateStages.${index}.duration` as const, {
-                                    valueAsNumber: true,
-                                  })}
+                                  value={watchedStages[index]?.duration || 0}
+                                  onChange={(e) => handleUpdateStageField(index, 'duration', parseFloat(e.target.value) || 0)}
                                 />
                               </td>
                               <td className="px-3 py-2 text-xs text-muted-foreground">
@@ -749,6 +841,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   testDuration={debouncedTestDuration}
                   intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
+                  startDateTime={startDateTime}
+                  endDateTime={watch('endDateTime')}
                 />
               </CardContent>
             </Card>
@@ -886,6 +980,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   testDuration={debouncedTestDuration}
                   intermediateStages={debouncedStages}
                   pressureUnit={pressureUnit}
+                  startDateTime={startDateTime}
+                  endDateTime={watch('endDateTime')}
                 />
               </CardContent>
             </Card>

@@ -52,6 +52,8 @@ interface PressureTestPreviewProps {
   intermediateStages?: IntermediateStage[];
   pressureUnit?: 'MPa' | 'Bar' | 'PSI';
   className?: string;
+  startDateTime?: string; // ISO 8601 format
+  endDateTime?: string; // ISO 8601 format
 }
 
 /**
@@ -67,9 +69,16 @@ export function PressureTestPreview({
   intermediateStages = [],
   pressureUnit = 'MPa',
   className = '',
+  startDateTime,
+  endDateTime,
 }: PressureTestPreviewProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
+
+  // Determine if we're using time-based axis
+  const useTimeBased = Boolean(startDateTime && endDateTime);
+  const startTime = useTimeBased ? new Date(startDateTime!).getTime() : 0;
+  const endTime = useTimeBased ? new Date(endDateTime!).getTime() : testDuration * 60;
 
   // Calculate pressure profile data points
   const profileData = useMemo(() => {
@@ -79,6 +88,14 @@ export function PressureTestPreview({
 
     const dataPoints: [number, number][] = [];
     const timeLabels: string[] = [];
+
+    // Helper to convert minutes to X value (timestamp or minutes)
+    const minutesToX = (minutes: number): number => {
+      if (useTimeBased) {
+        return startTime + minutes * 60 * 1000;
+      }
+      return minutes;
+    };
 
     // Helper to format time
     const formatTime = (minutes: number): string => {
@@ -90,11 +107,11 @@ export function PressureTestPreview({
     };
 
     // Start: 0 pressure at time 0
-    dataPoints.push([0, 0]);
+    dataPoints.push([minutesToX(0), 0]);
     timeLabels.push('0');
 
     // Ramp up to working pressure
-    dataPoints.push([rampUpDuration, workingPressure]);
+    dataPoints.push([minutesToX(rampUpDuration), workingPressure]);
     timeLabels.push(formatTime(rampUpDuration));
 
     let currentTime = rampUpDuration;
@@ -105,14 +122,14 @@ export function PressureTestPreview({
         // Transition to stage pressure
         const stageStartTime = Math.min(stage.time, totalMinutes - depressurizeDuration);
         if (stageStartTime > currentTime) {
-          dataPoints.push([stageStartTime, stage.pressure]);
+          dataPoints.push([minutesToX(stageStartTime), stage.pressure]);
           timeLabels.push(formatTime(stageStartTime));
         }
 
         // Hold at stage pressure
         const stageEndTime = Math.min(stageStartTime + stage.duration, totalMinutes - depressurizeDuration);
         if (stageEndTime > stageStartTime) {
-          dataPoints.push([stageEndTime, stage.pressure]);
+          dataPoints.push([minutesToX(stageEndTime), stage.pressure]);
           timeLabels.push(formatTime(stageEndTime));
         }
 
@@ -123,16 +140,16 @@ export function PressureTestPreview({
     // Hold at working pressure until near end
     const depressurizeStartTime = totalMinutes - depressurizeDuration;
     if (currentTime < depressurizeStartTime) {
-      dataPoints.push([depressurizeStartTime, workingPressure]);
+      dataPoints.push([minutesToX(depressurizeStartTime), workingPressure]);
       timeLabels.push(formatTime(depressurizeStartTime));
     }
 
     // Depressurize to 0
-    dataPoints.push([totalMinutes, 0]);
+    dataPoints.push([minutesToX(totalMinutes), 0]);
     timeLabels.push(formatTime(totalMinutes));
 
     return { dataPoints, timeLabels };
-  }, [workingPressure, testDuration, intermediateStages]);
+  }, [workingPressure, testDuration, intermediateStages, useTimeBased, startTime]);
 
   // Initialize and update chart
   useEffect(() => {
@@ -192,7 +209,47 @@ export function PressureTestPreview({
         top: '20%',
         containLabel: true,
       },
-      xAxis: {
+      xAxis: useTimeBased ? {
+        type: 'time',
+        name: 'Дата и время',
+        nameLocation: 'middle',
+        nameGap: 25,
+        nameTextStyle: {
+          fontSize: 11,
+        },
+        min: startTime,
+        max: endTime,
+        axisLabel: {
+          formatter: (value: number) => {
+            const date = new Date(value);
+            const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+            const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            return `${dateStr}\n${timeStr}`;
+          },
+          fontSize: 9,
+          rotate: 0,
+        },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dashed',
+            color: '#f0f0f0',
+          },
+        },
+        // Major ticks every 2 hours
+        interval: 2 * 60 * 60 * 1000,
+        minorTick: {
+          show: true,
+          splitNumber: 4, // Creates minor ticks (every 30 minutes for 2-hour intervals)
+        },
+        minorSplitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dotted',
+            color: '#f5f5f5',
+          },
+        },
+      } : {
         type: 'value',
         name: 'Время',
         nameLocation: 'middle',
@@ -230,7 +287,8 @@ export function PressureTestPreview({
           fontSize: 11,
         },
         min: 0,
-        max: Math.ceil(maxPressure * 1.1), // 10% above max pressure
+        max: Math.ceil(maxPressure * 1.1 / 5) * 5, // Round up to nearest 5 MPa
+        interval: 5, // Show grid lines every 5 MPa
         axisLabel: {
           formatter: '{value}',
           fontSize: 10,
@@ -323,7 +381,7 @@ export function PressureTestPreview({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [workingPressure, maxPressure, testDuration, intermediateStages, pressureUnit, profileData]);
+  }, [workingPressure, maxPressure, testDuration, intermediateStages, pressureUnit, profileData, useTimeBased, startTime, endTime]);
 
   // Cleanup on unmount
   useEffect(() => {
