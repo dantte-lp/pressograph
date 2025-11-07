@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Fullscreen Dialog Component** - Custom fullscreen dialog variant for immersive experiences
+  - Expands to near-fullscreen: `calc(100vh-2rem) × calc(100vw-2rem)`
+  - Flexible header/footer layout with sticky positioning
+  - ScrollArea integration for overflow content
+  - Perfect for graph previews, detailed forms, and full-page views
+  - Custom implementation: `DialogContentFullscreen` in `/src/components/ui/dialog.tsx`
+  - Based on shadcn/ui dialog primitives with fullscreen enhancements
+  - Maintains accessibility, keyboard navigation, and dark mode support
+
+- **Fullscreen Preview Dialog for Pressure Tests** - Enhanced graph viewing experience
+  - Full viewport dialog for detailed graph inspection
+  - A4 Landscape container (297mm × 210mm) centered inside dialog
+  - ScrollArea for responsive viewing at any screen size
+  - Clean, distraction-free preview mode
+  - Back button with ChevronLeft icon for easy closing
+  - Use cases:
+    - Detailed graph inspection before export
+    - Presentation mode for test profiles
+    - Mobile-friendly graph viewing
+    - Print preview
+  - Component: `/src/components/tests/fullscreen-preview-dialog.tsx`
+  - Integrates with existing PressureTestPreview component
+  - Props support: working pressure, max pressure, test duration, intermediate stages, units, date/time
+
+- **shadcn Studio Component Analysis** - Comprehensive evaluation of 500+ component variants
+  - Analyzed 40+ component categories from shadcn Studio
+  - Identified high-value variants for Pressograph 2.0:
+    - Dialog Components (26 variants) - Fullscreen, scrollable, sticky header/footer
+    - Data Table Components (13 variants) - Export, sortable, paginated, expandable
+    - Button Components (47 variants) - Loading states, state indicators, multi-action groups
+    - Input Components (46 variants) - Plus/minus buttons, character limits, clear buttons
+    - Form Components (10 variants) - OTP verification, date input, issue reporting
+    - Card Components (17 variants) - Product cards, testimonials, 3D hover effects
+  - Documented integration strategy and implementation roadmap
+  - Prioritized components by feature area and user value
+  - Created phased implementation plan (4 phases)
+  - Documentation: `/docs/development/SHADCN_INTEGRATION_STRATEGY.md`
+
 - **Collapsible Sections in Export Dialog** - Better organization with expandable sections
   - Three collapsible sections:
     - Export Quality - Resolution selector and pixel details
@@ -66,6 +104,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `echarts-export-dialog.tsx`
 
 ### Changed
+
+- **SHADCN Integration Strategy Documentation** - Comprehensive update with shadcn Studio analysis
+  - Added shadcn Studio Extended Components section
+  - Documented 40+ component categories with 500+ variants
+  - Created component recommendations by feature area:
+    - Test Management (data tables, loading buttons, badges)
+    - Graph Visualization (fullscreen dialog, scrollable dialog)
+    - Data Entry & Configuration (numeric inputs, character limits)
+    - User Interface Enhancement (state indicators, multi-action groups)
+  - Added 4-phase implementation roadmap with effort estimates
+  - Documented best practices for shadcn Studio integration
+  - Added integration patterns, customization guidelines, testing requirements
+  - Created comparison table: shadcn/ui vs shadcn Studio
+  - Added additional resources and next steps
+  - Location: `/docs/development/SHADCN_INTEGRATION_STRATEGY.md`
 
 - **Wider Export Dialog** - Improved content display with increased width
   - Changed from default width to `max-w-3xl` (768px)

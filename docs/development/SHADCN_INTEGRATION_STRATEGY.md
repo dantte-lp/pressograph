@@ -1308,6 +1308,445 @@ const { saveDraft, clearCache } = useFormCache({
 
 ---
 
+## shadcn Studio Extended Components
+
+### Overview
+
+**shadcn Studio** (https://shadcnstudio.com) is an open-source collection of 40+ enhanced component variants built on top of shadcn/ui. Unlike traditional npm packages, shadcn Studio follows a copy-paste philosophy where you browse, copy, and customize components directly in your project.
+
+**Installation Method:**
+- Browse component library at https://shadcnstudio.com/components
+- View component code and copy directly into project
+- Customize as needed (you own the code)
+- No dependency on external packages
+
+**Integration Status:** Analyzed and documented for future use
+
+### Component Categories Analysis
+
+The following analysis covers shadcn Studio components most relevant to Pressograph 2.0's pressure test visualization and management platform.
+
+#### Dialog Components (26 variants)
+
+**Fullscreen Dialog (dialog-07) - IMPLEMENTED**
+- **Status:** Custom implementation created
+- **Location:** `/src/components/ui/dialog.tsx` (DialogContentFullscreen)
+- **Use Case:** Graph preview in fullscreen A4 landscape format
+- **Priority:** High
+- **Implementation:** Custom variant based on shadcn/ui dialog primitives
+- **Features:**
+  - Near-fullscreen display: `calc(100vh-2rem) × calc(100vw-2rem)`
+  - Flexible header/footer layout with sticky positioning
+  - ScrollArea integration for overflow content
+  - Perfect for immersive graph viewing and detailed inspection
+- **Usage:** Implemented in `/src/components/tests/fullscreen-preview-dialog.tsx`
+
+**Other Dialog Variants of Interest:**
+- **Scrollable Dialog (dialog-04):** For lengthy content with fixed dimensions
+- **Sticky Header Dialog (dialog-05):** Header remains visible during scroll
+- **Sticky Footer Dialog (dialog-06):** Footer remains visible during scroll
+- **Alert Dialogs (dialog-01 to dialog-03):** Standard, with icon, destructive variants
+- **Animated Dialogs (dialog-24 to dialog-26):** Slide and zoom animations
+
+**Recommendation:** Current fullscreen implementation meets requirements. Consider alert dialog variants for confirmation workflows.
+
+#### Data Table Components (13 variants)
+
+**High-Value Variants for Pressograph:**
+
+1. **Column Visibility Data Table**
+   - Allow users to toggle columns in test history tables
+   - Priority: Medium
+   - Use Case: Test listing with customizable columns
+
+2. **Data Table with Sortable Columns**
+   - Essential for test history and results browsing
+   - Priority: High
+   - Use Case: Sort by date, pressure, duration, status
+
+3. **Data Table with Export (CSV, Excel, JSON)**
+   - Critical for test data portability
+   - Priority: High
+   - Use Case: Export test results for external analysis
+
+4. **Paginated Data Table**
+   - Handle large test datasets efficiently
+   - Priority: High
+   - Use Case: Test history with 100+ records
+
+5. **Data Table with Expanding Sub-rows**
+   - Show test details without leaving table view
+   - Priority: Medium
+   - Use Case: Expand to show intermediate stages
+
+6. **Editable Data Table**
+   - Inline editing for quick test parameter adjustments
+   - Priority: Low
+   - Use Case: Batch editing of test configurations
+
+**Recommendation:** Implement sortable, paginated, and export variants first. Column visibility and sub-rows for enhanced UX.
+
+#### Button Components (47 variants)
+
+**Recommended Variants:**
+
+1. **Loading State Buttons**
+   - Show async operation feedback during test execution
+   - Priority: High
+   - Use Case: "Start Test", "Export", "Save"
+
+2. **State Indicator Buttons**
+   - Display counts (e.g., "Active Tests 5", "Alerts 3")
+   - Priority: Medium
+   - Use Case: Dashboard navigation
+
+3. **Multi-Action Button Groups**
+   - "Cancel/Save Changes", "Reject/Approve"
+   - Priority: Medium
+   - Use Case: Test approval workflows
+
+4. **Icon + Text Combinations**
+   - Download, duplicate, bookmark actions
+   - Priority: Medium
+   - Use Case: Test management operations
+
+**Recommendation:** Implement loading states immediately. State indicators for dashboard. Multi-action groups for workflows.
+
+#### Card Components (17 variants)
+
+**Recommended Variants:**
+
+1. **Product Card**
+   - Display test templates with "Use Template" action
+   - Priority: Medium
+   - Use Case: Template selection interface
+
+2. **Testimonial Card**
+   - User quotes or system notifications
+   - Priority: Low
+   - Use Case: Dashboard announcements
+
+3. **Social Feed Card**
+   - Tab-based test history (Recent, Favorites, Archived)
+   - Priority: Low
+   - Use Case: Test organization
+
+4. **3D Hover Card**
+   - Interactive test result cards
+   - Priority: Low
+   - Use Case: Visual enhancement
+
+**Recommendation:** Product card pattern for templates. Others are nice-to-have.
+
+#### Form Components (10 variants)
+
+**Recommended Variants:**
+
+1. **OTP Verification Form**
+   - Two-factor authentication
+   - Priority: Low (future enhancement)
+   - Use Case: Enhanced security
+
+2. **Date Input Form**
+   - Test scheduling
+   - Priority: Medium
+   - Use Case: Already using DateTimePicker, can enhance
+
+3. **Issue Reporting Form**
+   - Bug reports, feedback
+   - Priority: Medium
+   - Use Case: User support
+
+**Recommendation:** Current form implementation is sufficient. Issue reporting form for feedback feature.
+
+#### Input Components (46 variants)
+
+**Recommended Variants:**
+
+1. **Input with Character Limit**
+   - Show remaining characters for test descriptions
+   - Priority: Medium
+   - Use Case: Test name, description fields
+
+2. **Password Strength Validator**
+   - User registration/password change
+   - Priority: Medium
+   - Use Case: Already implemented in auth
+
+3. **Input with Plus/Minus Buttons**
+   - Numeric input for pressure values
+   - Priority: High
+   - Use Case: Pressure, duration configuration
+
+4. **Input with Clear Button**
+   - Quick field reset
+   - Priority: Medium
+   - Use Case: Search, filter inputs
+
+5. **Search Input with Loader**
+   - Async search feedback
+   - Priority: Medium
+   - Use Case: Test search
+
+6. **File Input**
+   - CSV import for batch test creation
+   - Priority: Medium
+   - Use Case: Already using for test data import
+
+**Recommendation:** Plus/minus numeric inputs for pressure configuration. Character limit for text fields.
+
+#### Other Components of Interest
+
+**Calendar (25 variants)**
+- Enhanced date pickers for test scheduling
+- Priority: Low (current DateTimePicker is sufficient)
+
+**Badge (24 variants)**
+- Test status indicators (Running, Passed, Failed, Pending)
+- Priority: High
+- Use Case: Status display throughout UI
+
+**Avatar (21 variants)**
+- User profile display
+- Priority: Low (basic avatar already installed)
+
+**Tabs (29 variants)**
+- Enhanced tab interfaces for multi-section forms
+- Priority: Low (current tabs component is sufficient)
+
+**Pagination (15 variants)**
+- Enhanced pagination with page size selector
+- Priority: Medium
+- Use Case: Test history, results browsing
+
+### Component Recommendations by Feature
+
+#### Test Management
+- **Data Table with Export:** Export test results to CSV/Excel/JSON
+- **Data Table with Sortable Columns:** Sort test history by various fields
+- **Paginated Data Table:** Handle large test datasets
+- **Loading State Buttons:** Show test execution progress
+- **Badge Variants:** Test status indicators (Running, Passed, Failed)
+
+#### Graph Visualization
+- **Fullscreen Dialog (IMPLEMENTED):** Full viewport graph preview in A4 landscape
+- **Scrollable Dialog:** Alternative for constrained viewport previews
+- **Card Variants:** Test result summaries with graph thumbnails
+
+#### Data Entry & Configuration
+- **Input with Plus/Minus Buttons:** Numeric pressure/duration inputs
+- **Input with Character Limit:** Test name and description fields
+- **Input with Clear Button:** Quick field reset in search/filter
+- **Date Input Form:** Enhanced test scheduling
+
+#### User Interface Enhancement
+- **State Indicator Buttons:** Dashboard navigation with counts
+- **Multi-Action Button Groups:** Workflow actions (Approve/Reject)
+- **Column Visibility Data Table:** Customizable table views
+- **Expanding Sub-rows Data Table:** Detailed test information
+
+### Implementation Roadmap
+
+#### Phase 1: Immediate Priorities (Sprint 4)
+- [x] **Fullscreen Dialog:** Implemented for graph preview
+- [ ] **Loading State Buttons:** Add to async operations (Start Test, Export, Save)
+- [ ] **Badge Variants:** Implement test status indicators
+- [ ] **Input Plus/Minus:** Add to numeric pressure inputs
+
+**Estimated Effort:** 4-6 hours
+**Impact:** High - improves core user workflows
+
+#### Phase 2: Short-term Enhancements (Sprint 5-6)
+- [ ] **Data Table with Export:** CSV/Excel/JSON export functionality
+- [ ] **Data Table with Sortable Columns:** Test history sorting
+- [ ] **Paginated Data Table:** Large dataset handling
+- [ ] **Input with Character Limit:** Text field constraints
+- [ ] **Search Input with Loader:** Async search feedback
+
+**Estimated Effort:** 8-12 hours
+**Impact:** Medium-High - enhances data management
+
+#### Phase 3: Long-term Improvements (Sprint 7+)
+- [ ] **Column Visibility Data Table:** Customizable table columns
+- [ ] **Expanding Sub-rows Data Table:** Nested test details
+- [ ] **Multi-Action Button Groups:** Workflow enhancements
+- [ ] **Product Card:** Test template selection
+- [ ] **Issue Reporting Form:** User feedback system
+
+**Estimated Effort:** 12-16 hours
+**Impact:** Medium - quality of life improvements
+
+#### Phase 4: Nice-to-Have Features (Backlog)
+- [ ] **Animated Dialogs:** Enhanced transitions
+- [ ] **3D Hover Cards:** Visual polish
+- [ ] **OTP Verification:** Enhanced security
+- [ ] **Advanced Calendar Variants:** Scheduling enhancements
+
+**Estimated Effort:** 8-10 hours
+**Impact:** Low - visual and UX polish
+
+### Best Practices for shadcn Studio Integration
+
+#### 1. Component Selection Criteria
+
+**Prioritize components that:**
+- Solve specific user pain points
+- Enhance core workflows (test management, visualization)
+- Improve data entry efficiency
+- Provide clear visual feedback
+- Are accessible and keyboard-navigable
+
+**Avoid components that:**
+- Add visual complexity without functional value
+- Duplicate existing functionality
+- Require significant customization
+- Have accessibility issues
+- Don't fit Pressograph's industrial design aesthetic
+
+#### 2. Integration Patterns
+
+**Step 1: Browse and Evaluate**
+```bash
+# Visit shadcn Studio
+https://shadcnstudio.com/components
+
+# View component demo
+# Click "View code" to inspect implementation
+```
+
+**Step 2: Copy Component Code**
+- Copy component code from shadcn Studio
+- Paste into appropriate location (`/src/components/ui/` or `/src/components/`)
+- Adjust imports to match Pressograph's structure
+
+**Step 3: Customize for Pressograph**
+- Apply industrial design color palette
+- Ensure dark mode compatibility
+- Add proper TypeScript types
+- Implement accessibility features (ARIA labels, keyboard nav)
+- Test with real data
+
+**Step 4: Document Usage**
+```typescript
+/**
+ * Component Description
+ *
+ * Source: shadcn Studio [component-name]
+ * Customizations: [list changes]
+ *
+ * @example
+ * ```tsx
+ * <Component prop="value" />
+ * ```
+ */
+```
+
+#### 3. Customization Guidelines
+
+**Color Adjustments:**
+- Replace hardcoded colors with CSS variables
+- Use Tailwind theme colors (primary, secondary, destructive, etc.)
+- Ensure WCAG AA contrast ratios
+
+**Responsive Design:**
+- Test on mobile (375px), tablet (768px), desktop (1024px+)
+- Use Tailwind responsive prefixes (sm:, md:, lg:)
+- Ensure touch targets are 44×44px minimum
+
+**Performance:**
+- Lazy load heavy components with `next/dynamic`
+- Minimize re-renders with `useMemo`, `useCallback`
+- Use virtualization for long lists (react-virtual)
+
+**Accessibility:**
+- Add ARIA labels and roles
+- Ensure keyboard navigation works
+- Test with screen readers
+- Provide focus indicators
+- Support reduced motion preferences
+
+#### 4. Testing Requirements
+
+**Before Integration:**
+- [ ] Component displays correctly in light/dark mode
+- [ ] All interactive elements are keyboard accessible
+- [ ] Component is responsive across breakpoints
+- [ ] TypeScript types are complete and correct
+- [ ] No console errors or warnings
+
+**After Integration:**
+- [ ] Component works with real Pressograph data
+- [ ] Integration doesn't break existing functionality
+- [ ] Performance is acceptable (no jank)
+- [ ] Component follows Pressograph design patterns
+
+#### 5. Performance Considerations
+
+**Component Size:**
+- Keep component files under 500 lines
+- Split complex components into smaller pieces
+- Use composition over configuration
+
+**Bundle Size:**
+- Avoid importing entire icon libraries
+- Tree-shake unused code
+- Lazy load non-critical components
+
+**Runtime Performance:**
+- Debounce expensive operations (search, validation)
+- Virtualize long lists (100+ items)
+- Memoize computed values
+- Avoid unnecessary re-renders
+
+### shadcn Studio vs shadcn/ui
+
+| Aspect | shadcn/ui | shadcn Studio |
+|--------|-----------|---------------|
+| **Philosophy** | Core primitives | Enhanced variants |
+| **Component Count** | ~40 base components | ~40 categories, 500+ variants |
+| **Customization** | High | Very High (you own code) |
+| **Installation** | `pnpm dlx shadcn@latest add [component]` | Copy-paste from website |
+| **Registry** | Official registry | Community-driven |
+| **Documentation** | Comprehensive | Example-based |
+| **Maintenance** | Official Shadcn team | Community contributions |
+| **Use Case** | Foundation | Specialized implementations |
+
+**Recommendation:** Use shadcn/ui for core primitives (already installed). Use shadcn Studio for specialized variants that solve specific UX challenges.
+
+### Additional Resources
+
+- **shadcn Studio Website:** https://shadcnstudio.com
+- **shadcn Studio Components:** https://shadcnstudio.com/components
+- **shadcn Studio GitHub:** Check for official repository
+- **v0.dev Integration:** Some components link to v0.dev for interactive editing
+- **Theme Generator:** https://shadcnstudio.com/theme (customize color palette)
+- **Figma Plugin:** Convert Figma designs to shadcn Studio components
+
+### Conclusion on shadcn Studio
+
+shadcn Studio provides a valuable **extension to shadcn/ui** with specialized component variants that address common UX patterns. For Pressograph 2.0, the most valuable components are:
+
+1. **Fullscreen Dialog (IMPLEMENTED):** Enhanced graph viewing experience
+2. **Data Table Variants:** Export, sorting, pagination for test management
+3. **Loading State Buttons:** Clear feedback for async operations
+4. **Input Enhancements:** Plus/minus buttons, character limits, clear buttons
+5. **Badge Variants:** Status indicators throughout UI
+
+**Integration Strategy:**
+- Copy relevant components from shadcn Studio
+- Customize to match Pressograph's industrial design
+- Ensure accessibility and dark mode support
+- Document source and customizations
+- Follow established patterns from shadcn/ui integration
+
+**Next Steps:**
+1. Implement Phase 1 priorities (loading buttons, badges, numeric inputs)
+2. Monitor shadcn Studio for new component releases
+3. Collect user feedback on current implementations
+4. Iterate based on actual usage patterns
+
+---
+
 ## Conclusion
 
 Pressograph 2.0 has an **excellent shadcn/ui integration** that follows all current best practices and is fully compatible with Next.js 16.0.1, React 19.2.0, and Tailwind CSS 4.1.16.

@@ -129,10 +129,75 @@ function DialogDescription({
   )
 }
 
+/**
+ * Fullscreen Dialog Content Variant
+ *
+ * A specialized dialog that expands to fill the viewport (with optional margin)
+ * Perfect for immersive experiences like graph previews, forms, or detailed views.
+ *
+ * Features:
+ * - Near-fullscreen display: calc(100vh - 2rem) × calc(100vw - 2rem)
+ * - ScrollArea for overflow content
+ * - Flexible header/footer layout
+ * - Back/close button support
+ *
+ * @example
+ * ```tsx
+ * <Dialog>
+ *   <DialogTrigger>Open Fullscreen</DialogTrigger>
+ *   <DialogContentFullscreen>
+ *     <DialogHeader>
+ *       <DialogTitle>Preview</DialogTitle>
+ *     </DialogHeader>
+ *     <div className="flex-1 overflow-auto">
+ *       Content here
+ *     </div>
+ *     <DialogFooter>
+ *       <DialogClose>Close</DialogClose>
+ *     </DialogFooter>
+ *   </DialogContentFullscreen>
+ * </Dialog>
+ * ```
+ */
+function DialogContentFullscreen({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  showCloseButton?: boolean
+}) {
+  return (
+    <DialogPortal data-slot="dialog-portal">
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        data-slot="dialog-content-fullscreen"
+        className={cn(
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 flex h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col gap-0 rounded-lg border p-0 shadow-lg duration-200",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 z-10 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  )
+}
+
 export {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogContentFullscreen,
   DialogDescription,
   DialogFooter,
   DialogHeader,
