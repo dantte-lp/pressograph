@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **X-Axis Time-Based Interval Critical Fix** - FINAL FIX for time-based axis showing 1-hour intervals instead of 2 hours
+  - **Root Cause Discovery**: ECharts `splitNumber` property is only a SUGGESTION for time-based axes
+  - ECharts automatically overrides `splitNumber` to show "nice" time values (hour boundaries, half-hours, etc.)
+  - Despite setting `splitNumber: 13` (for 13 2-hour intervals), ECharts was rendering 26 1-hour intervals
+  - **The Real Solution**: Use `interval`, `minInterval`, and `maxInterval` properties on time-based axes
+  - These properties work in MILLISECONDS for time axes (not minutes like value axes)
+  - ```typescript
+    // Before (WRONG - splitNumber is just a suggestion):
+    type: 'time',
+    splitNumber: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000))
+    // ECharts ignores this and shows 1-hour intervals anyway
+
+    // After (CORRECT - interval forces exact spacing):
+    type: 'time',
+    interval: xAxisInterval * 60 * 1000,      // 2h = 7200000ms
+    minInterval: xAxisInterval * 60 * 1000,   // Prevent smaller intervals
+    maxInterval: xAxisInterval * 60 * 1000,   // Prevent larger intervals
+    ```
+  - **Additional Fix**: Removed `minorTick` and `minorSplitLine` from time-based axis as they interfere with interval control
+  - **Verification**: 24-hour test with start date should now show 18:00, 20:00, 22:00, ... (2-hour intervals)
+  - Updated logging to show `interval` in milliseconds instead of `splitNumber` for time-based axes
+  - Added JSON logging of full xAxis configuration to debug ECharts configuration issues
+
+### Fixed
 - **X-Axis Interval Display** - Fixed 1-hour intervals showing for 24h and 28h tests instead of 2 hours
   - **Root Cause**: Form cache was restoring previous test data that included `startDateTime` and `endDateTime` values
   - Empty string `startDateTime`/`endDateTime` from cached data was being passed to `PressureTestPreview` component

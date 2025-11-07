@@ -336,11 +336,12 @@ export function PressureTestPreview({
         },
         min: xAxisMin,
         max: xAxisMax,
-        // For time-based axes, ECharts ignores interval/minInterval/maxInterval
-        // Instead, use splitNumber to control the number of intervals
-        // splitNumber = total display range / desired interval
-        // Example: 26h total / 2h interval = 13 splits
-        splitNumber: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)),
+        // CRITICAL: For time-based axes in ECharts, splitNumber is only a SUGGESTION
+        // ECharts will override it to show "nice" time values (hour boundaries, etc.)
+        // To FORCE exact intervals, we must use interval property in milliseconds
+        interval: xAxisInterval * 60 * 1000, // Convert minutes to milliseconds
+        minInterval: xAxisInterval * 60 * 1000, // Prevent auto-adjustment to smaller intervals
+        maxInterval: xAxisInterval * 60 * 1000, // Prevent auto-adjustment to larger intervals
         axisLabel: {
           formatter: (value: number) => {
             const date = new Date(value);
@@ -358,17 +359,7 @@ export function PressureTestPreview({
             color: '#f0f0f0',
           },
         },
-        minorTick: {
-          show: true,
-          splitNumber: 4, // Creates minor ticks subdividing the main interval
-        },
-        minorSplitLine: {
-          show: true,
-          lineStyle: {
-            type: 'dotted',
-            color: '#f5f5f5',
-          },
-        },
+        // Remove minorTick and minorSplitLine as they interfere with interval control
       } : {
         type: 'value',
         name: 'Время',
@@ -500,8 +491,9 @@ export function PressureTestPreview({
 
     if (useTimeBased) {
       const intervalMs = xAxisInterval * 60 * 1000;
-      const splitNumber = Math.floor((xAxisMax - xAxisMin) / intervalMs);
-      console.log(`[ECharts Config] Time-based axis - splitNumber: ${splitNumber} (${xAxisInterval / 60}h intervals)`);
+      const expectedSplits = Math.floor((xAxisMax - xAxisMin) / intervalMs);
+      console.log(`[ECharts Config] Time-based axis - interval: ${intervalMs}ms (${xAxisInterval / 60}h)`);
+      console.log(`[ECharts Config] Time-based axis - Expected splits: ${expectedSplits}`);
       console.log(`[ECharts Config] Time-based axis - xAxisMin: ${xAxisMin}, xAxisMax: ${xAxisMax}`);
       console.log(`[ECharts Config] Time-based axis - Display range: ${(xAxisMax - xAxisMin) / (1000 * 60 * 60)} hours`);
     } else {
@@ -509,6 +501,9 @@ export function PressureTestPreview({
       console.log(`[ECharts Config] Value-based axis - min: 0, max: ${sanitizedDuration * 60} minutes`);
       console.log(`[ECharts Config] Value-based axis - Display range: ${sanitizedDuration} hours`);
     }
+
+    // Log the EXACT xAxis configuration being passed to ECharts
+    console.log('[ECharts Config] Full xAxis configuration:', JSON.stringify(option.xAxis, null, 2));
 
     chart.setOption(option, { notMerge: true });
 
