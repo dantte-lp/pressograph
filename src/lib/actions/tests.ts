@@ -496,9 +496,12 @@ export async function createTest(data: {
     const session = await requireAuth();
     const userId = session.user.id;
 
+    // Use organizationId from session if available, otherwise from data
+    const organizationId = session.user.organizationId || data.organizationId;
+
     // Verify project ownership
     const project = await db
-      .select({ id: projects.id, settings: projects.settings })
+      .select({ id: projects.id, settings: projects.settings, organizationId: projects.organizationId })
       .from(projects)
       .where(
         and(
@@ -518,19 +521,22 @@ export async function createTest(data: {
     const timestamp = Date.now().toString(36).toUpperCase().slice(-6);
     const testNumber = `${prefix}-${timestamp}`;
 
+    // Ensure tags is an array
+    const tags = Array.isArray(data.tags) ? data.tags : [];
+
     // Insert new test
     const result = await db
       .insert(pressureTests)
       .values({
         testNumber,
         name: data.name,
-        description: data.description,
+        description: data.description || null,
         projectId: data.projectId,
         createdBy: userId,
-        organizationId: data.organizationId,
+        organizationId: project[0].organizationId,
         templateType: data.templateType,
         config: data.config,
-        tags: data.tags,
+        tags: tags,
         status: data.status,
         isPublic: false,
       })
@@ -539,7 +545,14 @@ export async function createTest(data: {
     return { success: true, test: result[0] };
   } catch (error) {
     console.error('Error creating test:', error);
-    return { success: false, error: 'Failed to create test' };
+    // Return more detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create test';
+    console.error('Detailed error:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    return { success: false, error: errorMessage };
   }
 }
 
