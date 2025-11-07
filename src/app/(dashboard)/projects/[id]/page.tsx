@@ -18,34 +18,38 @@ import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ProjectDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     page?: string;
     pageSize?: string;
     search?: string;
     status?: string;
     sortBy?: string;
-  };
+  }>;
 }
 
 export default async function ProjectDetailPage({
   params,
   searchParams,
 }: ProjectDetailPageProps) {
-  const project = await getProjectById(params.id);
+  // Await params and searchParams (Next.js 16+)
+  const { id } = await params;
+  const searchParamsResolved = await searchParams;
+
+  const project = await getProjectById(id);
 
   if (!project) {
     notFound();
   }
 
   // Parse search params for tests table
-  const page = parseInt(searchParams.page ?? '1', 10);
-  const pageSize = parseInt(searchParams.pageSize ?? '20', 10);
-  const search = searchParams.search;
-  const status = searchParams.status?.split(',').filter(Boolean);
-  const sortBy = searchParams.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
+  const page = parseInt(searchParamsResolved.page ?? '1', 10);
+  const pageSize = parseInt(searchParamsResolved.pageSize ?? '20', 10);
+  const search = searchParamsResolved.search;
+  const status = searchParamsResolved.status?.split(',').filter(Boolean);
+  const sortBy = searchParamsResolved.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
 
   return (
     <div className="container mx-auto space-y-8 p-6 lg:p-8">

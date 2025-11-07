@@ -21,24 +21,25 @@ import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
  */
 
 interface TestsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     pageSize?: string;
     search?: string;
     project?: string;
     status?: string;
     sortBy?: string;
-  };
+  }>;
 }
 
-export default function TestsPage({ searchParams }: TestsPageProps) {
-  // Parse search params
-  const page = parseInt(searchParams.page ?? '1', 10);
-  const pageSize = parseInt(searchParams.pageSize ?? '20', 10);
-  const search = searchParams.search;
-  const projectId = searchParams.project;
-  const status = searchParams.status?.split(',').filter(Boolean);
-  const sortBy = searchParams.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
+export default async function TestsPage({ searchParams }: TestsPageProps) {
+  // Parse search params (await Promise in Next.js 16+)
+  const params = await searchParams;
+  const page = parseInt(params.page ?? '1', 10);
+  const pageSize = parseInt(params.pageSize ?? '20', 10);
+  const search = params.search;
+  const projectId = params.project;
+  const status = params.status?.split(',').filter(Boolean);
+  const sortBy = params.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
 
   return (
     <div className="container mx-auto space-y-8 p-6 lg:p-8">
