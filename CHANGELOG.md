@@ -8,6 +8,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: Popup Window Opens in Proper Landscape Dimensions** - Fixed new window opening in portrait despite landscape content
+  - **Root Cause**: Browser was ignoring window.open dimensions parameter or using default portrait size
+  - **User Question**: "popup окно открывается портретным, хотя внутри оно альбомное. Это системное ограничение или что?"
+  - **Analysis**: This is NOT a system limitation - the issue was in the window.open features specification
+  - **Changes Applied:**
+    - Enhanced window.open features string with comprehensive parameters (left, top, resizable, scrollbars, etc.)
+    - Added window position calculation to center popup on screen
+    - Implemented fallback window.resizeTo() call for browsers that initially ignore features
+    - Proper landscape dimensions: 1273px × 900px (1.414:1 aspect ratio)
+  - **Files Modified:**
+    - `/src/components/tests/preview-dialog.tsx` - Enhanced handleOpenInNewWindow function
+  - **Result**: New window now opens reliably in landscape orientation with correct dimensions
+  - **User Experience**: Consistent landscape display matching the content inside
+
+- **CRITICAL: Preview Page Shows Only Graph, No UI Elements** - Completely cleaned preview page for print-ready output
+  - **Root Cause**: Preview page displayed sidebar, header, buttons, and text summary from dashboard layout
+  - **User Requirements:**
+    1. NO sidebar navigation
+    2. NO top header/menu
+    3. NO buttons (Close, Print)
+    4. NO text labels or summaries
+    5. ONLY the graph - clean and professional
+  - **Changes Applied:**
+    - Created layout override (`/src/app/(dashboard)/tests/preview/layout.tsx`) to bypass dashboard layout
+    - Removed all UI chrome (sidebar, header, navigation)
+    - Removed Close and Print buttons from preview page
+    - Removed test parameters summary section
+    - Removed interval notice text
+    - Simple loading state with no text
+    - Clean white background with only the graph
+  - **Files Modified:**
+    - `/src/app/(dashboard)/tests/preview/layout.tsx` - NEW: Layout override returning only children
+    - `/src/app/(dashboard)/tests/preview/page.tsx` - Removed all UI elements
+    - `/src/components/tests/a4-preview-graph.tsx` - Removed summary text sections
+  - **Result**: Preview page displays ONLY the graph - truly print-ready with no distractions
+  - **Print Ready**: Perfect for professional reports and documentation
+
+- **CRITICAL: Added 1-Hour Padding Before and After Test in Preview** - Enhanced graph to show context around test period
+  - **Root Cause**: Graph showed exact test duration with no context before/after
+  - **User Requirement**: Add 1-hour padding before test start and after test end (like in main preview)
+  - **Changes Applied:**
+    - Preview page calculates padded start time (original - 1 hour)
+    - Preview page calculates padded end time (original + 1 hour)
+    - Passes padded times to A4PreviewGraph component
+    - Graph component properly handles time-based display with padding
+    - X-axis range adjusted to show full padded duration
+  - **Files Modified:**
+    - `/src/app/(dashboard)/tests/preview/page.tsx` - Added padding calculation before rendering graph
+    - `/src/components/tests/a4-preview-graph.tsx` - Enhanced time-based mode to use padded range
+  - **Result**: Graph now shows 1 hour before and 1 hour after test for better context
+  - **User Experience**: Better visualization of test preparation and completion periods
+
+- **Enhanced Y-Axis Label Positioning** - Improved professional appearance of Y-axis labels
+  - **Changes Applied:**
+    - Reduced nameGap from 50 to 45 for closer positioning to axis
+    - Added explicit margin: 8 to axisLabel for proper spacing between numbers and axis line
+    - Maintained professional font sizes and weights
+  - **Files Modified:**
+    - `/src/components/tests/a4-preview-graph.tsx` - Updated Y-axis configuration
+  - **Result**: Y-axis labels now positioned professionally next to axis numbers
+  - **User Experience**: Cleaner, more readable axis labels
+
+
 - **CRITICAL: All Preview Orientations Changed to Landscape** - Fixed all preview modes showing portrait (210mm × 297mm) instead of landscape orientation
   - **Root Cause**: All preview components were configured for A4 portrait format (1:1.414 aspect ratio)
   - **User Requirement**: Professional pressure test reports should be in landscape orientation for better visibility

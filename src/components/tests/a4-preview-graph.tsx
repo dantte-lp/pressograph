@@ -108,10 +108,15 @@ export function A4PreviewGraph({
     return Boolean(startDateTime && endDateTime);
   }, [startDateTime, endDateTime]);
 
-  // Calculate time bounds
+  // Calculate time bounds (already includes 1-hour padding from parent component)
   const startTime = useMemo(() => {
     return useTimeBased && startDateTime ? new Date(startDateTime).getTime() : 0;
   }, [useTimeBased, startDateTime]);
+
+  // Calculate end time for time-based display
+  const endTime = useMemo(() => {
+    return useTimeBased && endDateTime ? new Date(endDateTime).getTime() : 0;
+  }, [useTimeBased, endDateTime]);
 
   /**
    * Dynamic interval configuration
@@ -283,6 +288,7 @@ export function A4PreviewGraph({
       /**
        * X-AXIS CONFIGURATION WITH TICK MARKS
        * Professional appearance with major and minor tick marks
+       * In time-based mode, the range includes 1-hour padding (set by parent component)
        */
       xAxis: {
         type: 'value',
@@ -294,8 +300,10 @@ export function A4PreviewGraph({
           fontWeight: 600,
           color: '#374151',
         },
-        min: 0,
-        max: sanitizedDuration * 60,
+        min: useTimeBased ? 0 : 0,
+        max: useTimeBased
+          ? (endTime - startTime) / (60 * 1000) // Convert milliseconds to minutes
+          : sanitizedDuration * 60,
         // Major tick intervals (with labels)
         interval: xAxisInterval,
         minInterval: xAxisInterval,
@@ -340,7 +348,6 @@ export function A4PreviewGraph({
         // Major tick marks (at labels)
         axisTick: {
           show: true,
-          alignWithLabel: true,
           length: 8,
           lineStyle: {
             color: '#9ca3af',
@@ -381,7 +388,7 @@ export function A4PreviewGraph({
         type: 'value',
         name: `Давление (${pressureUnit})`,
         nameLocation: 'middle',
-        nameGap: 50,
+        nameGap: 45, // Reduced from 50 to position closer to axis
         nameTextStyle: {
           fontSize: 13,
           fontWeight: 600,
@@ -395,6 +402,7 @@ export function A4PreviewGraph({
           fontSize: 11,
           fontWeight: 500,
           color: '#4b5563',
+          margin: 8, // Space between numbers and axis line
         },
         axisLine: {
           show: true,
@@ -406,7 +414,6 @@ export function A4PreviewGraph({
         // Major tick marks
         axisTick: {
           show: true,
-          alignWithLabel: true,
           length: 6,
           lineStyle: {
             color: '#9ca3af',
@@ -527,6 +534,7 @@ export function A4PreviewGraph({
     pressureUnit,
     useTimeBased,
     startTime,
+    endTime,
     sanitizedDuration,
     xAxisInterval,
   ]);
@@ -558,47 +566,14 @@ export function A4PreviewGraph({
 
   return (
     <div className="w-full h-full p-8 print:p-6" style={{ minHeight: '210mm' }}>
-      {/* Chart Container */}
+      {/* Chart Container - ONLY THE GRAPH, NO TEXT SUMMARY */}
       <div
         ref={chartRef}
         role="img"
         aria-label={`Pressure test graph showing ${sanitizedDuration} hours test in landscape format`}
         className="w-full"
-        style={{ height: 'calc(210mm - 100px)', minHeight: '600px' }}
+        style={{ height: '100%', minHeight: '600px' }}
       />
-
-      {/* Test Parameters Summary */}
-      <div className="mt-6 grid grid-cols-2 gap-4 text-sm border-t-2 pt-4">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">Рабочее давление:</span>
-            <span className="font-bold">
-              {workingPressure} {pressureUnit}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">Макс. давление:</span>
-            <span className="font-bold">
-              {maxPressure} {pressureUnit}
-            </span>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">Продолжительность:</span>
-            <span className="font-bold">{sanitizedDuration} часов</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground font-medium">Промежуточные этапы:</span>
-            <span className="font-bold">{intermediateStages?.length || 0}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Interval notice */}
-      <div className="mt-4 text-center text-xs text-muted-foreground italic">
-        График с оптимальными интервалами для профессиональной документации
-      </div>
     </div>
   );
 }

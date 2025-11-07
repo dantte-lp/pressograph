@@ -3,15 +3,20 @@
 /**
  * A4 Landscape Preview Page for Pressure Tests
  *
- * This page displays pressure test graphs in A4 landscape format (297mm × 210mm)
- * with tick marks on the X-axis. Optimized for printing and opening in new browser windows.
+ * CLEAN PRINT-READY VERSION - NO UI ELEMENTS
+ *
+ * This page displays ONLY the pressure test graph in A4 landscape format (297mm × 210mm).
+ * All UI elements (buttons, text, labels, sidebar, header) have been removed for clean printing.
  *
  * Features:
  * - A4 landscape format (1.414:1 aspect ratio)
- * - Tick marks on X-axis for professional appearance
- * - High-resolution rendering for print
- * - Print-optimized styling (@media print)
- * - Receives configuration via URL query parameter
+ * - NO sidebar navigation
+ * - NO header/top menu
+ * - NO buttons (Close, Print)
+ * - NO text labels
+ * - ONLY the graph - clean and professional
+ * - 1-hour padding before and after test
+ * - Print-optimized styling
  *
  * URL Format:
  * /tests/preview?config=<base64-encoded-json>
@@ -33,8 +38,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
-import { X, Printer } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { A4PreviewGraph } from '@/components/tests/a4-preview-graph';
 
 interface IntermediateStage {
@@ -76,60 +79,51 @@ function PreviewPageContent() {
     }
   }, [searchParams]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleClose = () => {
-    window.close();
-  };
-
+  // Simple error state - no buttons, just text
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-destructive">Error</h1>
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={handleClose} variant="outline">
-            <X className="h-4 w-4 mr-2" />
-            Close Window
-          </Button>
+      <div className="w-screen h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <p className="text-gray-900">{error}</p>
         </div>
       </div>
     );
   }
 
+  // Simple loading state - no text
   if (!config) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading preview...</p>
-        </div>
+      <div className="w-screen h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
+  // Calculate 1-hour padding before and after test
+  const paddingHours = 1;
+  const paddingMs = paddingHours * 60 * 60 * 1000;
+
+  // Add padding to start and end times
+  const startWithPadding = config.startDateTime
+    ? new Date(new Date(config.startDateTime).getTime() - paddingMs).toISOString()
+    : undefined;
+  const endWithPadding = config.endDateTime
+    ? new Date(new Date(config.endDateTime).getTime() + paddingMs).toISOString()
+    : undefined;
+
+  // CLEAN VERSION: Only the graph, no buttons, no text, no UI elements
   return (
     <div className="w-screen h-screen bg-white flex items-center justify-center p-0 m-0 overflow-hidden">
-      {/* Minimal Print Button - Top Right Corner */}
-      <div className="print:hidden fixed top-2 right-2 z-50 flex gap-1">
-        <Button onClick={handlePrint} variant="ghost" size="sm" className="h-8 px-2">
-          <Printer className="h-4 w-4" />
-        </Button>
-        <Button onClick={handleClose} variant="ghost" size="sm" className="h-8 px-2">
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* A4 Landscape Graph - Full Screen */}
+      {/* A4 Landscape Graph - ONLY THE GRAPH */}
       <div
-        className="bg-white print:w-full print:h-full"
+        className="bg-white"
         style={{
           width: '297mm',
           height: '210mm',
           maxWidth: '100vw',
           maxHeight: '100vh',
+          margin: 0,
+          padding: 0,
         }}
       >
         <A4PreviewGraph
@@ -139,8 +133,8 @@ function PreviewPageContent() {
           intermediateStages={config.intermediateStages || []}
           pressureUnit={config.pressureUnit || 'MPa'}
           temperatureUnit={config.temperatureUnit || 'C'}
-          startDateTime={config.startDateTime}
-          endDateTime={config.endDateTime}
+          startDateTime={startWithPadding}
+          endDateTime={endWithPadding}
         />
       </div>
     </div>
@@ -151,11 +145,8 @@ export default function PreviewPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading preview...</p>
-          </div>
+        <div className="w-screen h-screen flex items-center justify-center bg-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         </div>
       }
     >

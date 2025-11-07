@@ -70,6 +70,9 @@ export function PreviewDialog({
   /**
    * Open preview in new browser window
    * Opens a dedicated A4 preview page with the test configuration
+   *
+   * FIXED: Properly size popup window to landscape dimensions
+   * Uses comprehensive window features to ensure browser respects dimensions
    */
   const handleOpenInNewWindow = () => {
     // Prepare test configuration
@@ -89,12 +92,41 @@ export function PreviewDialog({
 
     // Calculate A4 window dimensions (landscape)
     // A4 landscape ratio: 1.414:1
-    const windowWidth = 1273; // Landscape width (was 900px portrait)
-    const windowHeight = Math.round(windowWidth / 1.414); // ~900px
+    const windowWidth = 1273; // Landscape width
+    const windowHeight = 900; // Landscape height
 
-    // Open new window with A4 proportions
-    const windowFeatures = `width=${windowWidth},height=${windowHeight},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`;
-    window.open(`/tests/preview?config=${encodedConfig}`, '_blank', windowFeatures);
+    // Calculate window position (centered on screen)
+    const left = Math.max(0, (window.screen.width - windowWidth) / 2);
+    const top = Math.max(0, (window.screen.height - windowHeight) / 2);
+
+    // Comprehensive window features to ensure browser respects dimensions
+    const features = [
+      `width=${windowWidth}`,
+      `height=${windowHeight}`,
+      `left=${left}`,
+      `top=${top}`,
+      'resizable=yes',
+      'scrollbars=yes',
+      'toolbar=no',
+      'menubar=no',
+      'location=no',
+      'directories=no',
+      'status=yes',
+    ].join(',');
+
+    // Open new window with proper landscape dimensions
+    const newWindow = window.open(`/tests/preview?config=${encodedConfig}`, '_blank', features);
+
+    // Fallback: If browser ignores features, resize window immediately
+    if (newWindow) {
+      try {
+        newWindow.resizeTo(windowWidth, windowHeight);
+        newWindow.moveTo(left, top);
+      } catch (e) {
+        // Some browsers may block resizing for security reasons
+        console.warn('Window resize blocked by browser:', e);
+      }
+    }
   };
 
   return (
