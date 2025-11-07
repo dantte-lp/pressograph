@@ -38,7 +38,14 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
   const pageSize = parseInt(params.pageSize ?? '20', 10);
   const search = params.search;
   const projectId = params.project;
-  const status = params.status?.split(',').filter(Boolean);
+
+  // Map 'active' filter to actual database statuses ('running' and 'ready')
+  let status = params.status?.split(',').filter(Boolean);
+  if (status?.includes('active')) {
+    // Replace 'active' with the actual database statuses
+    status = status.filter(s => s !== 'active').concat(['running', 'ready']);
+  }
+
   const sortBy = params.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
 
   return (

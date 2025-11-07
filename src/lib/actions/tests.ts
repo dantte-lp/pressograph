@@ -6,7 +6,7 @@ import { projects } from '@/lib/db/schema/projects';
 import { users } from '@/lib/db/schema/users';
 import { testRuns } from '@/lib/db/schema/test-runs';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
-import { eq, and, desc, sql, count, or, ilike, gte, lte } from 'drizzle-orm';
+import { eq, and, desc, sql, count, or, ilike, gte, lte, inArray } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/server-auth';
 
 /**
@@ -95,7 +95,7 @@ export async function getTests(
   // Status filter
   if (filters.status && filters.status.length > 0) {
     conditions.push(
-      sql`${pressureTests.status} IN ${filters.status}`
+      inArray(pressureTests.status, filters.status as any)
     );
   }
 
