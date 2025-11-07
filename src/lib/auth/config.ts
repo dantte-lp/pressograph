@@ -187,43 +187,42 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // Get production URL from environment or use baseUrl
-      const productionUrl = process.env.NEXTAUTH_URL || 'https://dev-pressograph.infra4.dev';
+      // HARDCODED production URL to prevent localhost issues
+      // Do NOT rely on environment variables in this callback as they may not be available
+      const PRODUCTION_URL = 'https://dev-pressograph.infra4.dev';
 
       console.log('[NextAuth Redirect]', {
         url,
         baseUrl,
-        productionUrl,
+        productionUrl: PRODUCTION_URL,
+        envNextAuthUrl: process.env.NEXTAUTH_URL, // For debugging only
         nodeEnv: process.env.NODE_ENV,
       });
 
       // If starts with /, make it absolute with production URL
       if (url.startsWith('/')) {
-        const redirectTo = `${productionUrl}${url}`;
-        console.log('[NextAuth Redirect] Relative path:', redirectTo);
+        const redirectTo = `${PRODUCTION_URL}${url}`;
+        console.log('[NextAuth Redirect] Relative path, returning:', redirectTo);
         return redirectTo;
       }
 
-      // If contains localhost, extract path and use production URL
-      if (url.includes('localhost')) {
+      // If contains localhost or 127.0.0.1, extract path and use production URL
+      if (url.includes('localhost') || url.includes('127.0.0.1')) {
         try {
           const urlObj = new URL(url);
-          const redirectTo = `${productionUrl}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
-          console.log('[NextAuth Redirect] Localhost detected, replacing:', redirectTo);
+          const redirectTo = `${PRODUCTION_URL}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+          console.log('[NextAuth Redirect] Localhost detected, returning:', redirectTo);
           return redirectTo;
         } catch (error) {
           console.error('[NextAuth Redirect] URL parsing error:', error);
-          return productionUrl;
+          return PRODUCTION_URL;
         }
       }
 
-      // If same origin as baseUrl or productionUrl, allow
+      // If same origin as production URL, allow
       try {
         const urlObj = new URL(url);
-        const baseUrlObj = new URL(baseUrl);
-        const prodUrlObj = new URL(productionUrl);
-
-        if (urlObj.origin === baseUrlObj.origin || urlObj.origin === prodUrlObj.origin) {
+        if (urlObj.origin === PRODUCTION_URL) {
           console.log('[NextAuth Redirect] Same origin, allowing:', url);
           return url;
         }
@@ -231,8 +230,9 @@ export const authOptions: NextAuthOptions = {
         console.error('[NextAuth Redirect] URL comparison error:', error);
       }
 
-      console.log('[NextAuth Redirect] Default fallback to:', productionUrl);
-      return productionUrl;
+      // Default to production home
+      console.log('[NextAuth Redirect] Default case, returning home:', PRODUCTION_URL);
+      return PRODUCTION_URL;
     },
   },
 

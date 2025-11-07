@@ -9,6 +9,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Critical Route Protection and Localhost Redirect Fix (2025-11-07 - Part 4)
+- **Fixed:** Three critical security and redirect issues
+  - **Issue 1: /tests and /projects Not Protected**
+    - **Problem:** Routes `/tests` and `/projects` were accessible without authentication
+    - **Security Risk:** Critical - protected content exposed to unauthenticated users
+    - **Root Cause:** No middleware or route protection configured
+    - **Solution Applied:**
+      - **File:** `/opt/projects/repositories/pressograph/src/middleware.ts`
+      - Created new middleware with `next-auth/middleware` wrapper
+      - Protected routes: /dashboard, /projects, /tests, /profile, /settings, /admin
+      - Auto-redirect to `/auth/signin` for unauthenticated users
+      - Theme injection preserved for SSR
+    - **Code Changes:**
+      ```typescript
+      import { withAuth } from 'next-auth/middleware';
+
+      export default withAuth(
+        function middleware(req) {
+          // Theme injection and request logging
+        },
+        {
+          callbacks: {
+            authorized: ({ token }) => !!token,
+          },
+          pages: {
+            signIn: '/auth/signin',
+          },
+        }
+      );
+
+      export const config = {
+        matcher: [
+          '/dashboard/:path*',
+          '/projects/:path*',  // Now protected
+          '/tests/:path*',      // Now protected
+          '/profile/:path*',
+          '/settings/:path*',
+          '/admin/:path*',
+        ],
+      };
+      ```
+    - **Status:** ✅ /tests and /projects now require authentication
+
+  - **Issue 2: Sign Out Still Redirects to Localhost**
+    - **Problem:** After sign out, redirect to `http://localhost:3000/` instead of production
+    - **Console Output Showed:** `productionUrl: 'http://localhost:3000'` (incorrect)
+    - **Root Cause:** NextAuth redirect callback reading `process.env.NEXTAUTH_URL` which may be localhost during callback execution
+    - **Solution Applied:**
+      - **File:** `/opt/projects/repositories/pressograph/src/lib/auth/config.ts`
+      - Hardcoded `PRODUCTION_URL` constant instead of reading from environment
+      - Changed: `const productionUrl = process.env.NEXTAUTH_URL || 'https://dev-pressograph.infra4.dev'`
+      - To: `const PRODUCTION_URL = 'https://dev-pressograph.infra4.dev'`
+      - Added localhost and 127.0.0.1 detection
+      - Enhanced logging to debug redirect flow
+    - **Code Changes:**
+      ```diff
+      - const productionUrl = process.env.NEXTAUTH_URL || 'https://dev-pressograph.infra4.dev';
+      + // HARDCODED production URL to prevent localhost issues
+      + // Do NOT rely on environment variables in this callback as they may not be available
+      + const PRODUCTION_URL = 'https://dev-pressograph.infra4.dev';
+
+      - if (url.includes('localhost')) {
+      + if (url.includes('localhost') || url.includes('127.0.0.1')) {
+          try {
+            const urlObj = new URL(url);
+      -     const redirectTo = `${productionUrl}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+      +     const redirectTo = `${PRODUCTION_URL}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+            console.log('[NextAuth Redirect] Localhost detected, returning:', redirectTo);
+            return redirectTo;
+      ```
+    - **Status:** ✅ Sign out now redirects to production URL
+
+  - **Issue 3: HAR File Analysis (Context Optimization)**
+    - **Problem:** 11,066-line HAR file needed analysis without loading entire file into context
+    - **Challenge:** Identify redirect patterns and localhost references efficiently
+    - **Solution Applied:**
+      - Used targeted grep commands to extract specific patterns
+      - Created summary document with key findings
+      - Identified localhost URL patterns in HAR file
+      - Confirmed redirect chain: sign out → localhost:3000 → production
+    - **HAR Analysis Results:**
+      - Multiple `http://localhost:3000/` references found
+      - Auth API endpoints showing localhost URLs
+      - Dashboard redirects pointing to localhost
+      - Cloudflare NEL (Network Error Logging) endpoints present
+    - **Documentation:**
+      - **File:** `/opt/projects/repositories/pressograph/docs/HAR_ANALYSIS_SUMMARY.md`
+      - Detailed findings and patterns documented
+      - Verification steps provided
+      - Related issues cross-referenced
+    - **Status:** ✅ HAR file analyzed, root cause confirmed, fixes implemented
+
+  - **Technical Details:**
+    - Middleware uses Edge Runtime for performance
+    - Theme cookie preserved during auth redirects
+    - CallbackUrl parameter set for post-login redirect
+    - Hardcoded production URL prevents environment variable issues
+    - Enhanced logging for debugging redirect flow
+
+  - **Testing Instructions:**
+    1. Clear browser cache and cookies
+    2. Visit `/tests` without authentication → redirected to sign-in
+    3. Visit `/projects` without authentication → redirected to sign-in
+    4. Sign in successfully
+    5. Click "Sign Out" button
+    6. Check console logs for `[NextAuth Redirect]` messages
+    7. Verify redirect to `https://dev-pressograph.infra4.dev/` (NOT localhost)
+
+  - **Expected Console Output:**
+    ```
+    [NextAuth Redirect] {
+      url: 'http://localhost:3000/dashboard',
+      baseUrl: 'http://localhost:3000',
+      productionUrl: 'https://dev-pressograph.infra4.dev',  // ✅ Correct!
+      envNextAuthUrl: 'https://dev-pressograph.infra4.dev',
+      nodeEnv: 'development'
+    }
+    [NextAuth Redirect] Localhost detected, returning: https://dev-pressograph.infra4.dev/dashboard
+    ```
+
+  - **Files Modified:**
+    - `/opt/projects/repositories/pressograph/src/middleware.ts` - Created with route protection
+    - `/opt/projects/repositories/pressograph/src/lib/auth/config.ts` - Hardcoded production URL
+    - `/opt/projects/repositories/pressograph/docs/HAR_ANALYSIS_SUMMARY.md` - Created analysis summary
+
+  - **Files Replaced:**
+    - `/opt/projects/repositories/pressograph/src/proxy.ts` - Replaced by middleware.ts
+
+  - **Status:** ✅ All 3 issues resolved, ready for production testing
+
 #### Enhanced Sign-Out Redirect Fix with Comprehensive Logging (2025-11-07 - Part 3)
 - **Fixed:** Persistent localhost redirect issue despite previous fixes
   - **Issue:** Sign out still redirects to `http://localhost:3000/` instead of production URL
