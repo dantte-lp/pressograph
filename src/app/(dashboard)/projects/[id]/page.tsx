@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { getProjectById } from '@/lib/actions/projects';
 import { TestsTable } from '@/components/tests/tests-table';
 import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDate, formatRelativeTime } from '@/lib/utils/format';
 
 interface ProjectDetailPageProps {
   params: Promise<{
@@ -114,10 +114,10 @@ export default async function ProjectDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatDistanceToNow(project.createdAt, { addSuffix: true })}
+              {formatRelativeTime(project.createdAt)}
             </div>
             <p className="text-muted-foreground text-xs">
-              {project.createdAt.toLocaleDateString()}
+              {formatDate(project.createdAt)}
             </p>
           </CardContent>
         </Card>
