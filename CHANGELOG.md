@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned
+
+- **Comprehensive Page Refactoring Plan** - Created refactoring roadmap for applying shadcn/ui Integration Strategy
+  - Created comprehensive REFACTORING_ROADMAP.md document outlining 4-sprint refactoring plan
+  - Created 6 GitHub issues for page-specific refactoring tasks (Issues #109-#114)
+  - Pages to refactor: Test Detail, Dashboard, Tests List, Test Edit, Profile, Settings
+  - Total effort: 49 Story Points across Sprints 3-6 (Dec 2025 - Jan 2026)
+  - Goals: Apply shadcn/ui components consistently, improve accessibility, enhance responsiveness
+  - Each issue includes detailed scope, components to use, acceptance criteria, and related documentation
+  - Rollback plan and testing strategy documented
+  - Documentation: `/docs/development/REFACTORING_ROADMAP.md`
+
 ### Changed
 
 - **Simplified Test Creation Form** - Removed multi-step wizard, implemented single-page layout with ONE save button
