@@ -30,7 +30,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 import {
   generateEmulatedTestData,
@@ -62,7 +62,6 @@ export function EmulationExportDialog({
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('png');
   const [isExporting, setIsExporting] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { toast } = useToast();
 
   // Render emulated graph on canvas when dialog opens
   useEffect(() => {
@@ -183,18 +182,15 @@ export function EmulationExportDialog({
           break;
       }
 
-      toast({
-        title: 'Export Successful',
+      toast.success('Export Successful', {
         description: `Emulated test data exported as ${selectedFormat.toUpperCase()}`,
       });
 
       setOpen(false);
     } catch (error) {
       console.error('Export failed:', error);
-      toast({
-        title: 'Export Failed',
+      toast.error('Export Failed', {
         description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive',
       });
     } finally {
       setIsExporting(false);
@@ -239,8 +235,8 @@ export function EmulationExportDialog({
 
     downloadFile(csvContent, filename, 'text/csv');
 
-    toast({
-      description: `CSV file size: ${formatFileSize(new Blob([csvContent]).size)}`,
+    toast.success('CSV Exported', {
+      description: `File size: ${formatFileSize(new Blob([csvContent]).size)}`,
     });
   };
 
@@ -260,8 +256,8 @@ export function EmulationExportDialog({
 
     downloadFile(jsonContent, filename, 'application/json');
 
-    toast({
-      description: `JSON file size: ${formatFileSize(new Blob([jsonContent]).size)}`,
+    toast.success('JSON Exported', {
+      description: `File size: ${formatFileSize(new Blob([jsonContent]).size)}`,
     });
   };
 
@@ -282,7 +278,7 @@ export function EmulationExportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Alert variant="warning">
+        <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Simulated Data</AlertTitle>
           <AlertDescription>
@@ -311,7 +307,7 @@ export function EmulationExportDialog({
           {/* Export Format Selection */}
           <div className="space-y-4">
             <Label>Select Export Format</Label>
-            <RadioGroup value={selectedFormat} onValueChange={(v) => setSelectedFormat(v as ExportFormat)}>
+            <RadioGroup value={selectedFormat} onValueChange={(v: string) => setSelectedFormat(v as ExportFormat)}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent">
                   <RadioGroupItem value="png" id="format-png" />

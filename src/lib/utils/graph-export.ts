@@ -17,8 +17,6 @@ import {
   generateEmulatedTestData,
   emulatedDataToCSV,
   emulatedDataToJSON,
-  type EmulatedTestData,
-  type PressureDataPoint,
 } from './pressure-data-generator';
 
 /**
@@ -110,16 +108,6 @@ export async function exportEmulatedJSON(
   };
 }
 
-/**
- * Create a data URL for a canvas element
- *
- * @param canvas - Canvas element
- * @param format - Image format
- * @returns Data URL string
- */
-function canvasToDataURL(canvas: HTMLCanvasElement, format: 'png' | 'jpeg'): string {
-  return canvas.toDataURL(`image/${format}`, 1.0);
-}
 
 /**
  * Download a file to the user's device

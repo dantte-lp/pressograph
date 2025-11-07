@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { PlayIcon, EditIcon, DownloadIcon, Share2Icon, CopyIcon } from 'lucide-react';
+import { PlayIcon, EditIcon, Share2Icon, CopyIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
