@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormError } from '@/components/ui/form-error';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
 import { createTest } from '@/lib/actions/tests';
 import type { TestDetail } from '@/lib/actions/tests';
 import type { Project } from '@/lib/db/schema/projects';
@@ -136,6 +137,12 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
   const watchedStages = watch('intermediateStages') || [];
   const watchedTags = watch('tags') || [];
+
+  // Watch form values for graph preview
+  const workingPressure = watch('workingPressure') || 10;
+  const maxPressure = watch('maxPressure') || 15;
+  const testDuration = watch('testDuration') || 24;
+  const pressureUnit = watch('pressureUnit') || 'MPa';
 
   // Add tag
   const handleAddTag = () => {
@@ -428,14 +435,15 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
         {/* Step 2: Core Parameters */}
         {currentStep === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Core Parameters</CardTitle>
-              <CardDescription>
-                Configure pressure, temperature, and duration settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Core Parameters</CardTitle>
+                <CardDescription>
+                  Configure pressure, temperature, and duration settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="workingPressure">
@@ -563,29 +571,50 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea id="notes" placeholder="Additional notes" rows={3} {...register('notes')} />
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={handlePrev}>
-                <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-              <Button type="button" onClick={handleNext}>
-                Next
-                <ChevronRightIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button type="button" variant="outline" onClick={handlePrev}>
+                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
+                  Previous
+                </Button>
+                <Button type="button" onClick={handleNext}>
+                  Next
+                  <ChevronRightIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Graph Preview */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Preview</CardTitle>
+                <CardDescription>
+                  Real-time pressure profile visualization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PressureTestPreview
+                  workingPressure={workingPressure}
+                  maxPressure={maxPressure}
+                  testDuration={testDuration}
+                  intermediateStages={watchedStages}
+                  pressureUnit={pressureUnit}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Step 3: Intermediate Stages */}
         {currentStep === 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Intermediate Stages</CardTitle>
-              <CardDescription>
-                Add optional pressure steps during the test (you can skip this step)
-              </CardDescription>
-            </CardHeader>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Intermediate Stages</CardTitle>
+                <CardDescription>
+                  Add optional pressure steps during the test (you can skip this step)
+                </CardDescription>
+              </CardHeader>
             <CardContent className="space-y-4">
               {watchedStages.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -655,27 +684,48 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Add Stage
               </Button>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={handlePrev}>
-                <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-              <Button type="button" onClick={handleNext}>
-                Next
-                <ChevronRightIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button type="button" variant="outline" onClick={handlePrev}>
+                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
+                  Previous
+                </Button>
+                <Button type="button" onClick={handleNext}>
+                  Next
+                  <ChevronRightIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Graph Preview */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Preview</CardTitle>
+                <CardDescription>
+                  See how intermediate stages affect the pressure profile
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PressureTestPreview
+                  workingPressure={workingPressure}
+                  maxPressure={maxPressure}
+                  testDuration={testDuration}
+                  intermediateStages={watchedStages}
+                  pressureUnit={pressureUnit}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Step 4: Review & Create */}
         {currentStep === 4 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Review & Create</CardTitle>
-              <CardDescription>Review your test configuration and submit</CardDescription>
-            </CardHeader>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Review & Create</CardTitle>
+                <CardDescription>Review your test configuration and submit</CardDescription>
+              </CardHeader>
             <CardContent className="space-y-6">
               {/* Basic Info Review */}
               <div>
@@ -760,29 +810,49 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   </div>
                 </>
               )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={handlePrev}>
-                <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleSubmit((data) => onSubmit(data, true))()}
-                  disabled={isPending}
-                >
-                  <SaveIcon className="mr-2 h-4 w-4" />
-                  Save as Draft
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button type="button" variant="outline" onClick={handlePrev}>
+                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
+                  Previous
                 </Button>
-                <Button type="submit" disabled={isPending}>
-                  <PlayIcon className="mr-2 h-4 w-4" />
-                  {isPending ? 'Creating...' : 'Create Test'}
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleSubmit((data) => onSubmit(data, true))()}
+                    disabled={isPending}
+                  >
+                    <SaveIcon className="mr-2 h-4 w-4" />
+                    Save as Draft
+                  </Button>
+                  <Button type="submit" disabled={isPending}>
+                    <PlayIcon className="mr-2 h-4 w-4" />
+                    {isPending ? 'Creating...' : 'Create Test'}
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+
+            {/* Graph Preview */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Final Preview</CardTitle>
+                <CardDescription>
+                  Complete pressure test profile
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PressureTestPreview
+                  workingPressure={workingPressure}
+                  maxPressure={maxPressure}
+                  testDuration={testDuration}
+                  intermediateStages={watchedStages}
+                  pressureUnit={pressureUnit}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
       </form>
     </div>
