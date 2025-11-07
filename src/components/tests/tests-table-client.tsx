@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,13 +29,16 @@ import {
   Trash2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  PackageIcon,
+  FileDownIcon,
+  Loader2Icon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { formatBytes } from '@/lib/utils/format';
 import type { PaginatedTests, TestFilters, PaginationParams } from '@/lib/actions/tests';
-import { deleteTest } from '@/lib/actions/tests';
+import { deleteTest, batchDeleteTests } from '@/lib/actions/tests';
 
 interface TestsTableClientProps {
   data: PaginatedTests;
@@ -54,6 +58,8 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 export function TestsTableClient({ data, filters, pagination }: TestsTableClientProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   const handleDelete = async (testId: string, testNumber: string) => {
     if (!confirm(`Are you sure you want to delete test ${testNumber}? This action cannot be undone.`)) {
@@ -74,6 +80,69 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === data.tests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(data.tests.map(t => t.id)));
+    }
+  };
+
+  const toggleSelect = (testId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(testId)) {
+      newSelected.delete(testId);
+    } else {
+      newSelected.add(testId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBatchDelete = async () => {
+    const count = selectedIds.size;
+    if (!confirm(`Are you sure you want to delete ${count} test${count > 1 ? 's' : ''}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setBatchProcessing(true);
+    try {
+      const result = await batchDeleteTests(Array.from(selectedIds));
+      if (result.success) {
+        setSelectedIds(new Set());
+        router.refresh();
+      } else {
+        alert(result.error ?? 'Failed to delete tests');
+      }
+    } catch (error) {
+      console.error('Error deleting tests:', error);
+      alert('Failed to delete tests');
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleBatchExportCSV = () => {
+    const selectedTests = data.tests.filter(t => selectedIds.has(t.id));
+    const csv = [
+      ['Test Number', 'Name', 'Project', 'Status', 'Runs', 'Last Run', 'Created'],
+      ...selectedTests.map(t => [
+        t.testNumber,
+        t.name,
+        t.projectName,
+        t.status,
+        t.runCount.toString(),
+        t.lastRunDate ? t.lastRunDate.toISOString() : 'Never',
+        t.createdAt.toISOString(),
+      ])
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `tests-export-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
   const buildPageUrl = (newPage: number) => {
@@ -106,11 +175,65 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
 
   return (
     <div className="space-y-4">
+      {/* Batch Actions Toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between rounded-md border bg-muted/50 p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedIds.size} test{selectedIds.size > 1 ? 's' : ''} selected
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBatchExportCSV}
+              disabled={batchProcessing}
+            >
+              <FileDownIcon className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBatchDelete}
+              disabled={batchProcessing}
+            >
+              {batchProcessing ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2Icon className="mr-2 h-4 w-4" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedIds.size === data.tests.length && data.tests.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all tests"
+                />
+              </TableHead>
               <TableHead>Test Number</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Project</TableHead>
@@ -124,6 +247,13 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
           <TableBody>
             {data.tests.map((test) => (
               <TableRow key={test.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(test.id)}
+                    onCheckedChange={() => toggleSelect(test.id)}
+                    aria-label={`Select ${test.testNumber}`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   <Link
                     href={`/tests/${test.id}` as any}

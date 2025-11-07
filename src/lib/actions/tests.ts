@@ -674,6 +674,51 @@ export async function deleteTest(testId: string): Promise<{ success: boolean; er
 }
 
 /**
+ * Batch delete multiple tests
+ * Only deletes tests owned by the current user
+ */
+export async function batchDeleteTests(testIds: string[]): Promise<{ success: boolean; deleted: number; error?: string }> {
+  try {
+    const session = await requireAuth();
+    const userId = session.user.id;
+
+    if (testIds.length === 0) {
+      return { success: false, deleted: 0, error: 'No tests selected' };
+    }
+
+    // Verify ownership for all tests
+    const ownedTests = await db
+      .select({ id: pressureTests.id })
+      .from(pressureTests)
+      .where(
+        and(
+          inArray(pressureTests.id, testIds),
+          eq(pressureTests.createdBy, userId)
+        )
+      );
+
+    if (ownedTests.length === 0) {
+      return { success: false, deleted: 0, error: 'No tests found or access denied' };
+    }
+
+    // Delete tests (cascading will handle related records)
+    await db
+      .delete(pressureTests)
+      .where(
+        and(
+          inArray(pressureTests.id, ownedTests.map(t => t.id)),
+          eq(pressureTests.createdBy, userId)
+        )
+      );
+
+    return { success: true, deleted: ownedTests.length };
+  } catch (error) {
+    console.error('Error batch deleting tests:', error);
+    return { success: false, deleted: 0, error: 'Failed to delete tests' };
+  }
+}
+
+/**
  * Test Run Detail with full data
  */
 export interface TestRunDetail {
