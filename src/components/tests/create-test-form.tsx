@@ -16,6 +16,7 @@ import {
   PlayIcon,
 } from 'lucide-react';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import { useFormCache } from '@/lib/hooks/use-form-cache';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ import { FormError } from '@/components/ui/form-error';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
+import { PreviewDialog } from '@/components/tests/preview-dialog';
 import { createTest } from '@/lib/actions/tests';
 import type { TestDetail } from '@/lib/actions/tests';
 import type { Project } from '@/lib/db/schema/projects';
@@ -143,6 +145,14 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const watchedStages = watch('intermediateStages') || [];
   const watchedTags = watch('tags') || [];
 
+  // Three-tier caching: Tier 2 (LocalStorage)
+  const { clearCache } = useFormCache({
+    key: 'pressograph-test-form-draft',
+    form,
+    autosaveInterval: 30000, // Auto-save every 30 seconds
+    enabled: !sourceTest, // Disable cache when duplicating existing test
+  });
+
   // Watch form values for graph preview
   const workingPressure = watch('workingPressure') || 10;
   const maxPressure = watch('maxPressure') || 15;
@@ -172,11 +182,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     );
   };
 
-  // Add intermediate stage
+  // Add intermediate stage with empty/default values
   const handleAddStage = () => {
     setValue('intermediateStages', [
       ...watchedStages,
-      { time: 0, pressure: 0, duration: 0 },
+      { time: 0, pressure: 0, duration: 0 }, // Start with zeros, not hardcoded values
     ]);
   };
 
@@ -299,6 +309,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
         });
 
         if (result.success && result.test) {
+          // Clear cache on successful submission (Tier 3: Database now has data)
+          clearCache();
           toast.success(saveAsDraft ? 'Test saved as draft' : 'Test created successfully');
           router.push(`/tests/${result.test.id}`);
         } else {
@@ -687,10 +699,23 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             {/* Graph Preview */}
             <Card className="lg:col-span-1">
               <CardHeader>
-                <CardTitle>Preview</CardTitle>
-                <CardDescription>
-                  Real-time pressure profile visualization
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Preview</CardTitle>
+                    <CardDescription>
+                      Real-time pressure profile visualization
+                    </CardDescription>
+                  </div>
+                  <PreviewDialog
+                    workingPressure={debouncedWorkingPressure}
+                    maxPressure={debouncedMaxPressure}
+                    testDuration={debouncedTestDuration}
+                    intermediateStages={debouncedStages}
+                    pressureUnit={pressureUnit}
+                    startDateTime={startDateTime}
+                    endDateTime={watch('endDateTime')}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
@@ -829,10 +854,23 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             {/* Graph Preview */}
             <Card className="lg:col-span-1">
               <CardHeader>
-                <CardTitle>Preview</CardTitle>
-                <CardDescription>
-                  See how intermediate stages affect the pressure profile
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Preview</CardTitle>
+                    <CardDescription>
+                      See how intermediate stages affect the pressure profile
+                    </CardDescription>
+                  </div>
+                  <PreviewDialog
+                    workingPressure={debouncedWorkingPressure}
+                    maxPressure={debouncedMaxPressure}
+                    testDuration={debouncedTestDuration}
+                    intermediateStages={debouncedStages}
+                    pressureUnit={pressureUnit}
+                    startDateTime={startDateTime}
+                    endDateTime={watch('endDateTime')}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
@@ -968,10 +1006,23 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             {/* Graph Preview */}
             <Card className="lg:col-span-1">
               <CardHeader>
-                <CardTitle>Final Preview</CardTitle>
-                <CardDescription>
-                  Complete pressure test profile
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Final Preview</CardTitle>
+                    <CardDescription>
+                      Complete pressure test profile
+                    </CardDescription>
+                  </div>
+                  <PreviewDialog
+                    workingPressure={debouncedWorkingPressure}
+                    maxPressure={debouncedMaxPressure}
+                    testDuration={debouncedTestDuration}
+                    intermediateStages={debouncedStages}
+                    pressureUnit={pressureUnit}
+                    startDateTime={startDateTime}
+                    endDateTime={watch('endDateTime')}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
