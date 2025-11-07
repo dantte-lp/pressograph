@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CRITICAL: Export Graph Data Binding** - Export now uses actual database test data (Issue #104)
+  - Fixed export to dynamically generate pressure profile data from database configuration
+  - Export now correctly reflects all test parameters: duration, stages, working/max pressure
+  - Implemented dynamic data generation in `generateProfileData()` function
+  - Replaces static `useMemo` calculation with runtime generation based on `enableDrift` state
+  - Export graphs now match Preview graphs exactly
+  - Updated: `/src/components/tests/echarts-export-dialog.tsx`
+  - Impact: Exported graphs now show correct test configuration, not placeholder data
+
+- **CRITICAL: Realistic Drift Simulation in Export** - Fixed drift simulation not working in export (Issue #104)
+  - Applied same drift logic from Preview component to Export dialog
+  - Added imports for `generateRealisticTestData()` and `convertToMinutes()` utilities
+  - Export now generates realistic pressure data with Brownian motion and Gaussian noise when enabled
+  - Uses high-frequency sampling (1-second intervals) with LTTB downsampling
+  - Export checkbox "Enable Realistic Pressure Drift Simulation" now functional
+  - Smooth curve rendering for drift data, sharp corners for idealized data
+  - Updated: `/src/components/tests/echarts-export-dialog.tsx`
+  - Impact: Export graphs show realistic pressure variations matching Preview
+
+- **X-Axis Interval Logic Refinement** - Updated interval thresholds for better readability (Issue #104)
+  - New thresholds based on user requirements:
+    - Tests ≤ 30 hours: 60-minute intervals (1 hour marks)
+    - Tests 30-60 hours: 120-minute intervals (2 hour marks)
+    - Tests 60-96 hours: 180-minute intervals (3 hour marks)
+    - Tests > 96 hours: 240-minute intervals (4 hour marks)
+  - Added minor tick marks for 10-minute intervals (splitNumber: 6)
+  - Applied to both Export dialog and Preview component
+  - Previous logic showed 2-hour intervals for tests > 24 hours (too sparse)
+  - Updated: `/src/components/tests/echarts-export-dialog.tsx`, `/src/components/tests/pressure-test-preview.tsx`
+  - Impact: Better time resolution for tests up to 30 hours
+
 - **CRITICAL: X-Axis Labels Missing in Exported Graphs** - Fixed missing time labels in PNG exports
   - Added explicit `show: true` to X-axis `axisLabel` configuration for export
   - Implemented complete axis configuration with `axisTick` and `minorTick` for proper rendering
@@ -62,25 +93,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Time Scale Zoom Parameter** - Focus on specific time periods for detailed analysis (Issue #104 - Low Priority) [PARTIAL]
+- **Time Scale Zoom UI Controls** - Complete implementation of time zoom functionality (Issue #104) [COMPLETED]
+  - Added dropdown selector in Export Options section with zoom presets
+  - Zoom levels: Full Duration (1x), First Half (2x), First Quarter (4x), First 10% (10x), Custom Range
+  - Custom range inputs allow precise start/end minute selection
+  - Real-time feedback showing zoomed time window (e.g., "Showing 0-720 min (12.0h)")
+  - Preview graph updates to match export zoom settings
+  - Export X-axis min/max adjusted based on zoom selection
+  - Dynamic interval calculation for zoomed duration (uses `getZoomInterval()` utility)
+  - Integration with existing zoom foundation from `/src/lib/utils/time-zoom.ts`
+  - Components updated:
+    - `/src/components/tests/echarts-export-dialog.tsx`: Full zoom UI implementation
+    - Passes `timeScale` and `timeWindow` props to PressureTestPreview component
+  - Closes Issue #104: "доделай настройки zoom - это относится к пункту 6.2"
+  - Impact: Users can now focus on specific time periods for detailed pressure analysis
+
+- **Time Scale Zoom Foundation** - Backend utilities for zoom functionality (Issue #104)
   - Added `timeScale` prop to graph components ('auto', '1x', '2x', '4x', '10x')
   - Added `timeWindow` prop for custom time ranges (in minutes from test start)
-  - Zoom levels:
-    - 'auto' or '1x': Full test duration (no zoom)
-    - '2x': First half of test (50% of duration)
-    - '4x': First quarter of test (25% of duration)
-    - '10x': First 10% of test (10% of duration)
-    - Custom: Specify exact start/end minutes via `timeWindow` prop
   - Dynamic X-axis interval adjustment for optimal tick spacing at all zoom levels
   - Smaller intervals for zoomed views (5min, 10min, 15min) vs full view (1h, 2h, 3h)
   - Utility functions in `/src/lib/utils/time-zoom.ts`:
     - `calculateZoomedTimeWindow()`: Calculate min/max/duration for any zoom level
     - `getZoomInterval()`: Get optimal X-axis interval for zoomed display
     - `formatTimeWindowDescription()`: Format zoom info for display
-  - Components updated:
+  - Components with zoom support:
     - `/src/components/tests/pressure-test-preview.tsx` (IMPLEMENTED)
+    - `/src/components/tests/echarts-export-dialog.tsx` (COMPLETED - Full UI + integration)
     - `/src/components/tests/a4-preview-graph.tsx` (PENDING)
-    - `/src/components/tests/echarts-export-dialog.tsx` (PENDING - UI controls needed)
     - `/src/components/tests/fullscreen-preview-dialog.tsx` (PENDING - prop pass-through)
   - Use cases:
     - Detailed analysis of specific test stages
