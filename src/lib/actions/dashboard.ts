@@ -6,7 +6,7 @@ import { pressureTests } from '@/lib/db/schema/pressure-tests';
 import { testRuns } from '@/lib/db/schema/test-runs';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
 import { eq, and, count, desc, sql } from 'drizzle-orm';
-import { requireAuth } from '@/lib/auth/server';
+import { requireAuth } from '@/lib/auth/server-auth';
 
 /**
  * Dashboard Statistics
@@ -176,8 +176,9 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
 
 /**
  * Format bytes to human-readable string
+ * Note: Moved to @/lib/utils/format.ts to avoid server action export issues
  */
-export function formatBytes(bytes: number): string {
+function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
 
   const k = 1024;
