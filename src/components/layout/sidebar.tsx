@@ -127,29 +127,41 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     if (hasChildren) {
       return (
         <div key={item.label}>
-          <button
-            onClick={() => toggleExpanded(item.label)}
-            className={cn(
-              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              'hover:bg-accent hover:text-accent-foreground',
-              'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
-              (active || hasActiveDescendant) && 'bg-accent text-accent-foreground',
-              collapsed && 'justify-center'
-            )}
-            title={collapsed ? item.label : undefined}
-          >
-            <Icon className="h-5 w-5 shrink-0" />
+          <div className="flex items-center gap-1">
+            {/* Main navigation link */}
+            <Link
+              href={item.href as any}
+              className={cn(
+                'flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'hover:bg-accent hover:text-accent-foreground',
+                'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
+                (active || hasActiveDescendant) && 'bg-accent text-accent-foreground',
+                collapsed && 'justify-center'
+              )}
+              title={collapsed ? item.label : undefined}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+            </Link>
+            {/* Expand/collapse button */}
             {!collapsed && (
-              <>
-                <span className="flex-1 text-left">{item.label}</span>
+              <button
+                onClick={() => toggleExpanded(item.label)}
+                className={cn(
+                  'flex items-center justify-center rounded-lg p-2 text-sm transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2'
+                )}
+                aria-label={isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+              >
                 {isExpanded ? (
                   <ChevronDownIcon className="h-4 w-4 shrink-0" />
                 ) : (
                   <ChevronRightIcon className="h-4 w-4 shrink-0" />
                 )}
-              </>
+              </button>
             )}
-          </button>
+          </div>
           {!collapsed && isExpanded && item.children && (
             <div className="ml-4 mt-1 space-y-1">
               {item.children.map((child) => renderNavItem(child, depth + 1))}
