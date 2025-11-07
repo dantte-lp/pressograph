@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hydration Mismatch in Tests Table** - Resolved React hydration error in tests table component
+  - Created `RelativeTime` and `ConditionalRelativeTime` components for SSR-safe date formatting
+  - Components display absolute timestamps during SSR/initial render, then switch to relative time
+  - Prevents hydration errors by ensuring server and client render matching content initially
+  - Added title attribute with full timestamp on hover for accessibility
+  - Components: `/src/components/ui/relative-time.tsx`
+  - Updated: `/src/components/tests/tests-table-client.tsx`
+  - Fixes: "Text content did not match" error at line 238 (Last Run) and line 244 (Created)
+
+- **Drift Simulation Graph Rendering** - Fixed graph disappearing when drift simulation is enabled
+  - Fixed missing `startTime` parameter in `convertToMinutes()` function call
+  - Updated `/src/components/tests/pressure-test-preview.tsx` line 399
+  - Drift simulation now properly converts millisecond timestamps to minutes for display
+  - Graph correctly displays realistic pressure variations with Brownian motion and Gaussian noise
+  - Performance: LTTB downsampling handles high-frequency data (1-second intervals) efficiently
+
+- **Export Dialog User Experience** - Made export dialog fullscreen for better usability
+  - Replaced `DialogContent` with `DialogContentFullscreen` variant
+  - Updated layout with proper flex structure for header/content/footer
+  - Added border separators for visual hierarchy
+  - Dialog now uses full viewport: calc(100vh - 2rem) × calc(100vw - 2rem)
+  - Better viewing experience for graph preview and export configuration
+  - Updated: `/src/components/tests/echarts-export-dialog.tsx`
+
 ### Added
 
 - **Time Scale Zoom Parameter** - Focus on specific time periods for detailed analysis (Issue #104 - Low Priority) [PARTIAL]
