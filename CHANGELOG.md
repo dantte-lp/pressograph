@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- DateTimeSettings component useTranslations error by removing next-intl dependency and using hardcoded English text
+- LocaleSwitcher emoji flags not rendering in Chrome by replacing with text-based country codes (EN | English, RU | Русский)
 - LocaleSwitcher intl context error by passing locale as prop from Server Component instead of using useLocale() hook
 - DashboardHeader refactored to Client Component with locale passed from parent layout
 - UserMenu extracted to separate client component for better separation of concerns
