@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **X-Axis Interval Calculation for Time-Based Axis** - Fixed 24-hour tests showing 4-hour intervals instead of 2-hour intervals
-  - Time-based axis now uses `calculateXAxisInterval()` function based on test duration
-  - Previously hardcoded to 2-hour intervals regardless of test duration
+- **X-Axis Interval Auto-Adjustment Issue** - Fixed 24-hour tests showing 4-hour intervals instead of 2-hour intervals
+  - Added `minInterval` and `maxInterval` constraints to strictly enforce calculated interval
+  - ECharts was auto-adjusting intervals when padding (±1 hour) made the display range 26 hours
+  - The `calculateXAxisInterval()` correctly returned 120 minutes (2 hours) for 24-hour test
+  - But ECharts auto-adjusted to 4-hour intervals to reduce tick count for visual comfort
+  - Solution: Set `minInterval` and `maxInterval` to same value to disable auto-adjustment
   - Now correctly shows: 1h intervals (≤6h tests), 2h intervals (≤24h tests), 4h intervals (≤72h tests), 6h intervals (>72h tests)
-  - Padding (±1 hour) no longer affects interval calculation
-  - Fixes issue where 24-hour test with padding showed 4-hour intervals instead of 2-hour intervals
+  - Interval calculation based on actual test duration (24h), NOT padded range (26h)
 - **Cumulative Time Calculation for Intermediate Stages** - Redesigned time semantics for better usability
   - "Time (min)" field now represents RELATIVE time (minutes AFTER previous stage's hold ends)
   - Added "Cumulative" column showing absolute time from test start in H:M format (e.g., "2:30")

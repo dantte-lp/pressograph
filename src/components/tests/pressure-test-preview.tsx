@@ -266,8 +266,12 @@ export function PressureTestPreview({
             color: '#f0f0f0',
           },
         },
-        // Dynamic interval based on test duration (convert minutes to milliseconds)
+        // Dynamic interval based on ACTUAL test duration (not padded range)
+        // For 24h test: 2h intervals = 120 min * 60 * 1000 = 7,200,000 ms
         interval: calculateXAxisInterval(testDuration) * 60 * 1000,
+        // Ensure interval is strictly enforced (disable auto-adjustment)
+        minInterval: calculateXAxisInterval(testDuration) * 60 * 1000,
+        maxInterval: calculateXAxisInterval(testDuration) * 60 * 1000,
         minorTick: {
           show: true,
           splitNumber: 4, // Creates minor ticks subdividing the main interval
