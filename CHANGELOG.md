@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Sprint 2 GitHub Issues Management (2025-11-07)
+
+**GitHub Issues and Milestones:**
+
+1. **Closed Completed V1 Issues**
+   - Closed issue #29: [US-1.1] Initialize Next.js 16 project (3 SP)
+   - Closed issue #30: [US-1.2] Configure TypeScript 5.9.3 strict mode (2 SP)
+   - Closed issue #31: [US-1.3] Setup TailwindCSS 4.1 + shadcn v3.5 (5 SP)
+   - Closed issue #32: [US-1.4] Configure ESLint + Prettier (2 SP)
+   - Closed issue #34: [US-1.6] Create base layout with theme provider (4 SP)
+   - Closed issue #9: Create CHANGELOG.md (2 SP)
+   - Total: 6 completed basic setup issues closed
+
+2. **Created Sprint 2 Issues**
+   - Issue #84: [Sprint 2] Dashboard Page Implementation (4 SP)
+   - Issue #85: [Sprint 2] Navigation Sidebar Component (3 SP)
+   - Issue #86: [Sprint 2] Install Additional shadcn/ui Components (2 SP)
+   - Issue #87: [Sprint 2] Dashboard Statistics Backend (4 SP)
+   - Issue #88: [Sprint 2] Recent Activity Feed Component (3 SP)
+   - Issue #89: [Sprint 2] Dashboard Charts and Visualizations (4 SP)
+   - Total: 6 new Sprint 2 issues created (20 SP total)
+   - Milestone: Sprint 2: Authentication & Core UI (due 2025-12-01)
+
+**Reference:** `/docs/development/GITHUB_ISSUES_SPRINT2.md`
+
+#### Additional shadcn/ui Components Installation (2025-11-07)
+
+**New Components Installed:**
+
+1. **dialog** - Modal dialogs for test detail previews and confirmations
+2. **avatar** - User profile avatars in activity feed
+3. **alert** - Notification and warning messages
+4. **separator** - Visual dividers for sections
+5. **scroll-area** - Scrollable content containers
+6. **popover** - Tooltips and contextual help
+7. **switch** - Toggle settings
+8. **checkbox** - Multi-select forms
+
+**Existing Components (Already Installed):**
+- alert-dialog, badge, button, card, dropdown-menu, form, form-error
+- input, label, loading-skeletons, select, skeleton, sonner, spinner
+- table, tabs, textarea, theme-toggle
+
+**Total UI Components:** 26 components installed
+
+**Reference:** `/docs/development/SHADCN_INTEGRATION_STRATEGY.md`
+
+#### Dashboard Helper Components (2025-11-07)
+
+**New Components:**
+
+1. **StatsCard Component** (`/src/components/dashboard/stats-card.tsx`)
+   - Reusable card for displaying statistics
+   - Props: title, value, icon, description, trend
+   - Supports trend indicators (positive/negative)
+   - Used in dashboard for project count, active tests, runs, storage
+
+2. **ActivityFeed Component** (`/src/components/dashboard/activity-feed.tsx`)
+   - Displays recent user activities
+   - Shows user avatars, action descriptions, timestamps
+   - Links to related resources (tests, projects, runs)
+   - Empty state when no activity
+   - Relative time formatting using formatRelativeTime()
+
+3. **Dashboard Types** (`/src/types/dashboard.ts`)
+   - DashboardStats interface
+   - ActivityItem interface
+   - QuickAction interface
+   - Type safety for dashboard data
+
+**Existing Dashboard Infrastructure:**
+- Dashboard page (`/src/app/(dashboard)/dashboard/page.tsx`) - already implemented
+- Dashboard server actions (`/src/lib/actions/dashboard.ts`) - already implemented
+- DashboardLayout component (`/src/components/layout/dashboard-layout.tsx`) - already implemented
+- Sidebar component (`/src/components/layout/sidebar.tsx`) - already implemented
+- DashboardHeader component (`/src/components/layout/dashboard-header.tsx`) - already implemented
+
+**Dashboard Features:**
+- Statistics cards: Total projects, active tests, recent runs, storage usage
+- Recent activity feed with user actions
+- Quick action buttons for common tasks
+- Responsive design (mobile + desktop)
+- Server Components with Suspense for loading states
+
 ### Fixed
 
 #### Critical Hydration Error Fixes (2025-11-07)
