@@ -173,17 +173,3 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
     .slice(0, 10);
 }
-
-/**
- * Format bytes to human-readable string
- * Note: Moved to @/lib/utils/format.ts to avoid server action export issues
- */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}

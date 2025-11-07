@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FolderIcon, FlaskConicalIcon, BarChart3Icon, ActivityIcon, HardDriveIcon } from 'lucide-react';
-import { getDashboardStats, getRecentActivity, formatBytes } from '@/lib/actions/dashboard';
+import { getDashboardStats, getRecentActivity } from '@/lib/actions/dashboard';
+import { formatBytes } from '@/lib/utils/format';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
