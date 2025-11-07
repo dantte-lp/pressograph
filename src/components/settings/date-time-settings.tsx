@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -20,7 +19,6 @@ import {
 import { toast } from 'sonner';
 
 export function DateTimeSettings() {
-  const t = useTranslations('settings');
   const [timezone, setTimezone] = useState('UTC');
   const [dateFormat, setDateFormat] = useState<DateFormat>('YYYY-MM-DD');
   const [timeFormat, setTimeFormat] = useState<TimeFormat>('24h');
@@ -36,29 +34,29 @@ export function DateTimeSettings() {
   const handleTimezoneChange = (value: string) => {
     setTimezone(value);
     setUserDateTimeConfig({ timezone: value });
-    toast.success(t('saved'));
+    toast.success('Settings saved');
   };
 
   const handleDateFormatChange = (value: DateFormat) => {
     setDateFormat(value);
     setUserDateTimeConfig({ dateFormat: value });
-    toast.success(t('saved'));
+    toast.success('Settings saved');
   };
 
   const handleTimeFormatChange = (value: TimeFormat) => {
     setTimeFormat(value);
     setUserDateTimeConfig({ timeFormat: value });
-    toast.success(t('saved'));
+    toast.success('Settings saved');
   };
 
   return (
     <div className="space-y-6">
       {/* Timezone */}
       <div className="space-y-2">
-        <Label htmlFor="timezone">{t('timezone')}</Label>
+        <Label htmlFor="timezone">Timezone</Label>
         <Select value={timezone} onValueChange={handleTimezoneChange}>
           <SelectTrigger id="timezone">
-            <SelectValue placeholder={t('selectTimezone')} />
+            <SelectValue placeholder="Select timezone" />
           </SelectTrigger>
           <SelectContent>
             {COMMON_TIMEZONES.map((tz) => (
@@ -75,7 +73,7 @@ export function DateTimeSettings() {
 
       {/* Date Format */}
       <div className="space-y-2">
-        <Label htmlFor="date-format">{t('dateFormat')}</Label>
+        <Label htmlFor="date-format">Date Format</Label>
         <Select value={dateFormat} onValueChange={handleDateFormatChange}>
           <SelectTrigger id="date-format">
             <SelectValue />
@@ -97,14 +95,14 @@ export function DateTimeSettings() {
 
       {/* Time Format */}
       <div className="space-y-2">
-        <Label htmlFor="time-format">{t('timeFormat')}</Label>
+        <Label htmlFor="time-format">Time Format</Label>
         <Select value={timeFormat} onValueChange={handleTimeFormatChange}>
           <SelectTrigger id="time-format">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="12h">{t('12hour')}</SelectItem>
-            <SelectItem value="24h">{t('24hour')}</SelectItem>
+            <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
+            <SelectItem value="24h">24-hour</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
