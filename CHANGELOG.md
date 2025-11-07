@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### Critical Drizzle Date Query Error (2025-11-07)
+- **Fixed:** Dashboard runtime error causing Drizzle query to fail
+  - **Issue:** Failed query: `select count(*) from "test_runs" where ("test_runs"."executed_by" = $1 and "test_runs"."started_at" >= $2)`
+  - **Error Message:** Date parameter was being passed as string "Wed Oct 08 2025 01:25:02 GMT+0000" instead of proper timestamp
+  - **Root Cause:** Dashboard statistics query used `sql` template literal with JavaScript Date object, which Drizzle converted to string representation instead of PostgreSQL timestamp
+  - **Location:** `/src/lib/actions/dashboard.ts:67` - Recent test runs count query (last 30 days)
+  - **Solution Applied:**
+    - Changed from: `sql\`${testRuns.startedAt} >= ${thirtyDaysAgo}\``
+    - Changed to: `gte(testRuns.startedAt, thirtyDaysAgo)`
+    - Added `gte` import from 'drizzle-orm'
+    - Used Drizzle's built-in comparison operator instead of raw SQL
+  - **Benefits:**
+    - Proper type handling - Drizzle automatically converts Date to PostgreSQL timestamp
+    - Type-safe query construction
+    - Better query performance
+    - Follows Drizzle ORM best practices
+  - **Files Modified:**
+    - `/src/lib/actions/dashboard.ts` - Fixed date query in `getDashboardStats()` function
+  - **Status:** ✅ Dashboard now loads without errors, query executes correctly
+  - **Note:** Next.js 16 Performance timing warning ("DashboardPage cannot have a negative time stamp") is a known harmless dev-mode issue with Turbopack instrumentation, does not affect functionality
+
 ### Added
 
 #### Build Fixes and shadcn/ui Table Component (2025-11-07 - Part 7)

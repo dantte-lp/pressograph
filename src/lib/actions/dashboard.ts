@@ -5,7 +5,7 @@ import { projects } from '@/lib/db/schema/projects';
 import { pressureTests } from '@/lib/db/schema/pressure-tests';
 import { testRuns } from '@/lib/db/schema/test-runs';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
-import { eq, and, count, desc, sql } from 'drizzle-orm';
+import { eq, and, count, desc, sql, gte } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/server-auth';
 
 /**
@@ -64,7 +64,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .where(
       and(
         eq(testRuns.executedBy, userId),
-        sql`${testRuns.startedAt} >= ${thirtyDaysAgo}`
+        gte(testRuns.startedAt, thirtyDaysAgo)
       )
     );
 
