@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Test Editing - Intermediate Stages Data Transformation** - Fixed critical bugs in test editing page where intermediate stage fields appeared empty and graph preview rendered incorrectly
+  - **Root Cause**: Mismatch between database structure and form structure
+    - Database: `{ time, duration, pressure }`
+    - Form: `{ duration, targetPressure, holdDuration }`
+  - **Changes**:
+    - Added bidirectional data transformation in `edit-test-form-client.tsx`
+    - Loading: Transform DB structure to form structure in `defaultValues`
+      - `time` → `duration` (time to reach stage)
+      - `pressure` → `targetPressure`
+      - `duration` → `holdDuration` (time to hold at stage)
+    - Saving: Transform form structure back to DB structure in `onSubmit`
+      - `duration` → `time`
+      - `targetPressure` → `pressure`
+      - `holdDuration` → `duration`
+  - **Impact**:
+    - Fixes empty "Target Pressure" and "Hold" fields in Stages tab
+    - Fixes graph preview rendering in edit page Preview tab
+    - Maintains data integrity when editing and saving tests
+  - Tested with test ID: `5364cf01-602d-4ab6-bfec-0e608e8c43ff`
+  - Commit: `0152c857`
+
 ### Added
 - **JSON Export/Import for Test Configurations** - Complete backup and restore functionality for pressure test settings
   - Created `test-config-io.ts` utility module with comprehensive validation
