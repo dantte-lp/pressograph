@@ -40,7 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     }
     ```
   - Updated debug logging to show value-based approach
-  - **Status**: Testing required
+  - **Status**: ✅ CONFIRMED WORKING - 2-hour intervals display correctly
+
+- **Graph Vertical Line at Start** - Fixed unwanted vertical line appearing at test start when using time-based display
+  - **Root Cause**: When axis starts at -60 minutes (padding) but first data point is at 0, ECharts draws vertical line
+  - **Solution**: Add padding data points at both ends
+    - Start: Add point at `-paddingHours * 60` with pressure 0
+    - End: Add point at `totalMinutes + paddingHours * 60` with pressure 0
+  - This ensures smooth horizontal line through the padding regions
 
 ### Fixed
 - **X-Axis Time-Based Interval Critical Fix (ATTEMPT 2)** - Using `splitNumber` instead of `axisLabel.interval`

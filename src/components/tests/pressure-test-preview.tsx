@@ -209,6 +209,13 @@ export function PressureTestPreview({
       return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     };
 
+    // If using time-based display with padding, add a point at the start of padding
+    // This prevents a vertical line from appearing at time 0
+    if (useTimeBased) {
+      dataPoints.push([minutesToX(-paddingHours * 60), 0]);
+      timeLabels.push(`-${paddingHours}h`);
+    }
+
     // Start: 0 pressure at time 0
     dataPoints.push([minutesToX(0), 0]);
     timeLabels.push('0');
@@ -258,6 +265,13 @@ export function PressureTestPreview({
     // Depressurize to 0 (30 seconds)
     dataPoints.push([minutesToX(totalMinutes), 0]);
     timeLabels.push(formatTime(totalMinutes));
+
+    // If using time-based display with padding, add a point at the end of padding
+    // This ensures the line continues to the end of the axis
+    if (useTimeBased) {
+      dataPoints.push([minutesToX(totalMinutes + paddingHours * 60), 0]);
+      timeLabels.push(`+${paddingHours}h`);
+    }
 
     return { dataPoints, timeLabels };
   }, [workingPressure, sanitizedDuration, intermediateStages, useTimeBased, startTime]);
