@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Custom Test Number Customization** - Allow users to specify custom test numbers during test creation and editing
+  - Added test number input field to test creation form (`src/components/tests/create-test-form.tsx`)
+  - Added test number input field to test edit form (`src/components/tests/edit-test-form-client.tsx`)
+  - Created test number utility module (`src/lib/utils/test-number.ts`) with:
+    - `generateSequentialTestNumber()` - Auto-generate test numbers in format `PT-YYYY-NNN`
+    - `validateCustomTestNumber()` - Server-side validation for uniqueness and format
+    - `isTestNumberUnique()` - Database lookup for duplicate detection
+    - `isValidTestNumberFormat()` - Format validation (3-100 chars, alphanumeric with hyphens/underscores)
+  - Updated `createTest` server action to accept optional custom test number
+  - Updated `updateTest` server action to allow editing test numbers with validation
+  - Test numbers must be unique within organization (enforced at database level)
+  - Auto-generation falls back to timestamp-based format if sequential generation fails
+  - Helpful error messages for duplicate or invalid test numbers
+  - Form provides placeholder examples and user guidance
+
 - **Inter Font Typography** - Applied professional Inter font throughout all graph components
   - Configured Inter with Latin and Cyrillic subset support in root layout
   - Applied to all chart elements: title, subtitle, axis labels, tooltips

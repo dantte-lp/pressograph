@@ -49,6 +49,7 @@ const testFormSchema = z.object({
   // Step 1: Basic Information
   name: z.string().min(1, 'Test name is required').max(255, 'Name too long'),
   projectId: z.string().uuid('Please select a project'),
+  testNumber: z.string().min(3, 'Test number must be at least 3 characters').max(100, 'Test number too long').optional().or(z.literal('')),
   description: z.string().optional(),
   tags: z.array(z.string()).default([]),
 
@@ -113,6 +114,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     ? {
         name: `${sourceTest.name} (Copy)`,
         projectId: sourceTest.projectId,
+        testNumber: '', // Don't copy test number (must be unique)
         description: sourceTest.description || '',
         tags: sourceTest.tags || [],
         workingPressure: sourceTest.config.workingPressure,
@@ -131,6 +133,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     : {
         name: '',
         projectId: '',
+        testNumber: '',
         description: '',
         workingPressure: 10,
         maxPressure: 15,
@@ -297,7 +300,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     let fieldsToValidate: (keyof TestFormData)[] = [];
 
     if (currentStep === 1) {
-      fieldsToValidate = ['name', 'projectId', 'description', 'tags'];
+      fieldsToValidate = ['name', 'projectId', 'testNumber', 'description', 'tags'];
     } else if (currentStep === 2) {
       fieldsToValidate = [
         'workingPressure',
@@ -327,6 +330,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
         const result = await createTest({
           name: data.name,
           projectId: data.projectId,
+          testNumber: data.testNumber || undefined, // Include custom test number if provided
           description: data.description || null,
           tags: data.tags,
           templateType: data.templateType,
@@ -479,6 +483,26 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="testNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Test Number (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., PT-2025-001 (auto-generated if left empty)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Leave empty to auto-generate. Must be unique within your organization.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

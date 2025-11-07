@@ -35,6 +35,7 @@ const intermediateStageSchema = z.object({
 
 const testSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
+  testNumber: z.string().min(3, 'Test number must be at least 3 characters').max(100, 'Test number too long'),
   description: z.string().optional(),
   projectId: z.string().min(1, 'Project is required'),
   templateType: z.enum(['daily', 'extended', 'custom']),
@@ -86,6 +87,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
     resolver: zodResolver(testSchema),
     defaultValues: {
       name: test.name,
+      testNumber: test.testNumber,
       description: test.description || '',
       projectId: test.projectId,
       templateType: test.templateType || 'custom',
@@ -140,6 +142,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
         // Prepare update payload (no transformation needed - form matches DB structure)
         const updatePayload = {
           name: data.name,
+          testNumber: data.testNumber,
           description: data.description,
           projectId: data.projectId,
           templateType: data.templateType,
@@ -199,6 +202,21 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               aria-invalid={!!errors.name}
             />
             {errors.name && <FormError error={errors.name.message} />}
+          </div>
+
+          {/* Test Number */}
+          <div className="space-y-2">
+            <Label htmlFor="testNumber">Test Number *</Label>
+            <Input
+              id="testNumber"
+              {...register('testNumber')}
+              placeholder="e.g., PT-2025-001"
+              aria-invalid={!!errors.testNumber}
+            />
+            <p className="text-sm text-muted-foreground">
+              Must be unique within your organization.
+            </p>
+            {errors.testNumber && <FormError error={errors.testNumber.message} />}
           </div>
 
           {/* Description */}

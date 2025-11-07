@@ -7,6 +7,7 @@ import { users } from '@/lib/db/schema/users';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
 import { eq, and, desc, sql, count, or, ilike, gte, lte, inArray } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/server-auth';
+import { generateSequentialTestNumber, validateCustomTestNumber } from '@/lib/utils/test-number';
 
 /**
  * Test Status Types
@@ -339,6 +340,7 @@ export async function createTest(data: {
   status: 'draft' | 'ready';
   userId: string;
   organizationId: string;
+  testNumber?: string; // Optional custom test number
 }): Promise<{ success: boolean; test?: any; error?: string }> {
   try {
     const session = await requireAuth();
@@ -360,11 +362,28 @@ export async function createTest(data: {
       return { success: false, error: 'Project not found or access denied' };
     }
 
-    // Generate test number
-    const projectSettings = project[0].settings as any;
-    const prefix = projectSettings?.testNumberPrefix || 'PT';
-    const timestamp = Date.now().toString(36).toUpperCase().slice(-6);
-    const testNumber = `${prefix}-${timestamp}`;
+    // Handle test number (custom or auto-generated)
+    let testNumber: string;
+
+    if (data.testNumber) {
+      // Validate custom test number
+      const validation = await validateCustomTestNumber(
+        data.testNumber,
+        project[0].organizationId
+      );
+
+      if (!validation.valid) {
+        return { success: false, error: validation.error };
+      }
+
+      testNumber = data.testNumber.trim();
+    } else {
+      // Auto-generate test number
+      testNumber = await generateSequentialTestNumber(
+        data.projectId,
+        project[0].organizationId
+      );
+    }
 
     // Ensure tags is an array
     const tags = Array.isArray(data.tags) ? data.tags : [];
@@ -413,6 +432,7 @@ export async function updateTest(
     templateType?: 'daily' | 'extended' | 'custom';
     config?: any;
     tags?: string[];
+    testNumber?: string; // Optional: allow updating test number
   }
 ): Promise<{ success: boolean; test?: any; error?: string }> {
   try {
@@ -421,7 +441,12 @@ export async function updateTest(
 
     // Verify ownership
     const test = await db
-      .select({ id: pressureTests.id, status: pressureTests.status })
+      .select({
+        id: pressureTests.id,
+        status: pressureTests.status,
+        organizationId: pressureTests.organizationId,
+        testNumber: pressureTests.testNumber,
+      })
       .from(pressureTests)
       .where(
         and(
@@ -458,6 +483,19 @@ export async function updateTest(
       }
     }
 
+    // Validate test number if it's being updated
+    if (data.testNumber && data.testNumber !== test[0].testNumber) {
+      const validation = await validateCustomTestNumber(
+        data.testNumber,
+        test[0].organizationId,
+        testId // Exclude current test from uniqueness check
+      );
+
+      if (!validation.valid) {
+        return { success: false, error: validation.error };
+      }
+    }
+
     // Prepare update data
     const updateData: any = {
       updatedAt: new Date(),
@@ -469,6 +507,9 @@ export async function updateTest(
     if (data.templateType !== undefined) updateData.templateType = data.templateType;
     if (data.config !== undefined) updateData.config = data.config;
     if (data.tags !== undefined) updateData.tags = data.tags;
+    if (data.testNumber !== undefined && data.testNumber !== test[0].testNumber) {
+      updateData.testNumber = data.testNumber.trim();
+    }
 
     // Update test
     const result = await db
