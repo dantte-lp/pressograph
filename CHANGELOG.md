@@ -9,6 +9,152 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Real-Time Pressure Test Graph Preview with ECharts (2025-11-07)
+
+**Major Feature: Interactive Test Profile Visualization**
+
+Implemented comprehensive real-time graph preview for test creation workflow using native ECharts 6.0.0 with tree-shaking optimization.
+
+**New Component: PressureTestPreview**
+- Location: `/src/components/tests/pressure-test-preview.tsx`
+- Tree-shaken ECharts integration (LineChart, Canvas renderer only)
+- Real-time pressure profile calculation and visualization
+- Automated test timeline generation:
+  - Ramp up phase (10% of total duration)
+  - Working pressure hold period
+  - Intermediate pressure stages (if configured)
+  - Controlled depressurization (5% of total duration)
+- Visual reference lines:
+  - Working pressure (green dashed line)
+  - Max pressure safety limit (red dashed line)
+- Responsive design (300-400px height, auto-width)
+- Dark mode support via ECharts theming
+- Smart tooltips showing time and pressure at any point
+- Parameters summary card below graph
+- Support for multiple pressure units (MPa, Bar, PSI)
+
+**Integration in Create Test Form:**
+- **Step 2 (Core Parameters):** Side-by-side 2-column layout
+  - Form on left, preview on right (desktop)
+  - Stacked vertically on mobile
+  - Real-time updates as pressure/duration values change
+
+- **Step 3 (Intermediate Stages):** Interactive stage visualization
+  - Shows impact of each added stage on pressure profile
+  - Updates instantly when stages added/removed/modified
+  - Helps users validate stage timing and pressure levels
+
+- **Step 4 (Review & Create):** Final preview
+  - Complete pressure profile with all configurations
+  - Visual confirmation before test creation
+  - Validates entire test timeline
+
+**Technical Implementation:**
+- TypeScript strict mode with full type safety
+- ComposeOption type for tree-shakeable ECharts definitions
+- useMemo hook for optimized data point calculation
+- Proper ECharts instance lifecycle management
+- Window resize event handling with cleanup
+- Memory leak prevention (dispose on unmount)
+- Debounced updates for performance
+- ~150-200 KB bundle size (optimized via tree-shaking)
+
+**User Experience Benefits:**
+- See complete test timeline before creation
+- Validate intermediate stages visually
+- Understand pressure ramp rates and holds
+- Catch configuration errors early
+- Preview updates instantly on value change
+- Professional industrial visualization
+
+**Performance:**
+- Uses useMemo to prevent unnecessary recalculations
+- ECharts canvas renderer for optimal performance
+- Only imports required ECharts components
+- Responsive and smooth on all devices
+
+### Fixed
+
+#### Test Creation Error Handling and OrganizationId Fix (2025-11-07)
+
+**Critical Bug Fix in createTest Server Action**
+
+**Problem:**
+- Users received generic "Failed to create test" error
+- No detailed error information for debugging
+- OrganizationId handling was inconsistent
+- Tags field could be undefined causing database errors
+
+**Solution Implemented:**
+
+1. **Improved Error Handling:**
+   - Return actual error messages to client instead of generic "Failed to create test"
+   - Added detailed server-side logging with error name, message, and stack trace
+   - Proper error instanceof checks for better error classification
+   - Console logs for debugging production issues
+
+2. **OrganizationId Consistency:**
+   - Now uses organizationId from the project entity (authoritative source)
+   - Added project organizationId to SELECT query
+   - Prevents mismatch between passed organizationId and project's actual organization
+   - More reliable multi-tenancy support
+
+3. **Tags Array Handling:**
+   - Ensure tags is always an array (handle undefined case)
+   - Prevents PostgreSQL jsonb type errors
+   - Safe array check: `Array.isArray(data.tags) ? data.tags : []`
+
+4. **Enhanced Debugging:**
+   - Detailed error object logging with name, message, stack
+   - Better error messages returned to UI for user feedback
+   - Proper async error handling throughout
+
+**Impact:**
+- Users now see specific error messages
+- Easier troubleshooting for developers
+- More robust test creation flow
+- Better multi-tenancy data integrity
+
+**Files Modified:**
+- `/src/lib/actions/tests.ts` - createTest function
+
+### Changed
+
+#### Reduced Stage Card Height for Better UX (2025-11-07)
+
+**UI/UX Improvement in Step 3: Intermediate Stages**
+
+**Objective:** Fit 3-4 stage cards on screen without scrolling
+
+**Changes Implemented:**
+
+1. **Spacing Reductions:**
+   - Changed stage list spacing from `space-y-4` to `space-y-3`
+   - Reduced CardContent padding from default to `px-4 py-3`
+   - Reduced grid gap from `gap-4` to `gap-3`
+   - Changed label-input spacing from `space-y-2` to `space-y-1.5`
+
+2. **Header Optimization:**
+   - Replaced full CardHeader with compact `div` (px-4 py-3)
+   - Reduced stage title from CardTitle to `h4` with `text-sm font-medium`
+   - Made delete button more compact (`h-8 w-8 p-0`)
+   - Added border-b separator for visual clarity
+
+3. **Form Field Compaction:**
+   - Reduced label font size to `text-xs`
+   - Set input height to `h-9` (from default h-10)
+   - Tighter spacing throughout
+
+**Result:**
+- Successfully fits 3-4 stage cards on standard laptop screens
+- No horizontal scrolling needed
+- Cleaner, more professional appearance
+- Maintains accessibility and readability
+- Better form completion experience
+
+**Files Modified:**
+- `/src/components/tests/create-test-form.tsx` - Stage cards section
+
 #### Create Test Form with Multi-Step Wizard (2025-11-07)
 
 **CRITICAL BUG FIX: /tests/new Route Conflict Resolved**
