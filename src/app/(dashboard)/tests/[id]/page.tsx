@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { PlayIcon, EditIcon, Share2Icon, CopyIcon } from 'lucide-react';
+import { EditIcon, Share2Icon, CopyIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,8 +71,6 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             </Link>
             <span>•</span>
             <span>Created {formatDate(test.createdAt)}</span>
-            <span>•</span>
-            <span>{test.runCount} run{test.runCount !== 1 ? 's' : ''}</span>
           </div>
         </div>
 
@@ -84,14 +82,6 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
               Edit
             </Link>
           </Button>
-          {test.status === 'ready' && (
-            <Button size="sm" asChild>
-              <Link href={`/tests/${test.id}/run` as any}>
-                <PlayIcon className="mr-2 h-4 w-4" />
-                Run Test
-              </Link>
-            </Button>
-          )}
           <TestActionsDropdown test={test} />
         </div>
       </div>
@@ -109,64 +99,29 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="graph">Graph Preview</TabsTrigger>
-          <TabsTrigger value="runs">
-            Test Runs
-            {test.runCount > 0 && (
-              <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
-                {test.runCount}
-              </span>
-            )}
-          </TabsTrigger>
           <TabsTrigger value="sharing">Sharing</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Status Card */}
+            {/* Configuration Status Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Status</CardTitle>
+                <CardTitle className="text-base">Configuration</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Current Status</span>
-                    <TestStatusBadge status={test.status} />
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    <Badge variant={test.status === 'ready' ? 'default' : 'secondary'}>
+                      {test.status === 'ready' ? 'Finalized' : 'Draft'}
+                    </Badge>
                   </div>
-                  {test.startedAt && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Started</span>
-                      <span className="text-sm">{formatDateTime(test.startedAt)}</span>
-                    </div>
-                  )}
-                  {test.completedAt && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Completed</span>
-                      <span className="text-sm">{formatDateTime(test.completedAt)}</span>
-                    </div>
-                  )}
-                  {test.lastRunDate && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Last Run</span>
-                      <span className="text-sm">{formatDateTime(test.lastRunDate)}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Test Info Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Test Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Template</span>
                     <Badge variant="outline">
@@ -174,17 +129,38 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Last Updated</span>
+                    <span className="text-sm">{formatDate(test.updatedAt)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Test Information Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Test Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Test Number</span>
+                    <span className="text-sm font-medium">{test.testNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Created By</span>
                     <span className="text-sm">{test.createdByName}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Runs</span>
-                    <span className="text-sm font-medium">{test.runCount}</span>
+                    <span className="text-sm text-muted-foreground">Created</span>
+                    <span className="text-sm">{formatDate(test.createdAt)}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Last Updated</span>
-                    <span className="text-sm">{formatDate(test.updatedAt)}</span>
-                  </div>
+                  {test.config.startDateTime && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Scheduled</span>
+                      <span className="text-sm">{formatDateTime(test.config.startDateTime)}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -195,12 +171,6 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                 <CardTitle className="text-base">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                  <Link href={`/tests/${test.id}/runs`}>
-                    <PlayIcon className="mr-2 h-4 w-4" />
-                    View All Runs
-                  </Link>
-                </Button>
                 <EmulationExportDialog
                   testNumber={test.testNumber}
                   testName={test.name}
@@ -247,6 +217,92 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
               </CardContent>
             </Card>
           )}
+
+          {/* Comprehensive Test Parameters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Test Parameters</CardTitle>
+              <CardDescription>
+                Complete pressure test configuration and metadata
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+                <div>
+                  <div className="text-muted-foreground mb-1">Working Pressure</div>
+                  <div className="font-medium">
+                    {test.config.workingPressure} {test.config.pressureUnit || 'MPa'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground mb-1">Max Pressure</div>
+                  <div className="font-medium">
+                    {test.config.maxPressure} {test.config.pressureUnit || 'MPa'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground mb-1">Test Duration</div>
+                  <div className="font-medium">{test.config.testDuration} hours</div>
+                </div>
+                {test.config.temperature && (
+                  <div>
+                    <div className="text-muted-foreground mb-1">Temperature</div>
+                    <div className="font-medium">
+                      {test.config.temperature}°{test.config.temperatureUnit || 'C'}
+                    </div>
+                  </div>
+                )}
+                {test.config.allowablePressureDrop && (
+                  <div>
+                    <div className="text-muted-foreground mb-1">Allowable Pressure Drop</div>
+                    <div className="font-medium">
+                      {test.config.allowablePressureDrop} {test.config.pressureUnit || 'MPa'}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-muted-foreground mb-1">Intermediate Stages</div>
+                  <div className="font-medium">
+                    {test.config.intermediateStages?.length || 0}
+                  </div>
+                </div>
+                {test.config.equipmentId && (
+                  <div>
+                    <div className="text-muted-foreground mb-1">Equipment ID</div>
+                    <div className="font-medium">{test.config.equipmentId}</div>
+                  </div>
+                )}
+                {test.config.operatorName && (
+                  <div>
+                    <div className="text-muted-foreground mb-1">Operator</div>
+                    <div className="font-medium">{test.config.operatorName}</div>
+                  </div>
+                )}
+                {test.config.startDateTime && (
+                  <div>
+                    <div className="text-muted-foreground mb-1">Start Date/Time</div>
+                    <div className="font-medium">
+                      {formatDateTime(test.config.startDateTime)}
+                    </div>
+                  </div>
+                )}
+                {test.config.endDateTime && (
+                  <div>
+                    <div className="text-muted-foreground mb-1">End Date/Time</div>
+                    <div className="font-medium">
+                      {formatDateTime(test.config.endDateTime)}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {test.config.notes && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="text-muted-foreground text-xs mb-2">Notes</div>
+                  <p className="text-sm whitespace-pre-wrap">{test.config.notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Configuration Tab */}
@@ -290,48 +346,6 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                 startDateTime={test.config.startDateTime || undefined}
                 endDateTime={test.config.endDateTime || undefined}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Test Runs Tab */}
-        <TabsContent value="runs">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Runs</CardTitle>
-              <CardDescription>
-                Execution history and results
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {test.runCount === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <PlayIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-lg font-medium">No test runs yet</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Run this test to see execution history
-                  </p>
-                  {test.status === 'ready' && (
-                    <Button className="mt-4" asChild>
-                      <Link href={`/tests/${test.id}/run` as any}>
-                        <PlayIcon className="mr-2 h-4 w-4" />
-                        Run Test Now
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    This test has been executed {test.runCount} time{test.runCount !== 1 ? 's' : ''}.
-                  </p>
-                  <Button asChild>
-                    <Link href={`/tests/${test.id}/runs`}>
-                      View All Runs
-                    </Link>
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

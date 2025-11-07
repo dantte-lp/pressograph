@@ -9,6 +9,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Inter Font Typography** - Applied professional Inter font throughout all graph components
+  - Configured Inter with Latin and Cyrillic subset support in root layout
+  - Applied to all chart elements: title, subtitle, axis labels, tooltips
+  - Consistent font family: `'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'`
+  - Improved readability for both English and Russian text
+  - Components updated:
+    - `pressure-test-preview.tsx` - Preview graphs
+    - `echarts-export-dialog.tsx` - Export functionality
+    - `a4-preview-graph.tsx` - A4 landscape graphs
+  - Professional appearance for all exported and displayed graphs
+
+- **Configurable Data Placement in Exports** - Advanced metadata display options for graph exports
+  - Added data placement selector with 4 options:
+    - **Below Title**: Display metadata as subtitle below graph title
+    - **Below Graph**: Display between graph area and bottom edge (annotations)
+    - **On Graph**: Overlay box on top-left of graph area with shadow
+    - **Do Not Display**: Hide all test metadata for clean exports
+  - Added field selection checkboxes for granular control:
+    - Test Number (default: enabled)
+    - Date (default: enabled)
+    - Pressure | Temperature (default: enabled)
+    - Equipment ID (default: disabled)
+    - Operator Name (default: disabled)
+  - Smart formatting:
+    - Horizontal separator for below title/graph placements
+    - Vertical newline separator for overlay placement
+    - Compact display with minimal visual intrusion
+  - Dynamic grid adjustment to accommodate below placement
+  - Implemented using ECharts graphic elements for precise positioning
+  - Component: `echarts-export-dialog.tsx`
+
+- **Simplified Export Titles** - Clean, professional export naming
+  - Changed from verbose `"${testName} - Pressure Profile"` to `"Test №${testNumber}"`
+  - Falls back to test name if number unavailable
+  - Cleaner appearance for professional reports
+  - Matches user requirements for minimal, focused titles
+
+- **Comprehensive Test Information Display** - Enhanced test detail page
+  - Replaced "Status" card with "Configuration Status" showing Draft/Finalized
+  - Added detailed "Test Information" card with key metadata
+  - New "Test Parameters" section displaying all configuration fields:
+    - Working Pressure, Max Pressure, Test Duration
+    - Temperature, Allowable Pressure Drop
+    - Intermediate Stages count
+    - Equipment ID, Operator Name
+    - Start/End Date/Time (when scheduled)
+    - Configuration notes
+  - Responsive 3-column grid layout (1 column on mobile, 2 on tablet, 3 on desktop)
+  - Better organization of test metadata for quick reference
+  - Component: `src/app/(dashboard)/tests/[id]/page.tsx`
+
 - **Automatic Time Scale Adaptation** - Intelligent X-axis formatting that adapts based on zoom level
   - Wide view (>48h): Shows daily marks with 6h minor ticks
   - Medium view (6-48h): Shows hourly marks with 10min minor ticks

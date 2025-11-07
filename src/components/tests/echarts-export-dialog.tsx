@@ -24,7 +24,7 @@
  * @see /docs/ECHARTS_BEST_PRACTICES.md - Export/Image Generation section
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Download, FileImage, Settings2, ChevronDown } from 'lucide-react';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -68,7 +68,6 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
@@ -182,13 +181,68 @@ export function EChartsExportDialog({
   const [enableDrift, setEnableDrift] = useState(false);
   const [enableCanvasStyle, setEnableCanvasStyle] = useState(false);
 
+  // Data placement and field selection options
+  const [dataPlacement, setDataPlacement] = useState<'title' | 'below' | 'overlay' | 'none'>('below');
+  const [dataFields, setDataFields] = useState({
+    testNumber: true,
+    date: true,
+    pressureTemp: true,
+    equipmentId: false,
+    operatorName: false,
+  });
+
   // Collapsible sections state (all open by default)
   const [qualityOpen, setQualityOpen] = useState(true);
   const [optionsOpen, setOptionsOpen] = useState(true);
+  const [dataDisplayOpen, setDataDisplayOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(true);
 
   // Sanitize test duration
   const sanitizedDuration = config.testDuration > 0 ? config.testDuration : 24;
+
+  /**
+   * Generate compact data display text based on selected fields and placement
+   *
+   * @param separator - Separator between fields (default: '  •  ')
+   * @returns Formatted text string with selected metadata fields
+   */
+  const generateCompactDataText = (separator: string = '  •  '): string => {
+    const parts: string[] = [];
+    const pressureUnit = config.pressureUnit || 'MPa';
+    const temperatureUnit = config.temperatureUnit || 'C';
+
+    if (dataFields.testNumber && testNumber) {
+      parts.push(`Test №${testNumber}`);
+    }
+
+    if (dataFields.date && config.startDateTime) {
+      const date = new Date(config.startDateTime);
+      const dateStr = date.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      parts.push(`Date: ${dateStr}`);
+    }
+
+    if (dataFields.pressureTemp && config.workingPressure) {
+      let pressureTempStr = `Working: ${config.workingPressure} ${pressureUnit}`;
+      if (config.temperature) {
+        pressureTempStr += ` | Temp: ${config.temperature}°${temperatureUnit}`;
+      }
+      parts.push(pressureTempStr);
+    }
+
+    if (dataFields.equipmentId && config.equipmentId) {
+      parts.push(`Equipment: ${config.equipmentId}`);
+    }
+
+    if (dataFields.operatorName && config.operatorName) {
+      parts.push(`Operator: ${config.operatorName}`);
+    }
+
+    return parts.join(separator);
+  };
 
   /**
    * Generate pressure profile data points dynamically
@@ -380,31 +434,102 @@ export function EChartsExportDialog({
       // Generate profile data dynamically based on drift setting
       const profileData = generateProfileData(enableDrift);
 
+      // Generate data text if placement is not 'none'
+      const dataText = dataPlacement !== 'none' ? generateCompactDataText() : '';
+
       // Step 4: Apply chart options at export resolution
-      let exportOption = {
+      let exportOption: any = {
         backgroundColor: '#ffffff', // White background for professional output
         title: {
-          text: `${testName} - Pressure Profile`,
+          text: testNumber ? `Test №${testNumber}` : testName || 'Pressure Test',
           left: 'center',
           top: 20,
           textStyle: {
             fontSize: 18,
             fontWeight: 600,
             color: '#1f2937',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
-          subtext: `Test ${testNumber} | Duration: ${sanitizedDuration}h | ${config.workingPressure}-${config.maxPressure} ${pressureUnit}`,
-          subtextStyle: {
-            fontSize: 12,
-            color: '#6b7280',
-          },
+          // Add subtitle if placement is 'title'
+          ...(dataPlacement === 'title' && dataText
+            ? {
+                subtext: dataText,
+                subtextStyle: {
+                  fontSize: 11,
+                  color: '#6b7280',
+                  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                },
+              }
+            : {}),
         },
         grid: {
           left: '10%',
           right: '8%',
-          bottom: '15%',
+          bottom: dataPlacement === 'below' && dataText ? '20%' : '15%', // Extra space for below placement
           top: '20%',
           containLabel: true,
         },
+        // Add graphic elements for data display based on placement
+        ...(dataPlacement === 'below' && dataText
+          ? {
+              graphic: [
+                {
+                  type: 'text',
+                  left: 'center',
+                  bottom: '12%',
+                  style: {
+                    text: dataText,
+                    fontSize: 11,
+                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fill: '#6b7280',
+                    textAlign: 'center',
+                  },
+                },
+              ],
+            }
+          : dataPlacement === 'overlay' && dataText
+            ? {
+                graphic: [
+                  {
+                    type: 'group',
+                    left: 20,
+                    top: 80,
+                    children: [
+                      {
+                        type: 'rect',
+                        shape: {
+                          x: 0,
+                          y: 0,
+                          width: Math.max(200, dataText.length * 5),
+                          height: 60,
+                        },
+                        style: {
+                          fill: 'rgba(255, 255, 255, 0.95)',
+                          stroke: '#d1d5db',
+                          strokeWidth: 1,
+                          shadowBlur: 4,
+                          shadowColor: 'rgba(0, 0, 0, 0.1)',
+                          shadowOffsetX: 0,
+                          shadowOffsetY: 2,
+                        },
+                      },
+                      {
+                        type: 'text',
+                        left: 10,
+                        top: 15,
+                        style: {
+                          text: generateCompactDataText('\n'),
+                          fontSize: 11,
+                          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fill: '#374151',
+                          textAlign: 'left',
+                        },
+                      },
+                    ],
+                  },
+                ],
+              }
+            : {}),
         xAxis: {
           type: 'value' as const,
           name: useTimeBased ? 'Дата и время' : 'Время',
@@ -414,6 +539,7 @@ export function EChartsExportDialog({
             fontSize: 14,
             color: '#1f2937',
             fontWeight: 500,
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
           min: useTimeBased ? -paddingHours * 60 : 0,
           max: useTimeBased
@@ -452,6 +578,7 @@ export function EChartsExportDialog({
             fontSize: useTimeBased ? 10 : 12,
             color: '#4b5563',
             rotate: 0,
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
           axisLine: {
             show: true,
@@ -495,6 +622,7 @@ export function EChartsExportDialog({
             fontSize: 14,
             color: '#1f2937',
             fontWeight: 500,
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
           min: 0,
           max: Math.ceil((config.maxPressure * 1.1) / 5) * 5,
@@ -503,6 +631,7 @@ export function EChartsExportDialog({
             formatter: '{value}',
             fontSize: 12,
             color: '#4b5563',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
           axisLine: {
             lineStyle: {
@@ -918,6 +1047,141 @@ export function EChartsExportDialog({
                         Canvas: v1.0 visual styling.
                       </p>
                     </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* Data Display Section - Collapsible */}
+            <Collapsible open={dataDisplayOpen} onOpenChange={setDataDisplayOpen}>
+              <Card className="h-full">
+                <CardHeader className="pb-3">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between text-left hover:opacity-80 transition-opacity">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Settings2 className="h-4 w-4" />
+                      Data Display
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${dataDisplayOpen ? 'rotate-180' : ''}`} />
+                  </CollapsibleTrigger>
+                  <CardDescription className="text-xs">Configure test metadata display on graph</CardDescription>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    {/* Data Placement Selector */}
+                    <div className="space-y-2">
+                      <Label htmlFor="data-placement" className="text-sm">Data Placement</Label>
+                      <Select value={dataPlacement} onValueChange={(value: any) => setDataPlacement(value)}>
+                        <SelectTrigger id="data-placement" className="h-9">
+                          <SelectValue placeholder="Select placement" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="title">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Below Title</span>
+                              <span className="text-xs text-muted-foreground">
+                                Display as subtitle below graph title
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="below">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Below Graph</span>
+                              <span className="text-xs text-muted-foreground">
+                                Display between graph area and bottom edge
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="overlay">
+                            <div className="flex flex-col">
+                              <span className="font-medium">On Graph</span>
+                              <span className="text-xs text-muted-foreground">
+                                Overlay box on top-left of graph area
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="none">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Do Not Display</span>
+                              <span className="text-xs text-muted-foreground">
+                                Hide all test metadata
+                              </span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Data Fields Selection (only show if placement is not 'none') */}
+                    {dataPlacement !== 'none' && (
+                      <div className="space-y-2">
+                        <Label className="text-sm">Display Fields</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="field-testNumber"
+                              checked={dataFields.testNumber}
+                              onCheckedChange={(checked) =>
+                                setDataFields(prev => ({ ...prev, testNumber: !!checked }))
+                              }
+                            />
+                            <Label htmlFor="field-testNumber" className="text-sm font-normal cursor-pointer">
+                              Test Number
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="field-date"
+                              checked={dataFields.date}
+                              onCheckedChange={(checked) =>
+                                setDataFields(prev => ({ ...prev, date: !!checked }))
+                              }
+                            />
+                            <Label htmlFor="field-date" className="text-sm font-normal cursor-pointer">
+                              Date
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="field-pressureTemp"
+                              checked={dataFields.pressureTemp}
+                              onCheckedChange={(checked) =>
+                                setDataFields(prev => ({ ...prev, pressureTemp: !!checked }))
+                              }
+                            />
+                            <Label htmlFor="field-pressureTemp" className="text-sm font-normal cursor-pointer">
+                              Pressure | Temp
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="field-equipmentId"
+                              checked={dataFields.equipmentId}
+                              onCheckedChange={(checked) =>
+                                setDataFields(prev => ({ ...prev, equipmentId: !!checked }))
+                              }
+                            />
+                            <Label htmlFor="field-equipmentId" className="text-sm font-normal cursor-pointer">
+                              Equipment ID
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="field-operatorName"
+                              checked={dataFields.operatorName}
+                              onCheckedChange={(checked) =>
+                                setDataFields(prev => ({ ...prev, operatorName: !!checked }))
+                              }
+                            />
+                            <Label htmlFor="field-operatorName" className="text-sm font-normal cursor-pointer">
+                              Operator Name
+                            </Label>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Select which metadata fields to display on the exported graph
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </CollapsibleContent>
               </Card>
