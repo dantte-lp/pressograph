@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Test Editing - Complete Parity with Create Form** - Major refactor of test editing page to match create form functionality and fix multiple critical issues (Issues #6.2, #6.3, #7)
+  - **Issue 6.2 - Preview Tab Graph Rendering**: Replaced `PressureTestPreviewEnhanced` with standard `PressureTestPreview` component
+    - Edit page now uses the same graph component and preview dialog as create page
+    - Ensures consistent visualization across create and edit workflows
+    - Fixed graph rendering discrepancies and missing features
+  - **Issue 6.3 - Missing Parameters Configuration**: Added complete parameter configuration to Parameters tab
+    - Temperature field with unit selector (°C/°F) - previously missing temperature unit
+    - Test Schedule section (Start/End Date & Time) - previously missing entirely
+    - Equipment & Operator section (Equipment ID, Operator Name, Notes) - previously missing entirely
+    - All fields now match create form exactly
+  - **Issue 6.1 - Data Transformation Fix**: Removed incorrect data transformation logic
+    - Changed test duration from minutes back to hours (matching database structure)
+    - Fixed intermediate stages field names to match database: `time`, `pressure`, `duration`
+    - Removed incorrect transformation: `duration→time`, `targetPressure→pressure`, `holdDuration→duration`
+    - Form now directly matches database structure (no transformation needed)
+  - **Issue 7 - Export Emulation Graph**: Fixed intermediate stages calculation in emulated data generator
+    - Changed `stage.time` from absolute to relative time (minutes after previous stage ends)
+    - Fixed calculation to use `currentTime + stage.time` instead of `startDateTime + stage.time`
+    - Export emulation graphs now correctly render intermediate stages
+  - **Graph Component Consistency**: Both create and edit pages now use identical graph components
+    - `PressureTestPreview` - Main preview component with ECharts
+    - `PreviewDialog` - Full-screen preview modal
+    - Consistent props and data structure across all pages
+  - **Stages Tab Improvements**: Updated to use table layout matching create form
+    - Shows stage number, time (min), pressure, hold (min)
+    - Displays cumulative time for better understanding
+    - Empty state message for better UX
+    - Proper validation and error messages
+  - Tested with test ID: `5ccdd3d3-96f0-49b2-9a7f-788215714632`
+
 - **Test Editing - Intermediate Stages Data Transformation** - Fixed critical bugs in test editing page where intermediate stage fields appeared empty and graph preview rendered incorrectly
   - **Root Cause**: Mismatch between database structure and form structure
     - Database: `{ time, duration, pressure }`

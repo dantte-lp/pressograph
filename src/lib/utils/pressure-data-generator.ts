@@ -169,13 +169,13 @@ export function generateEmulatedTestData(
 
   // Phase 2: Hold at working pressure with intermediate stages
   if (intermediateStages && intermediateStages.length > 0) {
-    // Sort stages by time
-    const sortedStages = [...intermediateStages].sort((a, b) => a.time - b.time);
+    // Process stages in order (they should already be in the correct sequence)
+    // stage.time is RELATIVE minutes after the previous stage's hold ends
+    for (const stage of intermediateStages) {
+      // Calculate stage start time: current time + relative wait time
+      const stageStartTime = new Date(currentTime.getTime() + stage.time * 60 * 1000);
 
-    for (const stage of sortedStages) {
-      const stageStartTime = new Date(startDateTime.getTime() + stage.time * 60 * 1000);
-
-      // Hold current pressure until stage starts
+      // Hold current pressure until stage starts (if wait time > 0)
       if (stageStartTime.getTime() > currentTime.getTime()) {
         const holdDuration = stageStartTime.getTime() - currentTime.getTime();
         const holdPointsCount = Math.max(5, Math.floor(holdDuration / (60 * 1000))); // At least 5 points
@@ -201,7 +201,7 @@ export function generateEmulatedTestData(
       );
       points.push(...stageRisePoints.slice(1));
 
-      // Hold at stage pressure
+      // Hold at stage pressure for specified duration
       const stageHoldEnd = new Date(stageRiseEnd.getTime() + stage.duration * 60 * 1000);
       const stageHoldPoints = generateIntermediatePoints(
         stageRiseEnd,
@@ -212,6 +212,8 @@ export function generateEmulatedTestData(
       );
       points.push(...stageHoldPoints.slice(1));
 
+      // Update current time and pressure for next iteration
+      // Next stage's time is relative to THIS stage's hold end
       currentTime = stageHoldEnd;
       currentPressure = stage.pressure;
     }

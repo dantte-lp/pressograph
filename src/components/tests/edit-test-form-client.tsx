@@ -22,9 +22,16 @@ import { FormError } from '@/components/ui/form-error';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { updateTest } from '@/lib/actions/tests';
-import { PressureTestPreviewEnhanced } from './pressure-test-preview-enhanced';
+import { PressureTestPreview } from './pressure-test-preview';
+import { PreviewDialog } from './preview-dialog';
 
-// Validation schema for test form
+// Validation schema for test form (matches create form schema)
+const intermediateStageSchema = z.object({
+  time: z.number().min(0, 'Time must be positive'), // Minutes after previous stage
+  pressure: z.number().min(0, 'Pressure must be positive'), // Target pressure
+  duration: z.number().min(0, 'Duration must be positive'), // Hold duration in minutes
+});
+
 const testSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   description: z.string().optional(),
@@ -32,19 +39,29 @@ const testSchema = z.object({
   templateType: z.enum(['daily', 'extended', 'custom']),
   workingPressure: z.number().min(0.1, 'Working pressure must be positive'),
   maxPressure: z.number().min(0.1, 'Max pressure must be positive'),
-  testDuration: z.number().min(1, 'Duration must be at least 1 minute'),
-  temperature: z.number().optional(),
+  testDuration: z.number().min(0.1, 'Duration must be at least 0.1 hours'),
+  temperature: z.number(),
   allowablePressureDrop: z.number().min(0, 'Allowable drop must be non-negative'),
   pressureUnit: z.enum(['MPa', 'Bar', 'PSI']),
-  intermediateStages: z.array(
-    z.object({
-      duration: z.number().min(1, 'Duration must be positive'),
-      targetPressure: z.number().min(0.1, 'Pressure must be positive'),
-      holdDuration: z.number().min(0, 'Hold duration must be non-negative'),
-    })
-  ).optional(),
+  temperatureUnit: z.enum(['C', 'F']).default('C'),
+  equipmentId: z.string().optional(),
+  operatorName: z.string().optional(),
+  notes: z.string().optional(),
+  startDateTime: z.string().optional(),
+  endDateTime: z.string().optional(),
+  intermediateStages: z.array(intermediateStageSchema).default([]),
   tags: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    return data.intermediateStages.every(
+      (stage) => stage.pressure >= data.workingPressure
+    );
+  },
+  {
+    message: 'Intermediate stage pressure cannot be below working pressure',
+    path: ['intermediateStages'],
+  }
+);
 
 type TestFormData = z.infer<typeof testSchema>;
 
@@ -64,6 +81,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
     watch,
     control,
     setValue,
+    trigger,
   } = useForm<TestFormData>({
     resolver: zodResolver(testSchema),
     defaultValues: {
@@ -73,17 +91,23 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
       templateType: test.templateType || 'custom',
       workingPressure: test.config.workingPressure,
       maxPressure: test.config.maxPressure,
-      testDuration: test.config.testDuration * 60, // Convert hours to minutes for edit form
-      temperature: test.config.temperature,
+      testDuration: test.config.testDuration, // Keep in hours (not minutes)
+      temperature: test.config.temperature || 20,
       allowablePressureDrop: test.config.allowablePressureDrop,
       pressureUnit: test.config.pressureUnit || 'MPa',
-      // Transform database structure to form structure
-      // Database: { time, duration, pressure }
-      // Form: { duration, targetPressure, holdDuration }
+      temperatureUnit: test.config.temperatureUnit || 'C',
+      equipmentId: test.config.equipmentId || '',
+      operatorName: test.config.operatorName || '',
+      notes: test.config.notes || '',
+      startDateTime: test.config.startDateTime || '',
+      endDateTime: test.config.endDateTime || '',
+      // Keep database structure as-is (no transformation needed)
+      // Database: { time, pressure, duration }
+      // Form: { time, pressure, duration }
       intermediateStages: (test.config.intermediateStages || []).map((stage: any) => ({
-        duration: stage.time || 0, // time from DB becomes duration (time to reach stage)
-        targetPressure: stage.pressure || 0, // pressure from DB becomes targetPressure
-        holdDuration: stage.duration || 0, // duration from DB becomes holdDuration (time to hold at stage)
+        time: stage.time || 0,
+        pressure: stage.pressure || 0,
+        duration: stage.duration || 0,
       })),
       tags: test.tags?.join(', ') || '',
     },
@@ -105,16 +129,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           ? data.tags.split(',').map((t) => t.trim()).filter(Boolean)
           : [];
 
-        // Prepare update payload
-        // Transform form structure back to database structure
-        // Form: { duration, targetPressure, holdDuration }
-        // Database: { time, duration, pressure }
-        const transformedStages = (data.intermediateStages || []).map((stage) => ({
-          time: stage.duration, // duration from form becomes time (time to reach stage)
-          pressure: stage.targetPressure, // targetPressure from form becomes pressure
-          duration: stage.holdDuration, // holdDuration from form becomes duration (time to hold at stage)
-        }));
-
+        // Prepare update payload (no transformation needed - form matches DB structure)
         const updatePayload = {
           name: data.name,
           description: data.description,
@@ -123,11 +138,17 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           config: {
             workingPressure: data.workingPressure,
             maxPressure: data.maxPressure,
-            testDuration: data.testDuration / 60, // Convert minutes back to hours for database
+            testDuration: data.testDuration, // Already in hours
             temperature: data.temperature,
             allowablePressureDrop: data.allowablePressureDrop,
             pressureUnit: data.pressureUnit,
-            intermediateStages: transformedStages,
+            temperatureUnit: data.temperatureUnit,
+            equipmentId: data.equipmentId,
+            operatorName: data.operatorName,
+            notes: data.notes,
+            startDateTime: data.startDateTime || undefined,
+            endDateTime: data.endDateTime || undefined,
+            intermediateStages: data.intermediateStages, // Already in correct format
           },
           tags,
         };
@@ -301,11 +322,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                 <div className="grid gap-3 md:grid-cols-2">
                 {/* Test Duration */}
                 <div className="space-y-2">
-                  <Label htmlFor="testDuration">Test Duration (minutes) *</Label>
+                  <Label htmlFor="testDuration">Test Duration (hours) *</Label>
                   <Input
                     id="testDuration"
                     type="number"
-                    step="1"
+                    step="0.1"
                     {...register('testDuration', { valueAsNumber: true })}
                     aria-invalid={!!errors.testDuration}
                   />
@@ -314,15 +335,104 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
                 {/* Temperature */}
                 <div className="space-y-2">
-                  <Label htmlFor="temperature">Temperature (°C)</Label>
-                  <Input
-                    id="temperature"
-                    type="number"
-                    step="0.1"
-                    {...register('temperature', { valueAsNumber: true })}
-                    placeholder="Optional"
-                  />
+                  <Label htmlFor="temperature">Temperature *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="temperature"
+                      type="number"
+                      step="0.1"
+                      {...register('temperature', { valueAsNumber: true })}
+                      aria-invalid={!!errors.temperature}
+                    />
+                    <Select
+                      value={formValues.temperatureUnit || 'C'}
+                      onValueChange={(value) => setValue('temperatureUnit', value as any)}
+                    >
+                      <SelectTrigger className="w-16">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="C">°C</SelectItem>
+                        <SelectItem value="F">°F</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  {errors.temperature && <FormError error={errors.temperature.message} />}
+                </div>
+              </div>
+              </CardContent>
+            </Card>
+
+            {/* Test Schedule */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Test Schedule (Optional)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDateTime">Start Date & Time</Label>
+                    <Input
+                      id="startDateTime"
+                      type="datetime-local"
+                      {...register('startDateTime')}
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When the test should begin
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endDateTime">End Date & Time</Label>
+                    <Input
+                      id="endDateTime"
+                      type="datetime-local"
+                      {...register('endDateTime')}
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When the test should end
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Equipment and Operator */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Equipment & Operator (Optional)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="equipmentId">Equipment ID</Label>
+                    <Input
+                      id="equipmentId"
+                      placeholder="e.g., PUMP-001"
+                      {...register('equipmentId')}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="operatorName">Operator Name</Label>
+                    <Input
+                      id="operatorName"
+                      placeholder="e.g., John Doe"
+                      {...register('operatorName')}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Additional notes"
+                    rows={3}
+                    {...register('notes')}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -332,22 +442,33 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           <div>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Live Preview</CardTitle>
-                <CardDescription className="text-xs">
-                  Real-time visualization of test configuration
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm">Live Preview</CardTitle>
+                    <CardDescription className="text-xs">
+                      Real-time visualization of test configuration
+                    </CardDescription>
+                  </div>
+                  <PreviewDialog
+                    workingPressure={formValues.workingPressure ?? 10}
+                    maxPressure={formValues.maxPressure ?? 15}
+                    testDuration={formValues.testDuration ?? 24}
+                    intermediateStages={formValues.intermediateStages ?? []}
+                    pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                    startDateTime={formValues.startDateTime}
+                    endDateTime={formValues.endDateTime}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
-                <PressureTestPreviewEnhanced
+                <PressureTestPreview
                   workingPressure={formValues.workingPressure ?? 10}
                   maxPressure={formValues.maxPressure ?? 15}
-                  testDuration={(formValues.testDuration ?? 1440) / 60}
-                  intermediateStages={(formValues.intermediateStages ?? []).map(stage => ({
-                    time: stage.duration ?? 0,
-                    pressure: stage.targetPressure ?? 0,
-                    duration: stage.holdDuration ?? 0
-                  }))}
+                  testDuration={formValues.testDuration ?? 24}
+                  intermediateStages={formValues.intermediateStages ?? []}
                   pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                  startDateTime={formValues.startDateTime || undefined}
+                  endDateTime={formValues.endDateTime || undefined}
                 />
               </CardContent>
             </Card>
@@ -361,76 +482,107 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             <CardHeader>
               <CardTitle className="text-base">Intermediate Stages</CardTitle>
               <CardDescription>
-                Optional pressure stages before reaching working pressure
+                Add optional pressure steps during the test
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="grid gap-4 md:grid-cols-4 items-end p-4 border rounded-lg"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor={`intermediateStages.${index}.duration`}>
-                      Duration (min)
-                    </Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      {...register(`intermediateStages.${index}.duration` as const, {
-                        valueAsNumber: true,
-                      })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`intermediateStages.${index}.targetPressure`}>
-                      Target Pressure
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register(`intermediateStages.${index}.targetPressure` as const, {
-                        valueAsNumber: true,
-                      })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`intermediateStages.${index}.holdDuration`}>
-                      Hold (min)
-                    </Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      {...register(`intermediateStages.${index}.holdDuration` as const, {
-                        valueAsNumber: true,
-                      })}
-                    />
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => remove(index)}
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
+              {fields.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No intermediate stages added yet.</p>
+                  <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-2">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border rounded-lg">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">#</th>
+                          <th className="px-3 py-2 text-left font-medium" title="Minutes AFTER previous stage's hold duration ends">
+                            Time (min)
+                          </th>
+                          <th className="px-3 py-2 text-left font-medium">Pressure ({formValues.pressureUnit ?? 'MPa'})</th>
+                          <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
+                          <th className="px-3 py-2 text-center font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fields.map((field, index) => (
+                          <tr key={field.id} className="border-t hover:bg-muted/30">
+                            <td className="px-3 py-2 font-medium">{index + 1}</td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="0"
+                                className="h-8 w-20 text-xs"
+                                {...register(`intermediateStages.${index}.time` as const, {
+                                  valueAsNumber: true,
+                                })}
+                                title="Minutes AFTER previous stage's hold duration ends"
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="0.0"
+                                className="h-8 w-20 text-xs"
+                                {...register(`intermediateStages.${index}.pressure` as const, {
+                                  valueAsNumber: true,
+                                })}
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="0"
+                                className="h-8 w-20 text-xs"
+                                {...register(`intermediateStages.${index}.duration` as const, {
+                                  valueAsNumber: true,
+                                })}
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => remove(index)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <TrashIcon className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
+                    <span>Total Stages: {fields.length}</span>
+                  </div>
+                </div>
+              )}
 
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  append({ duration: 60, targetPressure: 5, holdDuration: 30 })
+                  append({ time: 0, pressure: 0, duration: 0 })
                 }
+                className="w-full"
               >
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Add Stage
               </Button>
+
+              {errors.intermediateStages && (
+                <FormError error={errors.intermediateStages.message || 'Invalid intermediate stages configuration'} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -439,22 +591,33 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
         <TabsContent value="preview" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Graph Preview</CardTitle>
-              <CardDescription>
-                Visual representation of the test configuration
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Graph Preview</CardTitle>
+                  <CardDescription>
+                    Complete pressure test profile visualization
+                  </CardDescription>
+                </div>
+                <PreviewDialog
+                  workingPressure={formValues.workingPressure ?? 10}
+                  maxPressure={formValues.maxPressure ?? 15}
+                  testDuration={formValues.testDuration ?? 24}
+                  intermediateStages={formValues.intermediateStages ?? []}
+                  pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                  startDateTime={formValues.startDateTime}
+                  endDateTime={formValues.endDateTime}
+                />
+              </div>
             </CardHeader>
             <CardContent>
-              <PressureTestPreviewEnhanced
+              <PressureTestPreview
                 workingPressure={formValues.workingPressure ?? 10}
                 maxPressure={formValues.maxPressure ?? 15}
-                testDuration={(formValues.testDuration ?? 1440) / 60}
-                intermediateStages={(formValues.intermediateStages ?? []).map(stage => ({
-                  time: stage.duration ?? 0,
-                  pressure: stage.targetPressure ?? 0,
-                  duration: stage.holdDuration ?? 0
-                }))}
+                testDuration={formValues.testDuration ?? 24}
+                intermediateStages={formValues.intermediateStages ?? []}
                 pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                startDateTime={formValues.startDateTime || undefined}
+                endDateTime={formValues.endDateTime || undefined}
               />
             </CardContent>
           </Card>
