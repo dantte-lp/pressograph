@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Automatic Time Scale Adaptation** - Intelligent X-axis formatting that adapts based on zoom level
+  - Wide view (>48h): Shows daily marks with 6h minor ticks
+  - Medium view (6-48h): Shows hourly marks with 10min minor ticks
+  - Close view (<6h): Shows 15-30 minute marks with 5-10min minor ticks
+  - Smooth transitions between scales for optimal readability
+  - Maintains minor tick visibility at all zoom levels
+  - Implemented in both preview and A4 landscape graphs
+  - Inspired by ECharts area-time-axis example
+
 - **Interactive Zoom Controls for All Graphs** - Implemented ECharts dataZoom functionality across all graph components
   - Added slider-based dataZoom at bottom of charts for X-axis zooming
   - Implemented mouse wheel zoom at cursor position
@@ -27,6 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Impact: Enhanced user experience for detailed graph analysis and exploration
 
 ### Removed
+
+- **Time Scale Zoom Feature** - Removed Time Scale Zoom dropdown and presets
+  - Removed timeScale and timeWindow props from graph components
+  - Removed Time Scale Zoom UI from export dialog
+  - Removed imports and usage of time-zoom utility functions
+  - Kept utility file at `src/lib/utils/time-zoom.ts` for potential future use
+  - Users can now rely on interactive dataZoom slider for all zoom operations
+  - Replaced by automatic time scale adaptation based on zoom level
 
 - **Test Runs Functionality** - Completely removed test execution/running features
   - Removed all test run pages and components (`/tests/[id]/runs`, `/tests/[id]/run`)
@@ -48,6 +65,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Modified: Database schema, relations, dashboard statistics, test detail pages
 
 ### Fixed
+
+- **Chart Layout and Visual Styling** - Comprehensive improvements to graph appearance
+  - Dark theme now properly re-initializes chart when switching themes
+  - Zoom slider correctly positioned below X-axis labels with proper spacing
+  - Moved slider from bottom: 80 to bottom: 10 for correct visual hierarchy
+  - Increased grid bottom margin from 20% to 25% to accommodate slider
+  - Changed containLabel to true to properly include axis labels in grid
+  - Removed gradient area fill, replaced with solid semi-transparent color
+  - Changed from linear gradient to solid `rgba(59, 130, 246, 0.15)`
+  - Matches original v1.0 design aesthetic
+
+- **Export X-Axis Time Formatting** - Correct time display in exported graphs
+  - Export now respects Test Schedule configuration
+  - When startDateTime/endDateTime set: Shows actual dates and times (e.g., "03.11.2025\n14:00")
+  - When NOT set: Shows duration format (e.g., "0h", "1h", "2h")
+  - Fixed issue where exports always showed "0, 1h, 2h" regardless of schedule
+  - CRITICAL: Set axisLabel.show to true explicitly for export rendering
+  - Both PNG and PDF exports now display correct time information
+
+### Fixed (Previous)
 
 - **CRITICAL: Export Graph Data Binding** - Export now uses actual database test data (Issue #104)
   - Fixed export to dynamically generate pressure profile data from database configuration
