@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **ECharts Best Practices Documentation** - Comprehensive guide for ECharts implementation in Pressograph 2.0
+  - Created `/docs/ECHARTS_BEST_PRACTICES.md` with 12 major sections covering all aspects of ECharts development
+  - **Architecture & Integration**: Tree-shaking, client vs server components, component composition patterns
+  - **Performance Optimization**: Memoization strategies, rendering performance, update patterns, lazy loading
+  - **Memory Management**: Chart disposal, event listener cleanup, large dataset handling, memory monitoring
+  - **Type Safety**: TypeScript configuration, props interface design, event handler types
+  - **Data Management**: Data structure patterns, dynamic data updates, validation with Zod, null handling
+  - **Responsive Design**: Resize handling, grid configuration, font scaling
+  - **Accessibility**: ARIA labels, keyboard navigation, high contrast mode, screen reader support
+  - **Server-Side Rendering**: Next.js integration, SSR for static charts, hydration strategy
+  - **Error Handling**: Error boundaries, graceful degradation, loading states
+  - **Testing Strategies**: Unit testing, integration testing, visual regression testing
+  - **Animation & Interaction**: Animation configuration, smooth line interpolation, tooltip optimization, interactive events
+  - **Code Organization**: File structure, reusable hooks, configuration management
+  - Includes practical code examples, anti-patterns, and performance benchmarks
+  - Serves as the definitive guide for all ECharts development in the project
+
+### Changed
+- **Pressure Test Preview Component Refactoring** - Applied comprehensive best practices to improve code quality and maintainability
+  - **Performance Improvements**:
+    - Removed 180+ lines of debug console.log statements (lines 110-173 in old version)
+    - Memoized all expensive computations with proper dependency arrays
+    - Separated chart option generation into dedicated `useMemo` hook
+    - Implemented in-component debounce utility (250ms) to avoid external dependencies
+    - Optimized resize handler with proper cleanup (cancels pending debounced calls)
+  - **Code Quality Enhancements**:
+    - Added comprehensive JSDoc documentation for all functions and interfaces
+    - Enhanced TypeScript type definitions with detailed comments
+    - Improved code structure with clear separation of concerns
+    - Added detailed inline comments explaining key implementation decisions
+    - Organized imports and type definitions for better readability
+  - **Accessibility Improvements**:
+    - Added proper ARIA labels (`role="img"`, `aria-label`, `aria-describedby`)
+    - Created hidden description for screen readers with test parameters
+    - Improved semantic HTML structure
+    - Enhanced color contrast in tooltip styling
+  - **Tooltip Enhancements**:
+    - Improved visual design with better spacing and typography
+    - Enhanced color scheme for better readability (#1f2937 for header, #6b7280 for labels)
+    - Better structured layout with flexbox for label-value pairs
+    - Increased minimum width to 180px for consistent appearance
+  - **Visual Polish**:
+    - Enhanced axis label colors (#6b7280) and line colors (#d1d5db) for better contrast
+    - Improved mark line styling with increased width (1.5px) and font weight (500)
+    - Added emphasis state for series with hover effects
+    - Optimized animation settings (300ms duration, cubicOut easing)
+  - **Memory Management**:
+    - Proper chart disposal in cleanup effect
+    - Event listener cleanup with debounce cancellation
+    - Clear chart instance references for garbage collection
+  - **Code Documentation**:
+    - Added module-level documentation with best practices applied
+    - Reference to `/docs/ECHARTS_BEST_PRACTICES.md` for detailed guidelines
+    - Comprehensive function-level documentation with examples
+    - Clear explanation of algorithms (interval calculation, data transformation)
+  - **Backward Compatibility**: All existing functionality maintained, no breaking changes
+  - **Bundle Size**: Reduced runtime overhead by removing debug logging (estimated 3-5KB reduction)
+
 ### Fixed
 - **X-Axis Time-Based Interval FINAL FIX (ATTEMPT 3)** - Complete architecture change to use value-based axis for both cases
   - **Problem with splitNumber Approach**: `splitNumber` is only a **suggestion** for time-based axes

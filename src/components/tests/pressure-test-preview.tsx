@@ -1,6 +1,26 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+/**
+ * Pressure Test Preview Component
+ *
+ * Displays a real-time graph preview of the pressure test profile using ECharts.
+ * Shows pressure over time with intermediate stages and reference lines.
+ *
+ * @module components/tests/pressure-test-preview
+ *
+ * Best Practices Applied:
+ * - Tree-shaking: Imports only required ECharts components
+ * - Type Safety: Full TypeScript coverage with ComposeOption
+ * - Performance: Memoized data transformations and chart options
+ * - Memory: Proper disposal and event listener cleanup
+ * - Accessibility: ARIA labels and screen reader support
+ * - Responsive: Debounced resize handling
+ * - Error Handling: Graceful degradation for invalid data
+ *
+ * @see /docs/ECHARTS_BEST_PRACTICES.md
+ */
+
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -20,7 +40,7 @@ import type {
   LegendComponentOption,
 } from 'echarts/components';
 
-// Register ECharts components
+// Register ECharts components (tree-shaking optimization)
 echarts.use([
   LineChart,
   TitleComponent,
@@ -31,6 +51,7 @@ echarts.use([
   CanvasRenderer,
 ]);
 
+// Type-safe chart option composition
 type ECOption = ComposeOption<
   | LineSeriesOption
   | TitleComponentOption
@@ -39,28 +60,103 @@ type ECOption = ComposeOption<
   | LegendComponentOption
 >;
 
+/**
+ * Represents an intermediate pressure stage in the test profile
+ */
 interface IntermediateStage {
-  time: number; // MINUTES AFTER previous stage's hold ends (relative time)
+  /** Minutes after previous stage's hold ends (relative time) */
+  time: number;
+  /** Target pressure for this stage */
   pressure: number;
-  duration: number; // minutes
+  /** Duration to hold at this pressure (minutes) */
+  duration: number;
 }
 
+/**
+ * Props for the PressureTestPreview component
+ */
 interface PressureTestPreviewProps {
+  /** Working (baseline) pressure for the test */
   workingPressure: number;
+  /** Maximum pressure limit */
   maxPressure: number;
-  testDuration: number; // hours
+  /** Total test duration in hours */
+  testDuration: number;
+  /** Optional intermediate pressure stages */
   intermediateStages?: IntermediateStage[];
+  /** Unit of measurement for pressure display */
   pressureUnit?: 'MPa' | 'Bar' | 'PSI';
+  /** Optional CSS class name for styling */
   className?: string;
-  startDateTime?: string; // ISO 8601 format
-  endDateTime?: string; // ISO 8601 format
+  /** ISO 8601 format start date/time (enables time-based axis) */
+  startDateTime?: string;
+  /** ISO 8601 format end date/time (enables time-based axis) */
+  endDateTime?: string;
+}
+
+/**
+ * Data point in [x, y] format for ECharts
+ */
+type ChartDataPoint = [number, number];
+
+/**
+ * Processed chart data structure
+ */
+interface ProcessedChartData {
+  dataPoints: ChartDataPoint[];
+  timeLabels: string[];
+}
+
+/**
+ * Utility function to debounce callback execution
+ * Prevents excessive calls during rapid events (e.g., window resize)
+ *
+ * @param func - Function to debounce
+ * @param wait - Delay in milliseconds
+ * @returns Debounced function with cancel method
+ */
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): T & { cancel: () => void } {
+  let timeout: NodeJS.Timeout | null = null;
+
+  const debounced = (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+
+  debounced.cancel = () => {
+    if (timeout) clearTimeout(timeout);
+  };
+
+  return debounced as T & { cancel: () => void };
 }
 
 /**
  * PressureTestPreview Component
  *
- * Displays a real-time graph preview of the pressure test profile using ECharts.
- * Shows pressure over time with intermediate stages and reference lines.
+ * Renders an interactive line chart showing pressure variations over time during a test.
+ * Supports both duration-based (hours) and calendar-based (date/time) X-axis displays.
+ *
+ * Performance Optimizations:
+ * - Memoized data calculations
+ * - Memoized chart options
+ * - Debounced resize handler
+ * - Canvas renderer for better performance with line charts
+ *
+ * @example
+ * ```tsx
+ * <PressureTestPreview
+ *   workingPressure={10}
+ *   maxPressure={15}
+ *   testDuration={24}
+ *   pressureUnit="MPa"
+ *   intermediateStages={[
+ *     { time: 1, pressure: 12, duration: 30 }
+ *   ]}
+ * />
+ * ```
  */
 export function PressureTestPreview({
   workingPressure,
@@ -72,91 +168,78 @@ export function PressureTestPreview({
   startDateTime,
   endDateTime,
 }: PressureTestPreviewProps) {
+  // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
 
-  // Sanitize testDuration - ensure it's a valid positive number
-  // Defaults to 24 hours if invalid (prevents division by zero or negative intervals)
-  const sanitizedDuration = typeof testDuration === 'number' && testDuration > 0 ? testDuration : 24;
+  // Data validation: Sanitize testDuration to prevent division by zero or negative intervals
+  // Defaults to 24 hours if invalid
+  const sanitizedDuration = useMemo(() => {
+    return typeof testDuration === 'number' && testDuration > 0 ? testDuration : 24;
+  }, [testDuration]);
 
-  // Determine if we're using time-based axis
-  const useTimeBased = Boolean(startDateTime && endDateTime);
-  const startTime = useTimeBased ? new Date(startDateTime!).getTime() : 0;
-  const endTime = useTimeBased ? new Date(endDateTime!).getTime() : sanitizedDuration * 60;
+  // Determine display mode: time-based (calendar) vs value-based (duration)
+  const useTimeBased = useMemo(() => {
+    return Boolean(startDateTime && endDateTime);
+  }, [startDateTime, endDateTime]);
 
-  // Add 1 hour padding (±1 hour) for time-based axis
-  const paddingMs = 60 * 60 * 1000; // 1 hour in milliseconds
-  const paddingHours = 2; // Total padding: +1 hour before and +1 hour after
-  const xAxisMin = useTimeBased ? startTime - paddingMs : 0;
-  const xAxisMax = useTimeBased ? endTime + paddingMs : sanitizedDuration * 60;
+  // Calculate time bounds for the chart
+  const { startTime, endTime, paddingMs, paddingHours } = useMemo(() => {
+    const start = useTimeBased && startDateTime ? new Date(startDateTime).getTime() : 0;
+    const end = useTimeBased && endDateTime
+      ? new Date(endDateTime).getTime()
+      : sanitizedDuration * 60;
+
+    // Add 1 hour padding (±1 hour) for time-based axis to show context
+    const padding = 60 * 60 * 1000; // 1 hour in milliseconds
+    const hours = 2; // Total padding: +1 hour before and +1 hour after
+
+    return {
+      startTime: start,
+      endTime: end,
+      paddingMs: padding,
+      paddingHours: hours,
+    };
+  }, [useTimeBased, startDateTime, endDateTime, sanitizedDuration]);
 
   /**
    * Calculate optimal X-axis interval based on display range
    *
-   * Algorithm: Aims for 8-15 tick marks on the axis for optimal readability
-   * Uses common interval values: 1h, 2h, 3h, 4h, 6h, 12h, 24h
-   * Prefers smaller intervals when multiple options are valid (better granularity)
+   * Algorithm:
+   * - Aims for 8-15 tick marks on the axis for optimal readability
+   * - Uses common interval values: 1h, 2h, 3h, 4h, 6h, 12h, 24h
+   * - Prefers smaller intervals when multiple options are valid (better granularity)
    *
    * @param displayHours - Total hours displayed on axis
    * @returns Interval in minutes
    */
-  const calculateXAxisInterval = (displayHours: number): number => {
+  const calculateXAxisInterval = useCallback((displayHours: number): number => {
     // Target tick count: aim for 10-12 ticks (comfortable range: 8-15)
     const targetTicks = 10;
 
     // Common interval values in hours (ordered from smallest to largest)
     const commonIntervals = [1, 2, 3, 4, 6, 12, 24];
 
-    // TODO: Remove debug logging after X-axis interval issue is resolved
-    // Expected behavior for 24h test (26h total with padding):
-    //   - 1h → 26 ticks (too many)
-    //   - 2h → 13 ticks (✓ VALID)
-    //   - 3h → 8.67 ticks (✓ VALID)
-    //   - 4h+ → too few ticks
-    //   - Should select 2h (smallest valid interval)
-    console.log(`[X-Axis Interval] Display hours: ${displayHours.toFixed(2)}`);
-
     // Find all intervals that provide 8-15 ticks
-    const validIntervals: Array<{ interval: number; tickCount: number; diff: number }> = [];
+    const validIntervals: Array<{ interval: number; tickCount: number }> = [];
 
     for (const interval of commonIntervals) {
       const tickCount = displayHours / interval;
-      const isValid = tickCount >= 8 && tickCount <= 15;
-
-      console.log(
-        `Testing ${interval}h interval: ${tickCount.toFixed(2)} ticks ` +
-        `(valid range: 8-15) ${isValid ? '✓ VALID' : '✗ invalid'}`
-      );
 
       // Check if tick count is in acceptable range (8-15 ticks)
-      if (isValid) {
-        const diff = Math.abs(tickCount - targetTicks);
-        validIntervals.push({ interval, tickCount, diff });
+      if (tickCount >= 8 && tickCount <= 15) {
+        validIntervals.push({ interval, tickCount });
       }
     }
 
     // If we have valid intervals, prefer smaller ones (better granularity)
     if (validIntervals.length > 0) {
-      console.log(`Found ${validIntervals.length} valid intervals:`, validIntervals);
-
       // Sort by interval size (prefer smaller for better granularity)
-      // This ensures 2h is chosen over 3h when both are valid
-      validIntervals.sort((a, b) => {
-        // Both intervals are already validated to be in 8-15 tick range
-        // Prefer smaller interval for better granularity and readability
-        return a.interval - b.interval;
-      });
-
-      const selected = validIntervals[0];
-      console.log(`Selected interval: ${selected.interval}h (${selected.tickCount.toFixed(2)} ticks)`);
-      console.log(`Returning: ${selected.interval * 60} minutes`);
-
-      return selected.interval * 60; // Convert hours to minutes
+      validIntervals.sort((a, b) => a.interval - b.interval);
+      return validIntervals[0].interval * 60; // Convert hours to minutes
     }
 
-    // If no interval gives 8-15 ticks, find the one closest to target
-    console.log('No valid intervals found. Finding closest to target...');
-
+    // Fallback: If no interval gives 8-15 ticks, find the one closest to target
     let bestInterval = commonIntervals[0];
     let bestDiff = Infinity;
 
@@ -169,38 +252,44 @@ export function PressureTestPreview({
       }
     }
 
-    console.log(`Fallback: Selected ${bestInterval}h interval (closest to target)`);
-    console.log(`Returning: ${bestInterval * 60} minutes`);
-
     return bestInterval * 60; // Convert hours to minutes
-  };
+  }, []);
 
   // Calculate display range in hours
   // Time-based axis: includes ±1 hour padding (total: duration + 2 hours)
   // Value-based axis: no padding (total: duration only)
-  const totalDisplayHours = useTimeBased ? sanitizedDuration + paddingHours : sanitizedDuration;
+  const totalDisplayHours = useMemo(() => {
+    return useTimeBased ? sanitizedDuration + paddingHours : sanitizedDuration;
+  }, [useTimeBased, sanitizedDuration, paddingHours]);
 
-  // Memoize the calculated interval to avoid excessive console logging on re-renders
+  // Memoize the calculated interval to avoid excessive recalculations
   const xAxisInterval = useMemo(() => {
     return calculateXAxisInterval(totalDisplayHours);
-  }, [totalDisplayHours]);
+  }, [calculateXAxisInterval, totalDisplayHours]);
 
-  // Calculate pressure profile data points
-  const profileData = useMemo(() => {
+  /**
+   * Calculate pressure profile data points
+   *
+   * Generates the complete pressure curve including:
+   * - Initial ramp-up (30 seconds)
+   * - Intermediate stages with holds
+   * - Final depressurization (30 seconds)
+   * - Optional padding points for time-based display
+   *
+   * @returns Processed chart data with points and labels
+   */
+  const profileData = useMemo((): ProcessedChartData => {
     const totalMinutes = sanitizedDuration * 60;
-    const rampUpDuration = 0.5; // 30 seconds to ramp up (matching v1)
-    const depressurizeDuration = 0.5; // 30 seconds to depressurize (matching v1)
+    const rampUpDuration = 0.5; // 30 seconds to ramp up
+    const depressurizeDuration = 0.5; // 30 seconds to depressurize
 
-    const dataPoints: [number, number][] = [];
+    const dataPoints: ChartDataPoint[] = [];
     const timeLabels: string[] = [];
 
-    // ALWAYS use minutes for X-axis (value-based approach)
-    // This gives us full control over intervals regardless of date selection
-    const minutesToX = (minutes: number): number => {
-      return minutes;
-    };
+    // Helper: Convert minutes to X-axis value (always use minutes for full control)
+    const minutesToX = (minutes: number): number => minutes;
 
-    // Helper to format time
+    // Helper: Format time for display
     const formatTime = (minutes: number): string => {
       if (minutes === 0) return '0';
       if (minutes < 60) return `${Math.round(minutes)}m`;
@@ -209,8 +298,8 @@ export function PressureTestPreview({
       return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     };
 
-    // If using time-based display with padding, add a point at the start of padding
-    // This prevents a vertical line from appearing at time 0
+    // Add padding point at start for time-based display
+    // Prevents vertical line from appearing at time 0
     if (useTimeBased) {
       dataPoints.push([minutesToX(-paddingHours * 60), 0]);
       timeLabels.push(`-${paddingHours}h`);
@@ -230,7 +319,6 @@ export function PressureTestPreview({
     if (intermediateStages && intermediateStages.length > 0) {
       intermediateStages.forEach((stage) => {
         // Calculate cumulative time for this stage
-        // stage.time = minutes AFTER previous stage's hold ends
         currentTime += stage.time; // Add wait time after previous stage
         const stageStartMinutes = currentTime;
 
@@ -238,7 +326,7 @@ export function PressureTestPreview({
         dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
         timeLabels.push(formatTime(stageStartMinutes));
 
-        // Hold at stage pressure for specified duration (minutes)
+        // Hold at stage pressure for specified duration
         const stageEndMinutes = stageStartMinutes + stage.duration;
         if (stageEndMinutes < totalMinutes - depressurizeDuration) {
           dataPoints.push([minutesToX(stageEndMinutes), stage.pressure]);
@@ -266,31 +354,31 @@ export function PressureTestPreview({
     dataPoints.push([minutesToX(totalMinutes), 0]);
     timeLabels.push(formatTime(totalMinutes));
 
-    // If using time-based display with padding, add a point at the end of padding
-    // This ensures the line continues to the end of the axis
+    // Add padding point at end for time-based display
+    // Ensures the line continues to the end of the axis
     if (useTimeBased) {
       dataPoints.push([minutesToX(totalMinutes + paddingHours * 60), 0]);
       timeLabels.push(`+${paddingHours}h`);
     }
 
     return { dataPoints, timeLabels };
-  }, [workingPressure, sanitizedDuration, intermediateStages, useTimeBased, startTime]);
+  }, [
+    workingPressure,
+    sanitizedDuration,
+    intermediateStages,
+    useTimeBased,
+    paddingHours,
+  ]);
 
-  // Initialize and update chart
-  useEffect(() => {
-    if (!chartRef.current) return;
-
-    // Initialize chart if not exists
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current, undefined, {
-        renderer: 'canvas',
-      });
-    }
-
-    const chart = chartInstance.current;
-
-    // Configure chart options (Russian labels matching export)
-    const option: ECOption = {
+  /**
+   * Generate complete ECharts configuration
+   *
+   * Memoized to prevent unnecessary recalculations on re-renders.
+   * Includes all chart styling, axes configuration, and data series.
+   */
+  const chartOption = useMemo((): ECOption => {
+    return {
+      // Chart title (Russian labels for consistency with export)
       title: {
         text: 'Предварительный просмотр испытания',
         left: 'center',
@@ -299,8 +387,18 @@ export function PressureTestPreview({
           fontWeight: 600,
         },
       },
+
+      // Interactive tooltip
       tooltip: {
         trigger: 'axis',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#ddd',
+        borderWidth: 1,
+        padding: 12,
+        textStyle: {
+          color: '#333',
+          fontSize: 13,
+        },
         formatter: (params: any) => {
           const point = params[0];
           let minutes: number;
@@ -314,40 +412,54 @@ export function PressureTestPreview({
           }
 
           const pressure = point.data[1];
-
           const hours = Math.floor(minutes / 60);
           const mins = Math.round(minutes % 60);
-          const timeStr = hours > 0
-            ? `${hours}h ${mins}m`
-            : `${mins}m`;
+          const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 
           return `
-            <div style="padding: 4px;">
-              <strong>Time:</strong> ${timeStr}<br/>
-              <strong>Pressure:</strong> ${pressure.toFixed(2)} ${pressureUnit}
+            <div style="min-width: 180px;">
+              <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">
+                ${timeStr}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #6b7280;">Pressure:</span>
+                <span style="font-weight: 600; color: #3b82f6; margin-left: 16px;">
+                  ${pressure.toFixed(2)} ${pressureUnit}
+                </span>
+              </div>
             </div>
           `;
         },
       },
+
+      // Legend (disabled to avoid series name mismatch errors)
       legend: {
-        show: false, // Disabled to avoid series name mismatch errors
+        show: false,
       },
+
+      // Grid configuration for chart positioning
       grid: {
         left: '12%',
         right: '8%',
         bottom: '18%',
         top: '22%',
+        containLabel: false,
       },
+
+      // X-axis configuration
       xAxis: {
-        type: 'value',
+        type: 'value', // Value-based for full interval control
         name: useTimeBased ? 'Дата и время' : 'Время',
         nameLocation: 'middle',
         nameGap: 25,
         nameTextStyle: {
           fontSize: 11,
+          color: '#4b5563',
         },
-        min: useTimeBased ? -paddingHours * 60 : 0, // With padding for time-based
-        max: useTimeBased ? (sanitizedDuration + paddingHours) * 60 : sanitizedDuration * 60,
+        min: useTimeBased ? -paddingHours * 60 : 0,
+        max: useTimeBased
+          ? (sanitizedDuration + paddingHours) * 60
+          : sanitizedDuration * 60,
         interval: xAxisInterval,
         minInterval: xAxisInterval,
         maxInterval: xAxisInterval,
@@ -357,8 +469,14 @@ export function PressureTestPreview({
               // Convert minutes offset to actual date/time
               const timestamp = startTime + value * 60 * 1000;
               const date = new Date(timestamp);
-              const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-              const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+              const dateStr = date.toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+              });
+              const timeStr = date.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
               return `${dateStr}\n${timeStr}`;
             } else {
               // Show duration format
@@ -372,6 +490,12 @@ export function PressureTestPreview({
           },
           fontSize: useTimeBased ? 9 : 10,
           rotate: 0,
+          color: '#6b7280',
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#d1d5db',
+          },
         },
         splitLine: {
           show: true,
@@ -381,6 +505,8 @@ export function PressureTestPreview({
           },
         },
       },
+
+      // Y-axis configuration
       yAxis: {
         type: 'value',
         name: `Давление, ${pressureUnit}`,
@@ -388,13 +514,20 @@ export function PressureTestPreview({
         nameGap: 35,
         nameTextStyle: {
           fontSize: 11,
+          color: '#4b5563',
         },
         min: 0,
-        max: Math.ceil(maxPressure * 1.1 / 5) * 5, // Round up to nearest 5 MPa
-        interval: 5, // Show grid lines every 5 MPa
+        max: Math.ceil((maxPressure * 1.1) / 5) * 5, // Round up to nearest 5
+        interval: 5, // Show grid lines every 5 units
         axisLabel: {
           formatter: '{value}',
           fontSize: 10,
+          color: '#6b7280',
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#d1d5db',
+          },
         },
         splitLine: {
           show: true,
@@ -404,12 +537,17 @@ export function PressureTestPreview({
           },
         },
       },
+
+      // Data series configuration
       series: [
         {
           name: 'Pressure Profile',
           type: 'line',
           data: profileData.dataPoints,
-          smooth: false,
+          smooth: false, // Sharp transitions for pressure stages
+          symbol: 'circle',
+          symbolSize: 4,
+          showSymbol: false, // Hide symbols by default
           lineStyle: {
             width: 2,
             color: '#3b82f6',
@@ -417,6 +555,7 @@ export function PressureTestPreview({
           itemStyle: {
             color: '#3b82f6',
           },
+          // Area fill with gradient
           areaStyle: {
             color: {
               type: 'linear',
@@ -430,6 +569,18 @@ export function PressureTestPreview({
               ],
             },
           },
+          // Emphasis (hover) state
+          emphasis: {
+            focus: 'series',
+            itemStyle: {
+              borderColor: '#3b82f6',
+              borderWidth: 2,
+            },
+            lineStyle: {
+              width: 3,
+            },
+          },
+          // Reference lines for working and max pressure
           markLine: {
             silent: true,
             symbol: 'none',
@@ -448,10 +599,12 @@ export function PressureTestPreview({
                 lineStyle: {
                   color: '#10b981',
                   type: 'dashed',
+                  width: 1.5,
                 },
                 label: {
                   formatter: `Working: ${workingPressure} ${pressureUnit}`,
                   color: '#10b981',
+                  fontWeight: 500,
                 },
               },
               {
@@ -460,79 +613,127 @@ export function PressureTestPreview({
                 lineStyle: {
                   color: '#ef4444',
                   type: 'dashed',
+                  width: 1.5,
                 },
                 label: {
                   formatter: `Max: ${maxPressure} ${pressureUnit}`,
                   color: '#ef4444',
+                  fontWeight: 500,
                 },
               },
             ],
           },
         },
       ],
+
+      // Animation configuration (optimized for performance)
+      animation: true,
+      animationDuration: 300,
+      animationEasing: 'cubicOut',
     };
+  }, [
+    profileData,
+    workingPressure,
+    maxPressure,
+    pressureUnit,
+    useTimeBased,
+    startTime,
+    sanitizedDuration,
+    paddingHours,
+    xAxisInterval,
+  ]);
 
-    // TODO: Remove debug logging after X-axis interval issue is resolved
-    // This logging shows EXACTLY what values are being passed to ECharts configuration
-    console.log(`[ECharts Config] useTimeBased: ${useTimeBased}`);
-    console.log(`[ECharts Config] xAxisInterval: ${xAxisInterval} minutes`);
+  /**
+   * Initialize chart and handle updates
+   *
+   * Effect manages chart lifecycle:
+   * - Initializes chart on mount
+   * - Updates chart when options change
+   * - Sets up resize handler
+   * - Cleans up on unmount
+   */
+  useEffect(() => {
+    if (!chartRef.current) return;
 
-    if (useTimeBased) {
-      const minMinutes = -paddingHours * 60;
-      const maxMinutes = (sanitizedDuration + paddingHours) * 60;
-      console.log(`[ECharts Config] Value-based axis with time formatting`);
-      console.log(`[ECharts Config] interval: ${xAxisInterval}, minInterval: ${xAxisInterval}, maxInterval: ${xAxisInterval}`);
-      console.log(`[ECharts Config] min: ${minMinutes} minutes, max: ${maxMinutes} minutes`);
-      console.log(`[ECharts Config] Display range: ${maxMinutes - minMinutes} minutes (${(maxMinutes - minMinutes) / 60} hours)`);
-      console.log(`[ECharts Config] Start time: ${new Date(startTime).toLocaleString('ru-RU')}`);
-    } else {
-      console.log(`[ECharts Config] Value-based axis with duration formatting`);
-      console.log(`[ECharts Config] interval: ${xAxisInterval}, minInterval: ${xAxisInterval}, maxInterval: ${xAxisInterval}`);
-      console.log(`[ECharts Config] min: 0, max: ${sanitizedDuration * 60} minutes`);
-      console.log(`[ECharts Config] Display range: ${sanitizedDuration} hours`);
+    // Initialize chart instance if not exists
+    if (!chartInstance.current) {
+      chartInstance.current = echarts.init(chartRef.current, undefined, {
+        renderer: 'canvas', // Canvas renderer for better performance
+        locale: 'RU', // Russian locale for consistency
+      });
     }
 
-    // Log the EXACT xAxis configuration being passed to ECharts
-    console.log('[ECharts Config] Full xAxis configuration:', JSON.stringify(option.xAxis, null, 2));
+    const chart = chartInstance.current;
 
-    chart.setOption(option, { notMerge: true });
+    // Update chart with new options
+    // notMerge: true ensures complete replacement for clean updates
+    chart.setOption(chartOption, { notMerge: true });
 
-    // Handle resize
-    const handleResize = () => {
+    // Debounced resize handler (250ms delay)
+    const handleResize = debounce(() => {
       chart?.resize();
-    };
+    }, 250);
 
     window.addEventListener('resize', handleResize);
 
+    // Cleanup function
     return () => {
+      handleResize.cancel(); // Cancel pending debounced calls
       window.removeEventListener('resize', handleResize);
     };
-  }, [workingPressure, maxPressure, sanitizedDuration, intermediateStages, pressureUnit, profileData, useTimeBased, startTime, endTime, xAxisMin, xAxisMax]);
+  }, [chartOption]);
 
-  // Cleanup on unmount
+  /**
+   * Cleanup on unmount
+   *
+   * Critical for memory management:
+   * - Disposes chart instance to free memory
+   * - Clears reference to allow garbage collection
+   */
   useEffect(() => {
     return () => {
-      chartInstance.current?.dispose();
-      chartInstance.current = null;
+      if (chartInstance.current) {
+        chartInstance.current.dispose();
+        chartInstance.current = null;
+      }
     };
   }, []);
 
+  // Render chart with accessibility features
   return (
     <div className={`w-full ${className}`}>
+      {/* Chart container with ARIA labels for accessibility */}
       <div
         ref={chartRef}
+        role="img"
+        aria-label={`Pressure test graph from ${useTimeBased ? new Date(startTime).toLocaleDateString('ru-RU') : '0'} showing pressure variations over ${sanitizedDuration} hours`}
+        aria-describedby="pressure-chart-description"
         className="w-full"
         style={{ height: '400px', minHeight: '300px' }}
       />
+
+      {/* Screen reader description */}
+      <div id="pressure-chart-description" className="sr-only">
+        Line chart displaying pressure measurements during a {sanitizedDuration}-hour test.
+        Working pressure: {workingPressure} {pressureUnit}.
+        Maximum pressure: {maxPressure} {pressureUnit}.
+        {intermediateStages.length > 0 &&
+          ` Includes ${intermediateStages.length} intermediate pressure stage${intermediateStages.length > 1 ? 's' : ''}.`}
+      </div>
+
       {/* Parameters Summary */}
       <div className="mt-3 p-3 bg-muted/50 rounded-lg text-xs space-y-1">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Working Pressure:</span>
-          <span className="font-medium">{workingPressure} {pressureUnit}</span>
+          <span className="font-medium">
+            {workingPressure} {pressureUnit}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Max Pressure:</span>
-          <span className="font-medium">{maxPressure} {pressureUnit}</span>
+          <span className="font-medium">
+            {maxPressure} {pressureUnit}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Test Duration:</span>
