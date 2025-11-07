@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Full-Screen A4 Preview with Button Group** - Enhanced test preview functionality with professional A4 format support
+  - **Button Group UI:** Replaced single "Full Screen" button with professional button group
+    - Left button: "Full Screen" - Opens maximized dialog
+    - Right button: "New Window" - Opens in separate browser window
+    - Uses shadcn/ui button styling with proper borders and grouping
+    - Clean, intuitive interface following modern design patterns
+  - **Full-Screen Dialog Improvements:**
+    - Dialog now truly full screen (width AND height maximized)
+    - Uses `w-screen h-screen` instead of previous `w-[98vw] h-[95vh]`
+    - A4 container (210mm × 297mm) centered within full-screen space
+    - Proper aspect ratio: 1:1.414 (A4 portrait format)
+    - White background with shadow for print preview appearance
+    - 20mm padding inside A4 container for professional margins
+    - ESC key support for quick closing
+  - **Component Updates:**
+    - Added `temperatureUnit` prop to `PreviewDialog` component
+    - Updated all three instances in `create-test-form.tsx` to pass temperature unit
+    - Button group properly styled with rounded corners and borders
+  - Files modified:
+    - `/src/components/tests/preview-dialog.tsx` - Complete rewrite with button group
+    - `/src/components/tests/create-test-form.tsx` - Added temperatureUnit prop passing
+  - References: Feature 6.1
+
+- **A4 Print Preview Page with 30-Minute Intervals** - Dedicated printable page for professional test reports
+  - **New Route:** `/tests/preview` - Standalone A4 preview page
+  - **Critical Feature: 30-Minute X-Axis Intervals**
+    - Fixed interval of 30 minutes (0.5 hours) on X-axis
+    - Clear tick marks at each 30-minute point
+    - Time labels formatted as `H:MM` (e.g., 0:00, 0:30, 1:00, 1:30)
+    - Works for all test durations (1h, 24h, 48h, etc.)
+    - Professional appearance suitable for regulatory reports
+  - **A4 Format Specifications:**
+    - Dimensions: 210mm × 297mm (A4 portrait)
+    - Aspect ratio: 1:√2 (1:1.414)
+    - Screen equivalent: ~800px × 1131px
+    - 20mm margins for professional appearance
+  - **Print Optimization:**
+    - `@media print` styles for clean output
+    - Print controls hidden during printing
+    - High-resolution chart rendering
+    - White background for print-ready output
+    - Proper page breaks and sizing
+  - **Configuration Transfer:**
+    - Test config passed via base64-encoded URL parameter
+    - Avoids URL length issues with complex configurations
+    - Supports all test parameters (pressure, duration, stages, etc.)
+    - Opens in new window with A4 proportions (900px × 1273px)
+  - **User Experience:**
+    - Print button with Ctrl+P keyboard shortcut
+    - Close button for easy navigation
+    - Loading state with spinner
+    - Error handling with clear messages
+    - Print instructions for optimal results
+  - **Graph Component: A4PreviewGraph**
+    - Dedicated component for A4 format rendering
+    - 30-minute interval enforcement (mandatory requirement)
+    - Russian labels for consistency (`График испытания давлением`)
+    - Enhanced styling for print (thicker lines, larger fonts)
+    - Test parameters summary below graph
+    - Professional appearance with grid lines and reference lines
+  - Files created:
+    - `/src/app/(dashboard)/tests/preview/page.tsx` - Preview page route
+    - `/src/components/tests/a4-preview-graph.tsx` - A4 graph component
+  - Technical details:
+    - ECharts configuration with fixed `interval: 30` minutes
+    - `minInterval` and `maxInterval` set to enforce 30-minute spacing
+    - Canvas renderer for optimal print quality
+    - Animation disabled for print performance
+    - Proper cleanup and disposal
+  - References: Feature 6.2
+
 ### Fixed
 - **CRITICAL: Unified Graph Preview Across All Pages** - Fixed inconsistent graph rendering between detail, edit, and create pages
   - Root cause: Detail page used `PressureTestPreviewEnhanced` while edit/create pages used `PressureTestPreview`

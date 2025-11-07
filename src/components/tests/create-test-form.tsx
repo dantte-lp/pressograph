@@ -180,6 +180,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const maxPressure = watch('maxPressure');
   const testDuration = watch('testDuration');
   const pressureUnit = watch('pressureUnit') || 'MPa';
+  const temperatureUnit = watch('temperatureUnit') || 'C';
 
   // Debounce graph updates for better performance (300ms delay)
   // Use nullish coalescing (??) to allow 0 values while providing defaults for undefined/null
@@ -785,6 +786,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     testDuration={debouncedTestDuration}
                     intermediateStages={debouncedStages}
                     pressureUnit={pressureUnit}
+                    temperatureUnit={temperatureUnit}
                     startDateTime={startDateTime}
                     endDateTime={watch('endDateTime')}
                   />
@@ -963,6 +965,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     testDuration={debouncedTestDuration}
                     intermediateStages={debouncedStages}
                     pressureUnit={pressureUnit}
+                    temperatureUnit={temperatureUnit}
                     startDateTime={startDateTime}
                     endDateTime={watch('endDateTime')}
                   />
@@ -1115,6 +1118,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     testDuration={debouncedTestDuration}
                     intermediateStages={debouncedStages}
                     pressureUnit={pressureUnit}
+                    temperatureUnit={temperatureUnit}
                     startDateTime={startDateTime}
                     endDateTime={watch('endDateTime')}
                   />
