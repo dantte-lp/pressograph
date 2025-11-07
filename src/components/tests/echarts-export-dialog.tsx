@@ -36,6 +36,7 @@ import {
   MarkLineComponent,
   DataZoomComponent,
   ToolboxComponent,
+  GraphicComponent,
 } from 'echarts/components';
 import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 import type { ECharts, ComposeOption } from 'echarts/core';
@@ -77,6 +78,7 @@ import {
   generateRealisticTestData,
   convertToMinutes,
 } from '@/lib/utils/pressure-drift-simulator';
+import { sanitizeForSVG, createSVGBlob } from '@/lib/utils/svg-sanitization';
 
 // Register ECharts components for export (tree-shaking optimization)
 // Include both Canvas and SVG renderers for export flexibility
@@ -89,6 +91,7 @@ echarts.use([
   MarkLineComponent,
   DataZoomComponent,
   ToolboxComponent,
+  GraphicComponent,
   CanvasRenderer,
   SVGRenderer,
 ]);
@@ -438,10 +441,15 @@ export function EChartsExportDialog({
       const dataText = dataPlacement !== 'none' ? generateCompactDataText() : '';
 
       // Step 4: Apply chart options at export resolution
+      // CRITICAL: Sanitize all text for SVG export to prevent XML parsing errors
+      const sanitizedTestNumber = sanitizeForSVG(testNumber);
+      const sanitizedTestName = sanitizeForSVG(testName);
+      const sanitizedDataText = sanitizeForSVG(dataText);
+
       let exportOption: any = {
         backgroundColor: '#ffffff', // White background for professional output
         title: {
-          text: testNumber ? `Test №${testNumber}` : testName || 'Pressure Test',
+          text: sanitizedTestNumber ? `Test №${sanitizedTestNumber}` : sanitizedTestName || 'Pressure Test',
           left: 'center',
           top: 20,
           textStyle: {
@@ -451,9 +459,9 @@ export function EChartsExportDialog({
             fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
           // Add subtitle if placement is 'title'
-          ...(dataPlacement === 'title' && dataText
+          ...(dataPlacement === 'title' && sanitizedDataText
             ? {
-                subtext: dataText,
+                subtext: sanitizedDataText,
                 subtextStyle: {
                   fontSize: 11,
                   color: '#6b7280',
@@ -470,7 +478,7 @@ export function EChartsExportDialog({
           containLabel: true,
         },
         // Add graphic elements for data display based on placement
-        ...(dataPlacement === 'below' && dataText
+        ...(dataPlacement === 'below' && sanitizedDataText
           ? {
               graphic: [
                 {
@@ -478,7 +486,7 @@ export function EChartsExportDialog({
                   left: 'center',
                   bottom: '12%',
                   style: {
-                    text: dataText,
+                    text: sanitizedDataText,
                     fontSize: 11,
                     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     fill: '#6b7280',
@@ -487,7 +495,7 @@ export function EChartsExportDialog({
                 },
               ],
             }
-          : dataPlacement === 'overlay' && dataText
+          : dataPlacement === 'overlay' && sanitizedDataText
             ? {
                 graphic: [
                   {
@@ -500,7 +508,7 @@ export function EChartsExportDialog({
                         shape: {
                           x: 0,
                           y: 0,
-                          width: Math.max(200, dataText.length * 5),
+                          width: Math.max(200, sanitizedDataText.length * 5),
                           height: 60,
                         },
                         style: {
@@ -518,7 +526,7 @@ export function EChartsExportDialog({
                         left: 10,
                         top: 15,
                         style: {
-                          text: generateCompactDataText('\n'),
+                          text: sanitizeForSVG(generateCompactDataText('\n')),
                           fontSize: 11,
                           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                           fill: '#374151',
@@ -751,22 +759,32 @@ export function EChartsExportDialog({
           description: `${qualityPreset.label} export completed: ${exportWidth * pixelRatio}×${exportHeight * pixelRatio} pixels`,
         });
       } else if (exportFormat === 'SVG') {
-        // SVG export using renderToSVGString
-        const svgStr = exportChart.renderToSVGString();
-        const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
+        // SVG export using renderToSVGString with validation
+        try {
+          const svgStr = exportChart.renderToSVGString();
 
-        const link = document.createElement('a');
-        link.download = `${baseFilename}.svg`;
-        link.href = url;
-        link.click();
+          // Validate and create blob with error handling
+          const { url } = createSVGBlob(svgStr, baseFilename);
 
-        // Clean up blob URL
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+          const link = document.createElement('a');
+          link.download = `${baseFilename}.svg`;
+          link.href = url;
+          link.click();
 
-        toast.success('SVG Export Successful', {
-          description: `Vector graphics export completed: ${exportWidth}×${exportHeight} (scalable)`,
-        });
+          // Clean up blob URL
+          setTimeout(() => URL.revokeObjectURL(url), 100);
+
+          toast.success('SVG Export Successful', {
+            description: `Vector graphics export completed: ${exportWidth}×${exportHeight} (scalable)`,
+          });
+        } catch (svgError) {
+          console.error('SVG export failed:', svgError);
+          toast.error('SVG Export Failed', {
+            description: 'The SVG contains invalid XML. Please try PNG or PDF format instead.',
+            duration: 5000,
+          });
+          throw svgError; // Re-throw to trigger outer catch block
+        }
       } else if (exportFormat === 'PDF') {
         // PDF export using jsPDF
         const { jsPDF } = await import('jspdf');

@@ -160,6 +160,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CRITICAL: ECharts GraphicComponent Import** - Fixed missing GraphicComponent in ECharts registration
+  - Added `GraphicComponent` import from `echarts/components`
+  - Registered `GraphicComponent` in `echarts.use()` array
+  - Fixes console error: "[ECharts] Component graphic is used but not imported"
+  - Affected components:
+    - `/src/components/tests/echarts-export-dialog.tsx` - Export dialog with data placement overlays
+    - `/src/components/tests/pressure-test-preview.tsx` - Preview component with graphic elements
+  - Impact: Eliminates console warnings when using graphic elements for metadata display
+  - Required for proper rendering of overlay boxes and text annotations on graphs
+
+- **CRITICAL: SVG Export XML Validation** - Fixed malformed SVG exports with proper text sanitization
+  - Created comprehensive SVG sanitization utility (`/src/lib/utils/svg-sanitization.ts`) with:
+    - `sanitizeForSVG()` - Escapes XML special characters (&, <, >, ", ')
+    - `validateSVG()` - Validates SVG is well-formed XML using DOMParser
+    - `cleanSVGForExport()` - Validates and cleans SVG before export
+    - `createSVGBlob()` - Creates validated blob with proper error handling
+  - Applied sanitization to all text fields in export configuration:
+    - Test number, test name, data text (metadata display)
+    - Graphic element text content (overlay boxes)
+  - Added SVG validation with user-friendly error messages
+  - Suggests fallback to PNG/PDF if SVG export fails
+  - Fixes error: "attributes construct error" when opening exported SVG files
+  - Impact: All SVG exports now valid XML, opens correctly in browsers and vector editors
+  - Prevents issues with special characters in test names (quotes, ampersands, etc.)
+
 - **Chart Layout and Visual Styling** - Comprehensive improvements to graph appearance
   - Dark theme now properly re-initializes chart when switching themes
   - Zoom slider correctly positioned below X-axis labels with proper spacing

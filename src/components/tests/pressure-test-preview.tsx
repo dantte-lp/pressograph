@@ -32,6 +32,7 @@ import {
   MarkLineComponent,
   DataZoomComponent,
   ToolboxComponent,
+  GraphicComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { ECharts, ComposeOption } from 'echarts/core';
@@ -60,6 +61,7 @@ echarts.use([
   MarkLineComponent,
   DataZoomComponent,
   ToolboxComponent,
+  GraphicComponent,
   CanvasRenderer,
 ]);
 
