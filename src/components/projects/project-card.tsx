@@ -59,15 +59,31 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <Card className="group hover:shadow-md transition-shadow">
         <CardHeader>
           <div className="flex items-start justify-between">
-            <Link
-              href={`/projects/${project.id}`}
-              className="flex-1 min-w-0"
-            >
-              <CardTitle className="flex items-center gap-2 group-hover:text-primary transition-colors">
-                <FolderOpen className="h-5 w-5 flex-shrink-0" />
-                <span className="truncate">{project.name}</span>
-              </CardTitle>
-            </Link>
+            <div className="flex-1 min-w-0">
+              <Link
+                href={`/projects/${project.id}`}
+                className="block"
+              >
+                <CardTitle className="flex items-center gap-2 group-hover:text-primary transition-colors">
+                  <FolderOpen className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate">{project.name}</span>
+                </CardTitle>
+              </Link>
+
+              {/* Status Badge */}
+              <div className="mt-2">
+                {project.isArchived ? (
+                  <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
+                    <Archive className="mr-1 h-3 w-3" />
+                    Archived
+                  </Badge>
+                ) : (
+                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">
+                    Active
+                  </Badge>
+                )}
+              </div>
+            </div>
 
             {/* Actions Dropdown */}
             <DropdownMenu>
@@ -114,12 +130,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
         <CardContent>
           <div className="flex items-center gap-2">
-            {project.isArchived && (
-              <Badge variant="secondary">
-                <Archive className="mr-1 h-3 w-3" />
-                Archived
-              </Badge>
-            )}
             <Badge variant="outline">
               {project.settings?.testNumberPrefix || 'PT'}
             </Badge>
