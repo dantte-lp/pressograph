@@ -184,15 +184,15 @@ export function PressureTestPreview({
   }, [startDateTime, endDateTime]);
 
   // Calculate time bounds for the chart
-  const { startTime, paddingHours } = useMemo(() => {
+  const { startTime, endTime, paddingHours } = useMemo(() => {
     const start = useTimeBased && startDateTime ? new Date(startDateTime).getTime() : 0;
     const end = useTimeBased && endDateTime
       ? new Date(endDateTime).getTime()
-      : sanitizedDuration * 60;
+      : start + (sanitizedDuration * 60 * 60 * 1000);
 
     // Add 1 hour padding (±1 hour) for time-based axis to show context
     const padding = 60 * 60 * 1000; // 1 hour in milliseconds
-    const hours = 2; // Total padding: +1 hour before and +1 hour after
+    const hours = 1; // Padding hours for calculation: 1 hour before and 1 hour after
 
     return {
       startTime: start,
@@ -259,8 +259,13 @@ export function PressureTestPreview({
   // Time-based axis: includes ±1 hour padding (total: duration + 2 hours)
   // Value-based axis: no padding (total: duration only)
   const totalDisplayHours = useMemo(() => {
-    return useTimeBased ? sanitizedDuration + paddingHours : sanitizedDuration;
-  }, [useTimeBased, sanitizedDuration, paddingHours]);
+    if (useTimeBased && endTime && startTime) {
+      // Calculate actual duration from timestamps and add padding
+      const actualDurationHours = (endTime - startTime) / (60 * 60 * 1000);
+      return actualDurationHours + (paddingHours * 2); // Add both before and after padding
+    }
+    return sanitizedDuration;
+  }, [useTimeBased, startTime, endTime, sanitizedDuration, paddingHours]);
 
   // Memoize the calculated interval to avoid excessive recalculations
   const xAxisInterval = useMemo(() => {
@@ -458,7 +463,7 @@ export function PressureTestPreview({
         },
         min: useTimeBased ? -paddingHours * 60 : 0,
         max: useTimeBased
-          ? (sanitizedDuration + paddingHours) * 60
+          ? (endTime - startTime) / (60 * 1000) + paddingHours * 60 // Total range with padding
           : sanitizedDuration * 60,
         interval: xAxisInterval,
         minInterval: xAxisInterval,
@@ -549,6 +554,7 @@ export function PressureTestPreview({
           fontSize: 11,
           color: '#4b5563',
         },
+        position: 'left', // Explicitly position at left edge
         min: 0,
         max: Math.ceil((maxPressure * 1.1) / 5) * 5, // Round up to nearest 5
         interval: 5, // Show grid lines every 5 units
@@ -559,6 +565,7 @@ export function PressureTestPreview({
         },
         axisLine: {
           show: true,
+          onZero: false, // CRITICAL: Don't align to X-axis zero, align to chart left edge
           lineStyle: {
             color: '#d1d5db',
             width: 1.5,
