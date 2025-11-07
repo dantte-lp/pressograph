@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Successful Emulation Export Mode (#91, #92 - 577a84a2)** - Generate and export simulated pressure test graphs without running actual tests
+  - Emulated test data generator with realistic pressure curves and noise
+  - Support for multiple export formats: PNG, PDF, CSV, and JSON
+  - Proper watermarking and metadata to distinguish emulated from real data
+  - EmulationExportDialog component with format selection UI
+  - Integration into test detail page (Quick Actions and Graph Preview tab)
+  - Based on v1 graphGenerator.ts with modern TypeScript improvements
+  - Simulates complete test lifecycle: rise, hold, intermediate stages, and drop phases
+  - CSV export includes metadata headers and timestamp data
+  - PDF export includes graph image and full test configuration details
+  - JSON export provides structured data with complete metadata
+  - All exported files prefixed with "EMULATED" to prevent confusion
 - **Batch Operations on Tests (#98 - bac2044b)** - Multi-select and batch actions for test management
   - Checkbox selection for individual tests and select-all functionality
   - Batch delete with ownership verification and confirmation
