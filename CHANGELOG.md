@@ -9,13 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **4K/HD/8K Export Quality Selector** - Professional-grade export with configurable resolution
-  - Quality presets with effective resolutions:
-    - HD: 1920×1080 @ 2x (3840×2160 effective)
-    - 4K: 3840×2160 @ 2x (7680×4320 effective) - Default
-    - 8K: 7680×4320 @ 2x (15360×8640 effective)
+- **Collapsible Sections in Export Dialog** - Better organization with expandable sections
+  - Three collapsible sections:
+    - Export Quality - Resolution selector and pixel details
+    - Export Options - Reference line toggles and display settings
+    - Test Information - Test configuration and export details
+  - All sections open by default for convenience
+  - Smooth animations with chevron indicators
+  - Uses shadcn/ui Collapsible component
+  - Location: `/tests/[id]` - Export Graph (ECharts) dialog
+
+- **Export Quality Selector with Correct Resolution Standards** - Professional-grade export following display resolution standards
+  - Quality presets with correct resolution labels (per Wikipedia standards):
+    - HD+ (1600×900) - HD Plus, good for web display
+    - Full HD (1920×1080) - Full HD 1080p, standard quality (Default)
+    - Quad HD (2560×1440) - QHD 1440p, high quality
+    - 4K UHD (3840×2160) - 4K Ultra HD 2160p, professional quality
+  - All presets use 2x pixel ratio for high-quality output
   - Select dropdown in export dialog with resolution details
-  - Maintains A4 Landscape 16:9 aspect ratio
+  - Maintains 16:9 aspect ratio for all presets
   - Real-time display of selected resolution and effective pixels
   - Export toast shows quality preset label
   - Location: `/tests/[id]` - Export Graph (ECharts) dialog
@@ -53,7 +65,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `a4-preview-graph.tsx`
     - `echarts-export-dialog.tsx`
 
+### Changed
+
+- **Wider Export Dialog** - Improved content display with increased width
+  - Changed from default width to `max-w-3xl` (768px)
+  - Better space utilization for export settings and preview
+  - Maintains responsive behavior on smaller screens
+  - Location: `/tests/[id]` - Export Graph (ECharts) dialog
+
 ### Fixed
+
+- **Export Resolution Labels** - Corrected resolution terminology to match display standards
+  - Fixed: Removed incorrect "HD" label (was mislabeled as 1920×1080)
+  - Correct: HD+ (1600×900), Full HD (1920×1080), QHD (2560×1440), 4K UHD (3840×2160)
+  - Removed 8K preset (too large for most use cases)
+  - Reference: https://en.wikipedia.org/wiki/Display_resolution
+  - Location: `/tests/[id]` - Export Graph (ECharts) dialog
 
 - **CRITICAL: Y-Axis Positioning and Time Padding Consistency** - Fixed Y-axis alignment and time padding across all preview locations
   - **Problem**: Preview components in `/tests/new`, `/tests/[id]`, and `/tests/[id]/edit` had incorrect Y-axis positioning and missing time padding

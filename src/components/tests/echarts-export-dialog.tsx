@@ -25,7 +25,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Download, FileImage, Settings2 } from 'lucide-react';
+import { Download, FileImage, Settings2, ChevronDown } from 'lucide-react';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -64,6 +64,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 import { PressureTestPreview } from './pressure-test-preview';
@@ -98,29 +99,37 @@ interface IntermediateStage {
 }
 
 /**
- * Export quality presets
+ * Export quality presets with correct resolution standards
+ * @see https://en.wikipedia.org/wiki/Display_resolution
  */
 const EXPORT_QUALITY_PRESETS = {
-  HD: {
+  'HD+': {
+    width: 1600,
+    height: 900,
+    pixelRatio: 2,
+    label: 'HD+ (1600×900)',
+    description: 'HD Plus - Good for web display',
+  },
+  FHD: {
     width: 1920,
     height: 1080,
     pixelRatio: 2,
-    label: 'Full HD (1080p)',
-    description: '3840 × 2160 effective resolution',
+    label: 'Full HD (1920×1080)',
+    description: 'Full HD 1080p - Standard quality',
+  },
+  QHD: {
+    width: 2560,
+    height: 1440,
+    pixelRatio: 2,
+    label: 'Quad HD (2560×1440)',
+    description: 'QHD 1440p - High quality',
   },
   '4K': {
     width: 3840,
     height: 2160,
     pixelRatio: 2,
-    label: '4K UHD (2160p)',
-    description: '7680 × 4320 effective resolution',
-  },
-  '8K': {
-    width: 7680,
-    height: 4320,
-    pixelRatio: 2,
-    label: '8K UHD (4320p)',
-    description: '15360 × 8640 effective resolution',
+    label: '4K UHD (3840×2160)',
+    description: '4K Ultra HD 2160p - Professional quality',
   },
 } as const;
 
@@ -139,9 +148,14 @@ export function EChartsExportDialog({
 }: EChartsExportDialogProps) {
   const [open, setOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportQuality, setExportQuality] = useState<ExportQuality>('4K');
+  const [exportQuality, setExportQuality] = useState<ExportQuality>('FHD');
   const [showWorkingLine, setShowWorkingLine] = useState(true);
   const [showMaxLine, setShowMaxLine] = useState(true);
+
+  // Collapsible sections state (all open by default)
+  const [qualityOpen, setQualityOpen] = useState(true);
+  const [optionsOpen, setOptionsOpen] = useState(true);
+  const [infoOpen, setInfoOpen] = useState(true);
 
   // Sanitize test duration
   const sanitizedDuration = config.testDuration > 0 ? config.testDuration : 24;
@@ -424,7 +438,7 @@ export function EChartsExportDialog({
                         yAxis: config.workingPressure,
                         lineStyle: {
                           color: '#10b981',
-                          type: 'dashed',
+                          type: 'dashed' as const,
                           width: 2,
                         },
                         label: {
@@ -441,7 +455,7 @@ export function EChartsExportDialog({
                         yAxis: config.maxPressure,
                         lineStyle: {
                           color: '#ef4444',
-                          type: 'dashed',
+                          type: 'dashed' as const,
                           width: 2,
                         },
                         label: {
@@ -507,7 +521,7 @@ export function EChartsExportDialog({
           Export Graph (ECharts)
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Graph (ECharts High-Quality)</DialogTitle>
           <DialogDescription>
@@ -516,92 +530,127 @@ export function EChartsExportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
-          {/* Export Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4" />
-                Export Settings
-              </CardTitle>
-              <CardDescription>Configure export quality and display options</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Quality Selector */}
-              <div className="space-y-2">
-                <Label htmlFor="quality-select">Export Quality</Label>
-                <Select value={exportQuality} onValueChange={(value) => setExportQuality(value as ExportQuality)}>
-                  <SelectTrigger id="quality-select">
-                    <SelectValue placeholder="Select quality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HD">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{EXPORT_QUALITY_PRESETS.HD.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {EXPORT_QUALITY_PRESETS.HD.description}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="4K">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{EXPORT_QUALITY_PRESETS['4K'].label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {EXPORT_QUALITY_PRESETS['4K'].description}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="8K">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{EXPORT_QUALITY_PRESETS['8K'].label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {EXPORT_QUALITY_PRESETS['8K'].description}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Selected: {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height} @ {EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x
-                  ({EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} effective)
-                </p>
-              </div>
+        <div className="space-y-4 py-4">
+          {/* Export Quality Section - Collapsible */}
+          <Collapsible open={qualityOpen} onOpenChange={setQualityOpen}>
+            <Card>
+              <CardHeader className="pb-3">
+                <CollapsibleTrigger className="flex w-full items-center justify-between text-left hover:opacity-80 transition-opacity">
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    Export Quality
+                  </CardTitle>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${qualityOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CardDescription>Configure export resolution and quality</CardDescription>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-4 pt-0">
+                  {/* Quality Selector */}
+                  <div className="space-y-2">
+                    <Label htmlFor="quality-select">Resolution Preset</Label>
+                    <Select value={exportQuality} onValueChange={(value) => setExportQuality(value as ExportQuality)}>
+                      <SelectTrigger id="quality-select">
+                        <SelectValue placeholder="Select quality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HD+">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{EXPORT_QUALITY_PRESETS['HD+'].label}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {EXPORT_QUALITY_PRESETS['HD+'].description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="FHD">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{EXPORT_QUALITY_PRESETS.FHD.label}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {EXPORT_QUALITY_PRESETS.FHD.description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="QHD">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{EXPORT_QUALITY_PRESETS.QHD.label}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {EXPORT_QUALITY_PRESETS.QHD.description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="4K">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{EXPORT_QUALITY_PRESETS['4K'].label}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {EXPORT_QUALITY_PRESETS['4K'].description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Display: {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height} @ {EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x pixel ratio
+                      <br />
+                      Effective: {EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} pixels
+                    </p>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-              {/* Pressure Line Toggles */}
-              <div className="space-y-2">
-                <Label>Reference Lines</Label>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="working-line"
-                      checked={showWorkingLine}
-                      onCheckedChange={(checked) => setShowWorkingLine(checked as boolean)}
-                    />
-                    <label
-                      htmlFor="working-line"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Show Working Pressure Line ({config.workingPressure} {config.pressureUnit})
-                    </label>
+          {/* Export Options Section - Collapsible */}
+          <Collapsible open={optionsOpen} onOpenChange={setOptionsOpen}>
+            <Card>
+              <CardHeader className="pb-3">
+                <CollapsibleTrigger className="flex w-full items-center justify-between text-left hover:opacity-80 transition-opacity">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileImage className="h-4 w-4" />
+                    Export Options
+                  </CardTitle>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${optionsOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CardDescription>Configure reference lines and display settings</CardDescription>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-4 pt-0">
+                  {/* Pressure Line Toggles */}
+                  <div className="space-y-2">
+                    <Label>Reference Lines</Label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="working-line"
+                          checked={showWorkingLine}
+                          onCheckedChange={(checked) => setShowWorkingLine(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="working-line"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Show Working Pressure Line ({config.workingPressure} {config.pressureUnit})
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="max-line"
+                          checked={showMaxLine}
+                          onCheckedChange={(checked) => setShowMaxLine(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="max-line"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Show Max Pressure Line ({config.maxPressure} {config.pressureUnit})
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="max-line"
-                      checked={showMaxLine}
-                      onCheckedChange={(checked) => setShowMaxLine(checked as boolean)}
-                    />
-                    <label
-                      htmlFor="max-line"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Show Max Pressure Line ({config.maxPressure} {config.pressureUnit})
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          {/* Graph Preview */}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+          {/* Graph Preview - Always visible */}
           <Card>
             <CardHeader>
               <CardTitle>Graph Preview</CardTitle>
@@ -622,104 +671,109 @@ export function EChartsExportDialog({
             </CardContent>
           </Card>
 
-          {/* Export Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Export Details</CardTitle>
-              <CardDescription>
-                Following ECharts export best practices with dedicated instance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="font-medium text-muted-foreground">Format</dt>
-                  <dd className="text-foreground">PNG Image (Lossless)</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Quality Preset</dt>
-                  <dd className="text-foreground">{EXPORT_QUALITY_PRESETS[exportQuality].label}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Display Resolution</dt>
-                  <dd className="text-foreground">
-                    {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Effective Resolution</dt>
-                  <dd className="text-foreground">
-                    {EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} ({EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x DPI)
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Aspect Ratio</dt>
-                  <dd className="text-foreground">16:9 (Wide)</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Rendering Method</dt>
-                  <dd className="text-foreground">Dedicated Instance (No Scaling)</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Background</dt>
-                  <dd className="text-foreground">White (Print-Ready)</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Reference Lines</dt>
-                  <dd className="text-foreground">
-                    {showWorkingLine && showMaxLine ? 'Both' : showWorkingLine ? 'Working Only' : showMaxLine ? 'Max Only' : 'None'}
-                  </dd>
-                </div>
-              </dl>
-            </CardContent>
-          </Card>
-
-          {/* Test Configuration Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="font-medium text-muted-foreground">Test Number</dt>
-                  <dd className="text-foreground">{testNumber}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Test Name</dt>
-                  <dd className="text-foreground">{testName}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Working Pressure</dt>
-                  <dd className="text-foreground">
-                    {config.workingPressure} {config.pressureUnit}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Max Pressure</dt>
-                  <dd className="text-foreground">
-                    {config.maxPressure} {config.pressureUnit}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Test Duration</dt>
-                  <dd className="text-foreground">{config.testDuration} hours</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-muted-foreground">Temperature</dt>
-                  <dd className="text-foreground">
-                    {config.temperature}°{config.temperatureUnit}
-                  </dd>
-                </div>
-                {config.intermediateStages && config.intermediateStages.length > 0 && (
-                  <div className="col-span-2">
-                    <dt className="font-medium text-muted-foreground">Intermediate Stages</dt>
-                    <dd className="text-foreground">{config.intermediateStages.length} stage(s)</dd>
+          {/* Test Information Section - Collapsible */}
+          <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
+            <Card>
+              <CardHeader className="pb-3">
+                <CollapsibleTrigger className="flex w-full items-center justify-between text-left hover:opacity-80 transition-opacity">
+                  <CardTitle>Test Information</CardTitle>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${infoOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CardDescription>Test configuration and export details</CardDescription>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-6 pt-0">
+                  {/* Test Configuration */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-3">Test Configuration</h4>
+                    <dl className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Test Number</dt>
+                        <dd className="text-foreground">{testNumber}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Test Name</dt>
+                        <dd className="text-foreground">{testName}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Working Pressure</dt>
+                        <dd className="text-foreground">
+                          {config.workingPressure} {config.pressureUnit}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Max Pressure</dt>
+                        <dd className="text-foreground">
+                          {config.maxPressure} {config.pressureUnit}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Test Duration</dt>
+                        <dd className="text-foreground">{config.testDuration} hours</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Temperature</dt>
+                        <dd className="text-foreground">
+                          {config.temperature}°{config.temperatureUnit}
+                        </dd>
+                      </div>
+                      {config.intermediateStages && config.intermediateStages.length > 0 && (
+                        <div className="col-span-2">
+                          <dt className="font-medium text-muted-foreground">Intermediate Stages</dt>
+                          <dd className="text-foreground">{config.intermediateStages.length} stage(s)</dd>
+                        </div>
+                      )}
+                    </dl>
                   </div>
-                )}
-              </dl>
-            </CardContent>
-          </Card>
+
+                  {/* Export Details */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-3">Export Details</h4>
+                    <dl className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Format</dt>
+                        <dd className="text-foreground">PNG Image (Lossless)</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Quality Preset</dt>
+                        <dd className="text-foreground">{EXPORT_QUALITY_PRESETS[exportQuality].label}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Display Resolution</dt>
+                        <dd className="text-foreground">
+                          {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Effective Resolution</dt>
+                        <dd className="text-foreground">
+                          {EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} ({EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x DPI)
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Aspect Ratio</dt>
+                        <dd className="text-foreground">16:9 (Wide)</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Rendering Method</dt>
+                        <dd className="text-foreground">Dedicated Instance (No Scaling)</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Background</dt>
+                        <dd className="text-foreground">White (Print-Ready)</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-muted-foreground">Reference Lines</dt>
+                        <dd className="text-foreground">
+                          {showWorkingLine && showMaxLine ? 'Both' : showWorkingLine ? 'Working Only' : showMaxLine ? 'Max Only' : 'None'}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         </div>
 
         <DialogFooter>
