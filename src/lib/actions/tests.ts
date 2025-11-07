@@ -588,3 +588,109 @@ export async function deleteTest(testId: string): Promise<{ success: boolean; er
     return { success: false, error: 'Failed to delete test' };
   }
 }
+
+/**
+ * Test Run Detail with full data
+ */
+export interface TestRunDetail {
+  id: string;
+  pressureTestId: string;
+  testNumber: string;
+  testName: string;
+  status: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  duration: number | null;
+  passed: boolean | null;
+  failureReason: string | null;
+  results: any;
+  executedBy: string;
+  executedByName: string;
+  createdAt: Date;
+  updatedAt: Date;
+  files: Array<{
+    id: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    storageKey: string;
+    createdAt: Date;
+  }>;
+}
+
+/**
+ * Get test run by ID with full details
+ */
+export async function getTestRunById(runId: string): Promise<TestRunDetail | null> {
+  const session = await requireAuth();
+  const userId = session.user.id;
+
+  // Get test run with joined data
+  const runData = await db
+    .select({
+      id: testRuns.id,
+      pressureTestId: testRuns.pressureTestId,
+      testNumber: pressureTests.testNumber,
+      testName: pressureTests.name,
+      status: testRuns.status,
+      startedAt: testRuns.startedAt,
+      completedAt: testRuns.completedAt,
+      duration: testRuns.duration,
+      passed: testRuns.passed,
+      failureReason: testRuns.failureReason,
+      results: testRuns.results,
+      executedBy: testRuns.executedBy,
+      executedByName: users.name,
+      createdAt: testRuns.createdAt,
+      updatedAt: testRuns.updatedAt,
+    })
+    .from(testRuns)
+    .innerJoin(pressureTests, eq(testRuns.pressureTestId, pressureTests.id))
+    .innerJoin(users, eq(testRuns.executedBy, users.id))
+    .where(
+      and(
+        eq(testRuns.id, runId),
+        eq(pressureTests.createdBy, userId) // Verify user owns the test
+      )
+    )
+    .limit(1);
+
+  if (runData.length === 0) {
+    return null;
+  }
+
+  const run = runData[0];
+
+  // Get associated files
+  const files = await db
+    .select({
+      id: fileUploads.id,
+      fileName: fileUploads.fileName,
+      fileType: fileUploads.fileType,
+      fileSize: fileUploads.fileSize,
+      storageKey: fileUploads.storageKey,
+      createdAt: fileUploads.createdAt,
+    })
+    .from(fileUploads)
+    .where(eq(fileUploads.testRunId, runId))
+    .orderBy(desc(fileUploads.createdAt));
+
+  return {
+    id: run.id,
+    pressureTestId: run.pressureTestId,
+    testNumber: run.testNumber,
+    testName: run.testName,
+    status: run.status,
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+    duration: run.duration,
+    passed: run.passed,
+    failureReason: run.failureReason,
+    results: run.results,
+    executedBy: run.executedBy,
+    executedByName: run.executedByName ?? 'Unknown',
+    createdAt: run.createdAt,
+    updatedAt: run.updatedAt,
+    files: files,
+  };
+}
