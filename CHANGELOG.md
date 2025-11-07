@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Preview Dialog Landscape Orientation** - Full-screen preview now uses wide layout (95vw × 85vh)
+  - Changed from portrait max-w-screen-2xl to landscape 95vw width
+  - Reduced height from 90vh to 85vh for better screen fit
+  - Optimized for viewing pressure test graphs in full width
+  - Improves visualization of long-duration tests
+- **Time Axis Formatter Display** - Fixed X-axis showing correct h:m format instead of long numbers
+  - Enhanced tooltip formatter to handle both time-based and value-based axes
+  - Improved axis label formatting with consistent spacing (e.g., "2h 30m")
+  - Fixed minutes-only display for durations under 1 hour
+  - Better readability for all test duration ranges
+- **Working Pressure Minimum Value** - Form now allows 0 MPa working pressure
+  - Changed min constraint from implicit 1 to explicit 0
+  - Added min="0" attribute to both workingPressure and maxPressure inputs
+  - Enables zero-pressure tests for specific testing scenarios
+  - Form validation updated to accept 0 as valid value
 - **ECharts Legend Errors** - Resolved series name mismatch warnings in console
   - Disabled legend display in both PressureTestPreview and PressureTestPreviewEnhanced
   - Eliminates "series not exists" warnings for Working Pressure and Max Pressure
@@ -70,6 +85,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Location: `/src/components/tests/preview-dialog.tsx`
 
 ### Changed
+- **Test Creation Form shadcn Components** - Refactored form to use shadcn/ui Form pattern
+  - Replaced manual Label + Input + Error pattern with FormField + FormItem + FormLabel + FormControl + FormMessage
+  - Wrapped form with Form provider component for better context management
+  - Updated key fields: name, projectId, workingPressure, maxPressure
+  - Improved accessibility with automatic ARIA attributes
+  - Better error handling and validation messaging
+  - Follows shadcn/ui best practices and React Hook Form integration patterns
 - **SHADCN Integration Documentation** - Comprehensive component audit
   - Documented all 30 installed shadcn/ui components
   - Categorized by function (Core UI, Layout, Feedback, Navigation, Forms, Display, Utilities)
