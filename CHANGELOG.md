@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Comprehensive i18n and date-fns research documentation (docs/development/I18N_DATEFNS_RESEARCH.md)
+- TypeScript type augmentation for type-safe translation keys
+- date-fns locale integration with next-intl for consistent localization
+- Custom hooks for localized date formatting (useFormattedDate, useRelativeTime, useShortDate)
+- LocaleSwitcher component for language switching UI
+- Enhanced date/time utilities with full locale support
 - Multi-step test creation form with real-time graph preview (182c7a92)
 - Internationalization support for English and Russian languages (683f8680)
 - Timezone and date/time format configuration (172b112f)
