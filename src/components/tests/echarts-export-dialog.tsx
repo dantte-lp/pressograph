@@ -78,12 +78,6 @@ import {
   generateRealisticTestData,
   convertToMinutes,
 } from '@/lib/utils/pressure-drift-simulator';
-import {
-  calculateZoomedTimeWindow,
-  getZoomInterval,
-  type TimeScale,
-  type TimeWindow,
-} from '@/lib/utils/time-zoom';
 
 // Register ECharts components for export (tree-shaking optimization)
 // Include both Canvas and SVG renderers for export flexibility
@@ -187,9 +181,6 @@ export function EChartsExportDialog({
   const [showMaxLine, setShowMaxLine] = useState(true);
   const [enableDrift, setEnableDrift] = useState(false);
   const [enableCanvasStyle, setEnableCanvasStyle] = useState(false);
-  const [timeScale, setTimeScale] = useState<TimeScale>('auto');
-  const [customWindow, setCustomWindow] = useState<TimeWindow>({ start: 0, end: 0 });
-  const [exportZoomedView, setExportZoomedView] = useState(false);
 
   // Collapsible sections state (all open by default)
   const [qualityOpen, setQualityOpen] = useState(true);
@@ -198,17 +189,6 @@ export function EChartsExportDialog({
 
   // Sanitize test duration
   const sanitizedDuration = config.testDuration > 0 ? config.testDuration : 24;
-
-  /**
-   * Calculate zoomed time window using utility function
-   */
-  const zoomedTimeWindow = useMemo(() => {
-    return calculateZoomedTimeWindow(
-      sanitizedDuration,
-      timeScale,
-      customWindow.end > 0 ? customWindow : undefined
-    );
-  }, [sanitizedDuration, timeScale, customWindow]);
 
   /**
    * Generate pressure profile data points dynamically
@@ -370,7 +350,7 @@ export function EChartsExportDialog({
 
       // Step 3: Calculate optimal interval for export with improved logic
       // New requirements: 1h intervals up to 30h, then scale up appropriately
-      const calculateXAxisInterval = (durationHours: number): number => {
+      const calculateInterval = (durationHours: number): number => {
         // Updated thresholds per user requirements
         if (durationHours <= 30) {
           return 60; // 1 hour intervals for tests up to 30 hours
@@ -383,15 +363,19 @@ export function EChartsExportDialog({
         }
       };
 
-      // Use zoomed duration for interval calculation if zoom is active
-      const displayDuration = zoomedTimeWindow.isZoomed
-        ? zoomedTimeWindow.durationHours
-        : sanitizedDuration;
-      const xAxisInterval = zoomedTimeWindow.isZoomed
-        ? getZoomInterval(displayDuration)
-        : calculateXAxisInterval(displayDuration);
+      const xAxisInterval = calculateInterval(sanitizedDuration);
 
       const pressureUnit = config.pressureUnit || 'MPa';
+
+      // Determine if we should use time-based X-axis (when Test Schedule is set)
+      const useTimeBased = Boolean(config.startDateTime && config.endDateTime);
+      const startTime = useTimeBased && config.startDateTime
+        ? new Date(config.startDateTime).getTime()
+        : 0;
+      const endTime = useTimeBased && config.endDateTime
+        ? new Date(config.endDateTime).getTime()
+        : 0;
+      const paddingHours = 1; // 1 hour padding before/after
 
       // Generate profile data dynamically based on drift setting
       const profileData = generateProfileData(enableDrift);
@@ -423,7 +407,7 @@ export function EChartsExportDialog({
         },
         xAxis: {
           type: 'value' as const,
-          name: 'Время',
+          name: useTimeBased ? 'Дата и время' : 'Время',
           nameLocation: 'middle' as const,
           nameGap: 30,
           nameTextStyle: {
@@ -431,22 +415,41 @@ export function EChartsExportDialog({
             color: '#1f2937',
             fontWeight: 500,
           },
-          min: zoomedTimeWindow.min,
-          max: zoomedTimeWindow.max,
+          min: useTimeBased ? -paddingHours * 60 : 0,
+          max: useTimeBased
+            ? (endTime - startTime) / (60 * 1000) + paddingHours * 60
+            : sanitizedDuration * 60,
           interval: xAxisInterval,
           minInterval: xAxisInterval,
           maxInterval: xAxisInterval,
           axisLabel: {
             show: true, // CRITICAL: Explicitly enable axis labels for export
             formatter: (value: number) => {
-              if (value === 0) return '0';
-              const hours = Math.floor(value / 60);
-              const mins = Math.round(value % 60);
-              if (hours === 0) return `${mins}m`;
-              if (mins === 0) return `${hours}h`;
-              return `${hours}h ${mins}m`;
+              if (useTimeBased) {
+                // Convert minutes offset to actual date/time
+                const timestamp = startTime + value * 60 * 1000;
+                const date = new Date(timestamp);
+                const dateStr = date.toLocaleDateString('ru-RU', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                });
+                const timeStr = date.toLocaleTimeString('ru-RU', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                return `${dateStr}\n${timeStr}`;
+              } else {
+                // Duration format
+                if (value === 0) return '0';
+                const hours = Math.floor(value / 60);
+                const mins = Math.round(value % 60);
+                if (hours === 0) return `${mins}m`;
+                if (mins === 0) return `${hours}h`;
+                return `${hours}h ${mins}m`;
+              }
             },
-            fontSize: 12,
+            fontSize: useTimeBased ? 10 : 12,
             color: '#4b5563',
             rotate: 0,
           },
@@ -532,18 +535,9 @@ export function EChartsExportDialog({
               width: enableDrift ? 2 : 3, // Thinner line for high-frequency drift data
               color: '#3b82f6',
             },
+            // Area fill with solid color (no gradient)
             areaStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: 'rgba(59, 130, 246, 0.4)' },
-                  { offset: 1, color: 'rgba(59, 130, 246, 0.05)' },
-                ],
-              },
+              color: 'rgba(59, 130, 246, 0.15)', // Solid semi-transparent blue
             },
             markLine: {
               silent: true,
@@ -924,82 +918,6 @@ export function EChartsExportDialog({
                         Canvas: v1.0 visual styling.
                       </p>
                     </div>
-
-                    {/* Time Scale Zoom Controls */}
-                    <div className="space-y-2">
-                      <Label htmlFor="time-scale-select" className="text-sm">Time Scale Zoom</Label>
-                      <Select value={timeScale} onValueChange={(value) => setTimeScale(value as TimeScale)}>
-                        <SelectTrigger id="time-scale-select" className="h-9">
-                          <SelectValue placeholder="Select time scale" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">Full Duration (1x)</SelectItem>
-                          <SelectItem value="2x">First Half (2x)</SelectItem>
-                          <SelectItem value="4x">First Quarter (4x)</SelectItem>
-                          <SelectItem value="10x">First 10% (10x)</SelectItem>
-                          <SelectItem value="1x">Custom Range</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {timeScale === '1x' && (
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          <div>
-                            <Label htmlFor="zoom-start" className="text-xs">Start (min)</Label>
-                            <Input
-                              id="zoom-start"
-                              type="number"
-                              placeholder="0"
-                              min={0}
-                              max={sanitizedDuration * 60}
-                              value={customWindow.start}
-                              onChange={(e) => setCustomWindow((prev) => ({ ...prev, start: Number(e.target.value) }))}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="zoom-end" className="text-xs">End (min)</Label>
-                            <Input
-                              id="zoom-end"
-                              type="number"
-                              placeholder={String(sanitizedDuration * 60)}
-                              min={0}
-                              max={sanitizedDuration * 60}
-                              value={customWindow.end}
-                              onChange={(e) => setCustomWindow((prev) => ({ ...prev, end: Number(e.target.value) }))}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <p className="text-xs text-muted-foreground">
-                        {zoomedTimeWindow.isZoomed
-                          ? `Showing ${zoomedTimeWindow.min}-${zoomedTimeWindow.max} min (${zoomedTimeWindow.durationHours.toFixed(1)}h)`
-                          : 'Showing full test duration'}
-                      </p>
-                    </div>
-
-                    {/* Export Zoomed View Toggle */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Export Behavior</Label>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="export-zoomed"
-                          checked={exportZoomedView}
-                          onCheckedChange={(checked) => setExportZoomedView(checked as boolean)}
-                        />
-                        <label
-                          htmlFor="export-zoomed"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          Export only visible zoomed area
-                        </label>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        When enabled, only the currently zoomed portion will be exported.
-                        Uncheck to export the full graph regardless of zoom state.
-                      </p>
-                    </div>
                   </CardContent>
                 </CollapsibleContent>
               </Card>
@@ -1096,8 +1014,6 @@ export function EChartsExportDialog({
                 enableCanvasStyle={enableCanvasStyle}
                 showMaxLine={showMaxLine}
                 enableDrift={enableDrift}
-                timeScale={timeScale}
-                timeWindow={customWindow.end > 0 ? customWindow : undefined}
               />
             </CardContent>
           </Card>
