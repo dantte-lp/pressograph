@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Graph Real-Time Updates** - Fixed graph not updating when changing intermediate stage parameters
+  - Changed from react-hook-form register to controlled inputs with explicit setValue
+  - Implemented immutable update pattern for intermediate stages array
+  - Graph now updates in real-time when modifying Time, Pressure, or Hold fields
+  - Previously only updated when adding/removing stages
+  - Fixes the critical bug where parameter changes were ignored by React's change detection
 - **Graph X-Axis Time Display** - Fixed X-axis not respecting test duration parameter
   - Added explicit min/max bounds to X-axis (0 to testDuration * 60 minutes)
   - Graph now correctly displays 0-60min for 1-hour tests, 0-180min for 3-hour tests, etc.
@@ -16,6 +22,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Confirmed hot reload functionality works correctly for intermediate stages (300ms debounce)
 
 ### Added
+- **Test Date/Time Scheduling** - Support for setting start and end date/time for pressure tests
+  - New optional fields in test configuration: startDateTime and endDateTime (ISO 8601 format)
+  - Automatic end date/time calculation based on start + duration
+  - Manual override supported for end date/time
+  - Native HTML5 datetime-local inputs for better UX
+  - Date/time displayed in test configuration forms
+  - Backward compatible (fields are optional)
+- **Enhanced X-Axis with Date/Time Labels** - Time-based graph visualization with proper intervals
+  - Switches to time-based X-axis when start/end dates are provided
+  - Major ticks every 2 hours (2 * 60 * 60 * 1000 ms)
+  - Minor ticks every 30 minutes (splitNumber: 4)
+  - Displays date and time in Russian locale format (DD.MM\nHH:MM)
+  - Falls back to duration-based axis (minutes) when no dates provided
+  - ECharts 'time' type with millisecond timestamp precision
+- **Y-Axis 5 MPa Intervals** - Standardized pressure axis for better readability
+  - Rounds max to nearest 5 MPa: Math.ceil(maxPressure * 1.1 / 5) * 5
+  - Interval set to 5 MPa for consistent grid lines
+  - Applies to both PressureTestPreview and PressureTestPreviewEnhanced
+  - Industry-standard pressure scale for professional reports
+- **Compact Edit Page Layout** - Improved Parameters tab with live preview
+  - Split into 4 tabs: Basic Info | Parameters | Stages | Graph Preview
+  - Parameters tab now shows live graph preview side-by-side
+  - Intermediate Stages moved to dedicated tab for better organization
+  - Reduced vertical spacing (pb-3 instead of default)
+  - Two-column grid layout (lg:grid-cols-2) for efficient space usage
+  - Live preview updates in real-time as parameters change
+  - Graph Preview tab maintained for full-screen visualization
 - **ECharts-Based Graph Export System** - Complete rewrite of graph export using ECharts native capabilities
   - New graph-export-echarts.ts module using ECharts getDataURL() method
   - High-resolution PNG export (pixelRatio: 4) for print-quality output
@@ -55,6 +88,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminated confusion from mismatched graph appearances
 
 ### Changed
+- **PressureTestConfig Schema** - Added startDateTime and endDateTime optional fields
+- **PressureTestPreview Component** - Now supports time-based X-axis and 5 MPa Y-axis intervals
+- **PressureTestPreviewEnhanced Component** - Updated Y-axis interval calculation
+- **CreateTestForm** - Implemented controlled inputs for test duration and intermediate stages
+- **EditTestFormClient** - Reorganized tabs and added Parameters tab live preview
 - PressureTestPreview component updated to use Russian labels
 - PressureTestPreviewEnhanced component updated to use Russian labels
 - CreateTestForm now uses debounced values for all graph preview instances
