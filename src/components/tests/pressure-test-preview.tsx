@@ -238,54 +238,26 @@ export function PressureTestPreview({
   /**
    * Calculate optimal X-axis interval based on display range
    *
-   * Algorithm:
-   * - Aims for 8-15 tick marks on the axis for optimal readability
-   * - Uses common interval values: 1h, 2h, 3h, 4h, 6h, 12h, 24h
-   * - Prefers smaller intervals when multiple options are valid (better granularity)
+   * Updated algorithm with new user requirements:
+   * - 1h intervals for tests up to 30 hours
+   * - 2h intervals for 30-60 hour tests
+   * - 3h intervals for 60-96 hour tests
+   * - 4h intervals for tests longer than 96 hours
    *
    * @param displayHours - Total hours displayed on axis
    * @returns Interval in minutes
    */
   const calculateXAxisInterval = useCallback((displayHours: number): number => {
-    // Target tick count: aim for 10-12 ticks (comfortable range: 8-15)
-    const targetTicks = 10;
-
-    // Common interval values in hours (ordered from smallest to largest)
-    const commonIntervals = [1, 2, 3, 4, 6, 12, 24];
-
-    // Find all intervals that provide 8-15 ticks
-    const validIntervals: Array<{ interval: number; tickCount: number }> = [];
-
-    for (const interval of commonIntervals) {
-      const tickCount = displayHours / interval;
-
-      // Check if tick count is in acceptable range (8-15 ticks)
-      if (tickCount >= 8 && tickCount <= 15) {
-        validIntervals.push({ interval, tickCount });
-      }
+    // Updated thresholds per user requirements
+    if (displayHours <= 30) {
+      return 60; // 1 hour intervals for tests up to 30 hours
+    } else if (displayHours <= 60) {
+      return 120; // 2 hour intervals for 30-60 hour tests
+    } else if (displayHours <= 96) {
+      return 180; // 3 hour intervals for 60-96 hour tests (4 days)
+    } else {
+      return 240; // 4 hour intervals for tests longer than 96 hours
     }
-
-    // If we have valid intervals, prefer smaller ones (better granularity)
-    if (validIntervals.length > 0) {
-      // Sort by interval size (prefer smaller for better granularity)
-      validIntervals.sort((a, b) => a.interval - b.interval);
-      return validIntervals[0].interval * 60; // Convert hours to minutes
-    }
-
-    // Fallback: If no interval gives 8-15 ticks, find the one closest to target
-    let bestInterval = commonIntervals[0];
-    let bestDiff = Infinity;
-
-    for (const interval of commonIntervals) {
-      const tickCount = displayHours / interval;
-      const diff = Math.abs(tickCount - targetTicks);
-      if (diff < bestDiff) {
-        bestDiff = diff;
-        bestInterval = interval;
-      }
-    }
-
-    return bestInterval * 60; // Convert hours to minutes
   }, []);
 
   // Calculate display range in hours
