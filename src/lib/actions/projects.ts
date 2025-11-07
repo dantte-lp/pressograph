@@ -173,16 +173,33 @@ export async function createProject(data: {
       ...settings,
     };
 
-    // Ensure user has an organization
-    if (!session.user.organizationId) {
-      return { project: null, error: 'User must belong to an organization to create projects' };
+    // Get organizationId - if not in session, fetch from database
+    let organizationId = session.user.organizationId;
+
+    if (!organizationId) {
+      // Fetch fresh user data to get organizationId
+      const [user] = await db
+        .select({ organizationId: users.organizationId })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
+
+      organizationId = user?.organizationId;
+
+      // If still no organizationId, user needs to be assigned to an organization
+      if (!organizationId) {
+        return {
+          project: null,
+          error: 'User must belong to an organization to create projects. Please contact your administrator.'
+        };
+      }
     }
 
     // Insert new project
     const newProject: NewProject = {
       name: name.trim(),
       description: description?.trim() || null,
-      organizationId: session.user.organizationId,
+      organizationId,
       ownerId: session.user.id,
       settings: defaultSettings,
       isArchived: false,
