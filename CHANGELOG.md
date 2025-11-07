@@ -9,6 +9,110 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Complete Tests Page and Project Detail Implementation (2025-11-07 - Part 6)
+- **Feature:** Implemented comprehensive /tests page (replaces old /history route from v1.0)
+  - **Global Tests View** (`/tests`):
+    - Paginated table showing all tests across all projects
+    - Configurable page size (default 20 items per page)
+    - Search by test number or test name
+    - Filter by project, status, and date range
+    - Sort options: newest, oldest, test number, name, last run
+    - Status badges with color coding (draft, ready, running, completed, failed, cancelled)
+    - Run count and last run date display
+    - File size formatting for downloadable graphs
+    - Empty states for no data or no search results
+  - **Per-Test Actions Dropdown**:
+    - View Details - Navigate to test detail page
+    - View Runs - See all executions of the test
+    - Download Graph - Download latest generated graph with size display
+    - Create Share Link - Generate public access link
+    - Duplicate Test - Copy test configuration
+    - Delete Test - Remove with confirmation dialog
+  - **Interactive Features**:
+    - Client-side delete with optimistic UI updates
+    - Router refresh after mutations
+    - Loading states during operations
+    - Suspense boundaries for streaming
+    - Skeleton loading states for better perceived performance
+  - **Database Integration**:
+    - Efficient queries with joins (projects, users, test_runs, file_uploads)
+    - Aggregated run counts per test
+    - Latest graph information retrieval
+    - User-scoped queries with authentication verification
+  - **Implementation Files**:
+    - `/src/app/(dashboard)/tests/page.tsx` - Server Component page
+    - `/src/lib/actions/tests.ts` - Server actions (getTests, getTestById, deleteTest)
+    - `/src/components/tests/tests-table.tsx` - Server Component wrapper
+    - `/src/components/tests/tests-table-client.tsx` - Client Component with interactions
+    - `/src/components/tests/tests-table-skeleton.tsx` - Loading skeleton
+  - **Technical Stack**:
+    - Next.js 16 Server Components for data fetching
+    - Client Components for interactivity
+    - Drizzle ORM with complex joins and aggregations
+    - date-fns for relative time formatting
+    - shadcn/ui Table, Badge, DropdownMenu components
+    - TypeScript with strict typing
+
+- **Feature:** Project Detail Page with Scoped Tests View
+  - **Project Detail View** (`/projects/[id]`):
+    - Project header with name, description, and archived badge
+    - Breadcrumb navigation back to projects list
+    - Quick actions: Create test in project, Project settings
+    - Three information cards:
+      - Owner name with user icon
+      - Creation date with relative time ("3 days ago")
+      - Test number prefix with auto-numbering status
+  - **Project-Scoped Tests Table**:
+    - Reuses TestsTable component with projectId filter
+    - Shows only tests belonging to the specific project
+    - Full filtering and pagination capabilities
+    - Same actions as global tests view
+  - **Database Integration**:
+    - New `getProjectById()` function with user join
+    - Retrieves owner information for display
+    - Handles not found scenarios
+  - **Implementation Files**:
+    - `/src/app/(dashboard)/projects/[id]/page.tsx` - Project detail page
+    - `/src/lib/actions/projects.ts` - Added getProjectById() function
+  - **UI Components**:
+    - Responsive grid layout for info cards
+    - Consistent styling with shadcn/ui components
+    - Proper loading states and error handling
+
+- **Feature:** Utility Functions for Data Formatting
+  - **Format Module** (`/src/lib/utils/format.ts`):
+    - `formatBytes()` - Convert bytes to human-readable format (KB, MB, GB, etc.)
+    - `formatNumber()` - Add thousand separators to numbers
+    - `formatPercentage()` - Format decimal values as percentages
+    - `formatDuration()` - Convert milliseconds to human-readable duration
+    - `formatPressure()` - Format pressure values with units
+  - **Usage**:
+    - Dashboard storage display
+    - Tests table file size display
+    - Future use in graphs and reports
+  - **Benefits**:
+    - Consistent formatting across application
+    - Reusable utility functions
+    - Well-documented with JSDoc and examples
+
+### Fixed
+
+#### Build Error: formatBytes Export Issue (2025-11-07 - Part 6)
+- **Fixed:** Critical build error preventing development
+  - **Error Message:** "Export formatBytes doesn't exist in target module"
+  - **Root Cause:** formatBytes was changed from exported to internal function in dashboard.ts, but dashboard/page.tsx still imported it
+  - **Solution Applied:**
+    1. Created new `/src/lib/utils/format.ts` utility module
+    2. Moved formatBytes to utilities (proper separation of concerns)
+    3. Added additional formatting utilities for future use
+    4. Updated dashboard page import to use @/lib/utils/format
+    5. Removed duplicate formatBytes from dashboard.ts
+  - **Files Modified:**
+    - `/src/lib/utils/format.ts` - Created with comprehensive formatting utilities
+    - `/src/app/(dashboard)/dashboard/page.tsx` - Updated import statement
+    - `/src/lib/actions/dashboard.ts` - Removed duplicate function
+  - **Status:** ✅ Build error resolved, dev server working
+
 #### Enhanced Dashboard with Real Statistics (2025-11-07 - Part 5)
 - **Feature:** Implemented fully functional dashboard with real-time statistics
   - **Dashboard Statistics**:
