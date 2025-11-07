@@ -1,20 +1,20 @@
 'use client';
 
 /**
- * A4 Preview Graph Component
+ * A4 Landscape Preview Graph Component
  *
- * Specialized component for rendering pressure test graphs in A4 format with
- * 30-minute interval tick marks on the X-axis. Optimized for printing.
+ * Specialized component for rendering pressure test graphs in A4 landscape format
+ * with tick marks on the X-axis. Optimized for printing.
  *
  * Critical Features:
- * - A4 portrait dimensions (210mm × 297mm)
- * - 30-minute intervals on X-axis (MANDATORY)
+ * - A4 landscape dimensions (297mm × 210mm)
+ * - Tick marks on X-axis for professional appearance
  * - High-resolution rendering
  * - Print-optimized styling
  * - Professional appearance for reports
  *
  * X-Axis Interval Configuration:
- * - Fixed 30-minute intervals (0.5 hours)
+ * - Dynamic intervals based on test duration
  * - Clear tick marks at each interval
  * - Time labels formatted appropriately
  * - Works for all test durations (1h, 24h, etc.)
@@ -83,8 +83,8 @@ type ChartDataPoint = [number, number];
 /**
  * A4PreviewGraph Component
  *
- * Renders pressure test graph with mandatory 30-minute X-axis intervals
- * in A4 portrait format for professional printing.
+ * Renders pressure test graph with tick marks on X-axis
+ * in A4 landscape format for professional printing.
  */
 export function A4PreviewGraph({
   workingPressure,
@@ -114,11 +114,30 @@ export function A4PreviewGraph({
   }, [useTimeBased, startDateTime]);
 
   /**
-   * CRITICAL: 30-minute interval configuration
-   * This is a mandatory requirement for professional reports
+   * Dynamic interval configuration
+   * Calculates optimal interval based on test duration
    */
-  const INTERVAL_MINUTES = 30; // 30 minutes (0.5 hours)
-  const xAxisInterval = INTERVAL_MINUTES;
+  const calculateOptimalInterval = (durationHours: number): number => {
+    // Target 10-15 tick marks on the axis
+    const targetTicks = 12;
+    const commonIntervals = [5, 10, 15, 30, 60, 120, 180, 240, 360, 720, 1440]; // minutes
+
+    let bestInterval = commonIntervals[0];
+    let bestDiff = Infinity;
+
+    for (const interval of commonIntervals) {
+      const tickCount = (durationHours * 60) / interval;
+      const diff = Math.abs(tickCount - targetTicks);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestInterval = interval;
+      }
+    }
+
+    return bestInterval;
+  };
+
+  const xAxisInterval = calculateOptimalInterval(sanitizedDuration);
 
   /**
    * Calculate pressure profile data points
@@ -183,7 +202,7 @@ export function A4PreviewGraph({
     return {
       title: {
         text: 'График испытания давлением',
-        subtext: `Интервалы: ${INTERVAL_MINUTES} минут | Формат: A4 (210×297 мм)`,
+        subtext: `Интервалы: ${xAxisInterval} минут | Формат: A4 Landscape (297×210 мм)`,
         left: 'center',
         top: 20,
         textStyle: {
@@ -262,8 +281,8 @@ export function A4PreviewGraph({
       },
 
       /**
-       * X-AXIS CONFIGURATION WITH 30-MINUTE INTERVALS
-       * This is the critical requirement for professional reports
+       * X-AXIS CONFIGURATION WITH TICK MARKS
+       * Professional appearance with major and minor tick marks
        */
       xAxis: {
         type: 'value',
@@ -277,7 +296,7 @@ export function A4PreviewGraph({
         },
         min: 0,
         max: sanitizedDuration * 60,
-        // CRITICAL: Fixed 30-minute intervals
+        // Major tick intervals (with labels)
         interval: xAxisInterval,
         minInterval: xAxisInterval,
         maxInterval: xAxisInterval,
@@ -312,25 +331,48 @@ export function A4PreviewGraph({
           margin: 12,
         },
         axisLine: {
+          show: true,
           lineStyle: {
             color: '#9ca3af',
             width: 1.5,
           },
         },
+        // Major tick marks (at labels)
         axisTick: {
           show: true,
+          alignWithLabel: true,
           length: 8,
           lineStyle: {
             color: '#9ca3af',
             width: 1.5,
           },
         },
+        // Minor tick marks (between labels) - CRITICAL FOR ISSUE #8
+        minorTick: {
+          show: true,
+          splitNumber: 3, // 3 minor ticks between major ticks (divides interval into 4 parts)
+          length: 5,
+          lineStyle: {
+            color: '#d1d5db',
+            width: 1,
+          },
+        },
+        // Grid lines at major points
         splitLine: {
           show: true,
           lineStyle: {
-            type: 'dashed',
+            type: 'solid',
             color: '#e5e7eb',
             width: 1,
+          },
+        },
+        // Minor grid lines (subtle)
+        minorSplitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dashed',
+            color: '#f3f4f6',
+            width: 0.5,
           },
         },
       },
@@ -355,25 +397,48 @@ export function A4PreviewGraph({
           color: '#4b5563',
         },
         axisLine: {
+          show: true,
           lineStyle: {
             color: '#9ca3af',
             width: 1.5,
           },
         },
+        // Major tick marks
         axisTick: {
           show: true,
+          alignWithLabel: true,
           length: 6,
           lineStyle: {
             color: '#9ca3af',
             width: 1.5,
           },
         },
+        // Minor tick marks on Y-axis
+        minorTick: {
+          show: true,
+          splitNumber: 5, // 5 minor ticks between major ticks
+          length: 4,
+          lineStyle: {
+            color: '#d1d5db',
+            width: 1,
+          },
+        },
+        // Grid lines at major points
         splitLine: {
           show: true,
           lineStyle: {
             type: 'solid',
             color: '#e5e7eb',
             width: 1,
+          },
+        },
+        // Minor grid lines
+        minorSplitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dashed',
+            color: '#f3f4f6',
+            width: 0.5,
           },
         },
       },
@@ -492,14 +557,14 @@ export function A4PreviewGraph({
   }, [chartOption]);
 
   return (
-    <div className="w-full h-full p-8 print:p-6" style={{ minHeight: '297mm' }}>
+    <div className="w-full h-full p-8 print:p-6" style={{ minHeight: '210mm' }}>
       {/* Chart Container */}
       <div
         ref={chartRef}
         role="img"
-        aria-label={`Pressure test graph with 30-minute intervals showing ${sanitizedDuration} hours test`}
+        aria-label={`Pressure test graph showing ${sanitizedDuration} hours test in landscape format`}
         className="w-full"
-        style={{ height: 'calc(297mm - 100px)', minHeight: '800px' }}
+        style={{ height: 'calc(210mm - 100px)', minHeight: '600px' }}
       />
 
       {/* Test Parameters Summary */}
@@ -530,9 +595,9 @@ export function A4PreviewGraph({
         </div>
       </div>
 
-      {/* 30-minute interval notice */}
+      {/* Interval notice */}
       <div className="mt-4 text-center text-xs text-muted-foreground italic">
-        График с интервалами 30 минут для профессиональной документации
+        График с оптимальными интервалами для профессиональной документации
       </div>
     </div>
   );

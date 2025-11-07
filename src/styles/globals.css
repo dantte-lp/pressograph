@@ -194,3 +194,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print Styles for A4 Landscape */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Hide non-print elements */
+  .print\:hidden {
+    display: none !important;
+  }
+}

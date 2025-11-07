@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CRITICAL: All Preview Orientations Changed to Landscape** - Fixed all preview modes showing portrait (210mm × 297mm) instead of landscape orientation
+  - **Root Cause**: All preview components were configured for A4 portrait format (1:1.414 aspect ratio)
+  - **User Requirement**: Professional pressure test reports should be in landscape orientation for better visibility
+  - **Changes Applied:**
+    - Full-screen dialog: Changed from 210mm × 297mm to 297mm × 210mm (1.414:1 aspect ratio)
+    - New window preview: Changed from 210mm × 297mm to 297mm × 210mm
+    - Window dimensions: Changed from 900px × 1273px to 1273px × 900px
+    - Print styles: Added `@page { size: A4 landscape; }` in globals.css
+    - All documentation updated to reflect landscape orientation
+  - **Files Modified:**
+    - `/src/components/tests/preview-dialog.tsx` - Dialog dimensions and aspect ratio
+    - `/src/app/(dashboard)/tests/preview/page.tsx` - Page container and print instructions
+    - `/src/components/tests/a4-preview-graph.tsx` - Graph container and documentation
+    - `/src/styles/globals.css` - Added print media query for landscape
+  - **Result**: All preview modes (full screen, new window, print) now display in landscape orientation
+  - **Specifications**: A4 Landscape: 297mm × 210mm, aspect ratio 1.414:1, screen ~1123px × 794px
+
+- **CRITICAL: New Window Preview Simplified to Graph Only** - Removed all UI chrome to show only the graph for professional appearance
+  - **Root Cause**: New window preview page showed header, buttons, instructions, and other UI elements
+  - **User Requirement**: "New window should show ONLY the graph, nothing else"
+  - **Changes Applied:**
+    - Removed header with title and description
+    - Removed print instructions section
+    - Removed all navigation and control buttons from main view
+    - Added minimal print/close buttons in top-right corner (hidden when printing)
+    - Centered graph in full-screen white background
+    - Clean, print-ready appearance without distractions
+  - **Files Modified:**
+    - `/src/app/(dashboard)/tests/preview/page.tsx` - Simplified page structure
+  - **Result**: New window displays only the graph in A4 landscape format, perfect for screenshots and printing
+  - **User Experience**: Clean, professional output suitable for reports and documentation
+
+- **CRITICAL: Added Tick Marks Between Time Labels on All Graphs** - Enhanced professional appearance with minor tick marks and grid lines
+  - **Root Cause**: Graphs showed time labels but no tick marks between them, making precise time reading difficult
+  - **User Requirement**: Professional regulatory reports need clear tick marks (насечки) for exact timing visualization
+  - **User Reference Screenshot**: Shows desired appearance with vertical grid lines and tick marks at each time point
+  - **ECharts Implementation:**
+    - Added `minorTick` configuration with `splitNumber: 3` on X-axis (3 minor ticks between major ticks)
+    - Added `minorTick` configuration with `splitNumber: 5` on Y-axis (5 minor ticks between major ticks)
+    - Added `minorSplitLine` for subtle dashed grid lines at minor tick positions
+    - Major ticks at labels with `alignWithLabel: true` for proper alignment
+    - Differentiated styling: major ticks (8px, #9ca3af) vs minor ticks (4-5px, #d1d5db)
+    - Grid lines: solid for major intervals, dashed for minor intervals
+  - **Files Modified:**
+    - `/src/components/tests/a4-preview-graph.tsx` - Added tick mark configuration to X and Y axes
+    - `/src/components/tests/pressure-test-preview.tsx` - Added tick mark configuration to X and Y axes
+  - **Result**: All graphs now display professional tick marks matching regulatory report standards
+  - **Visual Improvement**: Clear separation between time intervals, easier to read exact timing, professional appearance
+
 ### Added
 
 - **Full-Screen A4 Preview with Button Group** - Enhanced test preview functionality with professional A4 format support

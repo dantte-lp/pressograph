@@ -1,15 +1,14 @@
 'use client';
 
 /**
- * A4 Preview Page for Pressure Tests
+ * A4 Landscape Preview Page for Pressure Tests
  *
- * This page displays pressure test graphs in A4 portrait format (210mm × 297mm)
- * with 30-minute interval tick marks on the X-axis. Optimized for printing and
- * opening in new browser windows.
+ * This page displays pressure test graphs in A4 landscape format (297mm × 210mm)
+ * with tick marks on the X-axis. Optimized for printing and opening in new browser windows.
  *
  * Features:
- * - A4 portrait format (1:1.414 aspect ratio)
- * - 30-minute intervals on X-axis (critical requirement)
+ * - A4 landscape format (1.414:1 aspect ratio)
+ * - Tick marks on X-axis for professional appearance
  * - High-resolution rendering for print
  * - Print-optimized styling (@media print)
  * - Receives configuration via URL query parameter
@@ -34,7 +33,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { A4PreviewGraph } from '@/components/tests/a4-preview-graph';
 
@@ -92,7 +91,7 @@ function PreviewPageContent() {
           <h1 className="text-2xl font-bold text-destructive">Error</h1>
           <p className="text-muted-foreground">{error}</p>
           <Button onClick={handleClose} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <X className="h-4 w-4 mr-2" />
             Close Window
           </Button>
         </div>
@@ -112,65 +111,37 @@ function PreviewPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Print Controls - Hidden when printing */}
-      <div className="print:hidden sticky top-0 z-50 bg-background border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">A4 Print Preview</h1>
-            <p className="text-sm text-muted-foreground">
-              Pressure Test Preview - Ready for printing
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handlePrint} variant="default" size="sm">
-              <Printer className="h-4 w-4 mr-2" />
-              Print (Ctrl+P)
-            </Button>
-            <Button onClick={handleClose} variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Close
-            </Button>
-          </div>
-        </div>
+    <div className="w-screen h-screen bg-white flex items-center justify-center p-0 m-0 overflow-hidden">
+      {/* Minimal Print Button - Top Right Corner */}
+      <div className="print:hidden fixed top-2 right-2 z-50 flex gap-1">
+        <Button onClick={handlePrint} variant="ghost" size="sm" className="h-8 px-2">
+          <Printer className="h-4 w-4" />
+        </Button>
+        <Button onClick={handleClose} variant="ghost" size="sm" className="h-8 px-2">
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* A4 Page Container */}
-      <div className="container mx-auto py-8 print:p-0">
-        <div
-          className="mx-auto bg-white shadow-2xl print:shadow-none"
-          style={{
-            width: '210mm',
-            minHeight: '297mm',
-            aspectRatio: '1 / 1.414',
-          }}
-        >
-          <A4PreviewGraph
-            workingPressure={config.workingPressure}
-            maxPressure={config.maxPressure}
-            testDuration={config.testDuration}
-            intermediateStages={config.intermediateStages || []}
-            pressureUnit={config.pressureUnit || 'MPa'}
-            temperatureUnit={config.temperatureUnit || 'C'}
-            startDateTime={config.startDateTime}
-            endDateTime={config.endDateTime}
-          />
-        </div>
-      </div>
-
-      {/* Print Instructions - Hidden when printing */}
-      <div className="print:hidden container mx-auto px-4 pb-8">
-        <div className="max-w-2xl mx-auto bg-background border rounded-lg p-6 space-y-3">
-          <h2 className="font-semibold text-lg">Print Instructions</h2>
-          <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
-            <li>Press <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Ctrl+P</kbd> or click "Print" button to open print dialog</li>
-            <li>Set paper size to <strong>A4 (210mm × 297mm)</strong></li>
-            <li>Select <strong>Portrait</strong> orientation</li>
-            <li>Disable margins or set to minimum for best results</li>
-            <li>Ensure "Background graphics" is enabled to print colors</li>
-            <li>Graph displays 30-minute intervals on X-axis for professional reports</li>
-          </ul>
-        </div>
+      {/* A4 Landscape Graph - Full Screen */}
+      <div
+        className="bg-white print:w-full print:h-full"
+        style={{
+          width: '297mm',
+          height: '210mm',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+        }}
+      >
+        <A4PreviewGraph
+          workingPressure={config.workingPressure}
+          maxPressure={config.maxPressure}
+          testDuration={config.testDuration}
+          intermediateStages={config.intermediateStages || []}
+          pressureUnit={config.pressureUnit || 'MPa'}
+          temperatureUnit={config.temperatureUnit || 'C'}
+          startDateTime={config.startDateTime}
+          endDateTime={config.endDateTime}
+        />
       </div>
     </div>
   );

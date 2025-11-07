@@ -446,7 +446,7 @@ export function PressureTestPreview({
         containLabel: false,
       },
 
-      // X-axis configuration
+      // X-axis configuration with tick marks
       xAxis: {
         type: 'value', // Value-based for full interval control
         name: useTimeBased ? 'Дата и время' : 'Время',
@@ -493,20 +493,53 @@ export function PressureTestPreview({
           color: '#6b7280',
         },
         axisLine: {
+          show: true,
           lineStyle: {
             color: '#d1d5db',
+            width: 1.5,
           },
         },
+        // Major tick marks
+        axisTick: {
+          show: true,
+          alignWithLabel: true,
+          length: 6,
+          lineStyle: {
+            color: '#d1d5db',
+            width: 1.5,
+          },
+        },
+        // Minor tick marks between labels - CRITICAL
+        minorTick: {
+          show: true,
+          splitNumber: 2, // 2 minor ticks between major ticks
+          length: 4,
+          lineStyle: {
+            color: '#e5e7eb',
+            width: 1,
+          },
+        },
+        // Major grid lines
         splitLine: {
           show: true,
           lineStyle: {
-            type: 'dashed',
+            type: 'solid',
             color: '#f0f0f0',
+            width: 1,
+          },
+        },
+        // Minor grid lines
+        minorSplitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dashed',
+            color: '#f9fafb',
+            width: 0.5,
           },
         },
       },
 
-      // Y-axis configuration
+      // Y-axis configuration with tick marks
       yAxis: {
         type: 'value',
         name: `Давление, ${pressureUnit}`,
@@ -525,15 +558,48 @@ export function PressureTestPreview({
           color: '#6b7280',
         },
         axisLine: {
+          show: true,
           lineStyle: {
             color: '#d1d5db',
+            width: 1.5,
           },
         },
+        // Major tick marks
+        axisTick: {
+          show: true,
+          alignWithLabel: true,
+          length: 5,
+          lineStyle: {
+            color: '#d1d5db',
+            width: 1.5,
+          },
+        },
+        // Minor tick marks on Y-axis
+        minorTick: {
+          show: true,
+          splitNumber: 5,
+          length: 3,
+          lineStyle: {
+            color: '#e5e7eb',
+            width: 1,
+          },
+        },
+        // Major grid lines
         splitLine: {
           show: true,
           lineStyle: {
             type: 'solid',
             color: '#f0f0f0',
+            width: 1,
+          },
+        },
+        // Minor grid lines
+        minorSplitLine: {
+          show: true,
+          lineStyle: {
+            type: 'dashed',
+            color: '#f9fafb',
+            width: 0.5,
           },
         },
       },

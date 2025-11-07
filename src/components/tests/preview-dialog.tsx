@@ -25,22 +25,22 @@ interface PreviewDialogProps {
 }
 
 /**
- * Full-Screen Preview Dialog Component with A4 Format Support
+ * Full-Screen Preview Dialog Component with A4 Landscape Format Support
  *
  * Displays the pressure test graph in a truly full-screen modal dialog
- * with A4 portrait aspect ratio (1:1.414) for optimal print preview.
+ * with A4 landscape aspect ratio (1.414:1) for optimal print preview.
  *
  * Features:
  * - True full-screen modal (width AND height maximized)
- * - A4 portrait format (210mm × 297mm aspect ratio)
+ * - A4 landscape format (297mm × 210mm aspect ratio)
  * - Button group with "Full Screen" and "Open in New Window" options
  * - Close button and ESC key support
  * - Responsive design with proper centering
  *
- * A4 Portrait Specifications:
- * - Aspect Ratio: 1:√2 (approximately 1:1.414)
- * - Dimensions: 210mm × 297mm
- * - Screen Equivalent: ~800px × 1131px
+ * A4 Landscape Specifications:
+ * - Aspect Ratio: √2:1 (approximately 1.414:1)
+ * - Dimensions: 297mm × 210mm (width × height)
+ * - Screen Equivalent: ~1123px × 794px
  *
  * @example
  * ```typescript
@@ -87,10 +87,10 @@ export function PreviewDialog({
     // Encode configuration as base64 to avoid URL length issues
     const encodedConfig = btoa(JSON.stringify(testConfig));
 
-    // Calculate A4 window dimensions (portrait)
-    // A4 ratio: 1:1.414
-    const windowWidth = 900; // Slightly larger than 800px for browser chrome
-    const windowHeight = Math.round(windowWidth * 1.414); // ~1273px
+    // Calculate A4 window dimensions (landscape)
+    // A4 landscape ratio: 1.414:1
+    const windowWidth = 1273; // Landscape width (was 900px portrait)
+    const windowHeight = Math.round(windowWidth / 1.414); // ~900px
 
     // Open new window with A4 proportions
     const windowFeatures = `width=${windowWidth},height=${windowHeight},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`;
@@ -119,10 +119,10 @@ export function PreviewDialog({
           >
             <DialogHeader className="flex-shrink-0 mb-4">
               <DialogTitle className="text-2xl font-bold">
-                Pressure Test Preview - A4 Format
+                Pressure Test Preview - A4 Landscape Format
               </DialogTitle>
               <DialogDescription>
-                Full-screen preview in A4 portrait format (210mm × 297mm). Press ESC to close.
+                Full-screen preview in A4 landscape format (297mm × 210mm). Press ESC to close.
               </DialogDescription>
             </DialogHeader>
 
@@ -131,11 +131,11 @@ export function PreviewDialog({
               <div
                 className="bg-background border-2 border-border shadow-2xl"
                 style={{
-                  width: '210mm',
-                  height: '297mm',
+                  width: '297mm',
+                  height: '210mm',
                   maxWidth: '100%',
                   maxHeight: '100%',
-                  aspectRatio: '1 / 1.414',
+                  aspectRatio: '1.414 / 1',
                   padding: '20mm',
                   display: 'flex',
                   flexDirection: 'column',
