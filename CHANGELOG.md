@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduced stage card height in test form for improved UX (e60bde44)
 
 ### Fixed
+- Messages directory permission denied error blocking Turbopack build (chmod 755, chown developer:developer)
 - Test creation route conflict between /tests/new and /tests/[id] (75d2cfd2)
 - Dynamic import issues with i18n in Edge Runtime (182c7a92)
 - All date formatting to prevent hydration errors (fad1b911, d0e665b2, 5451f445, dc5aa467, 925f0628)
