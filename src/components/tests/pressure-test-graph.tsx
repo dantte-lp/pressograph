@@ -28,13 +28,17 @@ export function PressureTestGraph({
     const timestamps = measurements.map(m => m.timestamp.toLocaleTimeString());
     const pressureData = measurements.map(m => m.pressure);
 
+    // V1 STYLING: Calculate Y-axis max (same as v1: Math.ceil(maxPressure * 1.1 / 5) * 5)
+    const pressureMaxRaw = maxPressure * 1.1;
+    const yAxisMax = Math.ceil(pressureMaxRaw / 5) * 5;
+
     return {
       title: {
         text: 'Real-Time Pressure Monitoring',
         left: 'center',
         textStyle: {
-          fontSize: 16,
-          fontWeight: 'normal',
+          fontSize: 20,
+          fontWeight: 'bold',
         },
       },
       tooltip: {
@@ -53,44 +57,73 @@ export function PressureTestGraph({
         },
       },
       grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
+        left: '10%',
+        right: '5%',
+        bottom: '15%',
+        top: '15%',
         containLabel: true,
       },
       xAxis: {
         type: 'category',
         data: timestamps,
         boundaryGap: false,
+        name: 'Time',
+        nameLocation: 'middle',
+        nameGap: 25,
+        nameTextStyle: {
+          fontSize: 14,
+          fontWeight: 'bold',
+        },
         axisLabel: {
           rotate: 45,
+          fontSize: 11,
+        },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: '#d0d0d0',
+            width: 1,
+          },
         },
       },
       yAxis: {
         type: 'value',
-        name: `Pressure (${pressureUnit})`,
+        name: `Pressure, ${pressureUnit}`,
+        nameLocation: 'middle',
+        nameGap: 40,
+        nameTextStyle: {
+          fontSize: 14,
+          fontWeight: 'normal',
+        },
         axisLabel: {
           formatter: '{value}',
+          fontSize: 12,
         },
         min: 0,
-        max: maxPressure * 1.1, // 10% above max for better visualization
+        max: yAxisMax,
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: '#f0f0f0',
+            width: 1,
+          },
+        },
       },
       series: [
         {
           name: 'Measured Pressure',
           type: 'line',
           data: pressureData,
-          smooth: true,
+          smooth: false,
           lineStyle: {
             width: 2,
-            color: '#3b82f6',
+            color: '#0066cc', // V1 STYLING: Match v1 color
           },
           itemStyle: {
-            color: '#3b82f6',
+            color: '#0066cc',
           },
           areaStyle: {
-            opacity: 0.2,
-            color: '#3b82f6',
+            color: 'rgba(173, 216, 230, 0.3)', // V1 STYLING: Match v1 area fill
           },
           markLine: {
             silent: true,

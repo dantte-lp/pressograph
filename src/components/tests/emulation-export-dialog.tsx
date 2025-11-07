@@ -72,6 +72,7 @@ export function EmulationExportDialog({
 
   /**
    * Render emulated pressure graph on canvas
+   * Matches v1 graph styling for consistency
    */
   const renderEmulatedGraph = () => {
     const canvas = canvasRef.current;
@@ -83,81 +84,247 @@ export function EmulationExportDialog({
     // Generate emulated data
     const emulatedData = generateEmulatedTestData(config);
 
-    // Set canvas size
-    canvas.width = 800;
-    canvas.height = 400;
+    // Set canvas size with high DPI for crisp rendering
+    const scale = 2;
+    const displayWidth = 800;
+    const displayHeight = 500;
+    canvas.width = displayWidth * scale;
+    canvas.height = displayHeight * scale;
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+    ctx.scale(scale, scale);
 
-    // Clear canvas
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // V1 STYLING: Background color (white)
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
 
-    // Add watermark
+    // V1 STYLING: Graph margins
+    const margin = { top: 80, right: 50, bottom: 120, left: 80 };
+    const graphWidth = displayWidth - margin.left - margin.right;
+    const graphHeight = displayHeight - margin.top - margin.bottom;
+
+    // V1 STYLING: Add time buffer (5% on each side)
+    const timeRange = emulatedData.endDateTime.getTime() - emulatedData.startDateTime.getTime();
+    const timeBuffer = timeRange * 0.05;
+    const graphStartTime = new Date(emulatedData.startDateTime.getTime() - timeBuffer);
+    const graphEndTime = new Date(emulatedData.endDateTime.getTime() + timeBuffer);
+    const graphTimeRange = graphEndTime.getTime() - graphStartTime.getTime();
+
+    // V1 STYLING: Pressure scaling
+    const pressureMaxRaw = config.maxPressure * 1.1;
+    const pressureMax = Math.ceil(pressureMaxRaw / 5) * 5;
+
+    const xScale = (time: number) => {
+      return margin.left + ((time - graphStartTime.getTime()) / graphTimeRange) * graphWidth;
+    };
+
+    const yScale = (pressure: number) => {
+      return margin.top + graphHeight - (pressure / pressureMax) * graphHeight;
+    };
+
+    // V1 STYLING: Title
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.fillText(testName || 'Pressure Test Graph', displayWidth / 2, 40);
+
+    // V1 STYLING: Draw axes
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(margin.left, margin.top);
+    ctx.lineTo(margin.left, margin.top + graphHeight);
+    ctx.lineTo(margin.left + graphWidth, margin.top + graphHeight);
+    ctx.stroke();
+
+    // V1 STYLING: Grid lines (Y-axis) - light gray
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = 1;
+    const gridStep = 5;
+    const numSteps = Math.ceil(pressureMax / gridStep);
+
+    for (let i = 0; i <= numSteps; i++) {
+      const pressure = i * gridStep;
+      if (pressure <= pressureMax) {
+        const y = yScale(pressure);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + graphWidth, y);
+        ctx.stroke();
+      }
+    }
+
+    // V1 STYLING: Y-axis labels
+    ctx.font = '12px Arial';
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'right';
+
+    for (let i = 0; i <= numSteps; i++) {
+      const pressure = i * gridStep;
+      if (pressure <= pressureMax) {
+        const y = yScale(pressure);
+        ctx.fillText(pressure.toFixed(0), margin.left - 10, y + 5);
+      }
+    }
+
+    // V1 STYLING: Y-axis label
     ctx.save();
-    ctx.font = 'bold 48px Arial';
-    ctx.fillStyle = 'rgba(200, 200, 200, 0.3)';
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(-Math.PI / 6);
+    ctx.translate(20, displayHeight / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.font = '14px Arial';
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Pressure, ${config.pressureUnit}`, 0, 0);
+    ctx.restore();
+
+    // V1 STYLING: Grid lines (X-axis) - darker gray
+    const testDuration = config.testDuration;
+    const timeInterval = testDuration <= 30 ? 2 * 60 * 60 * 1000 : 4 * 60 * 60 * 1000;
+
+    const gridStartTime = new Date(graphStartTime);
+    gridStartTime.setMinutes(0, 0, 0);
+    const intervalHours = timeInterval / (60 * 60 * 1000);
+    gridStartTime.setHours(Math.floor(gridStartTime.getHours() / intervalHours) * intervalHours);
+
+    if (gridStartTime > graphStartTime) {
+      gridStartTime.setHours(gridStartTime.getHours() - intervalHours);
+    }
+
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'center';
+
+    for (
+      let time = gridStartTime.getTime();
+      time <= graphEndTime.getTime() + timeInterval;
+      time += timeInterval
+    ) {
+      const x = xScale(time);
+      if (x >= margin.left && x <= margin.left + graphWidth) {
+        ctx.strokeStyle = '#d0d0d0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, margin.top + graphHeight);
+        ctx.stroke();
+
+        const date = new Date(time);
+        const timeStr = formatDateTime(date).split(' ');
+        ctx.fillStyle = 'black';
+        ctx.fillText(timeStr[0], x, margin.top + graphHeight + 20);
+        ctx.fillText(timeStr[1], x, margin.top + graphHeight + 35);
+      }
+    }
+
+    // V1 STYLING: Fine grid lines (30 minutes)
+    const thirtyMinutes = 30 * 60 * 1000;
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = 0.5;
+    for (
+      let time = graphStartTime.getTime();
+      time <= graphEndTime.getTime();
+      time += thirtyMinutes
+    ) {
+      const x = xScale(time);
+      if (x >= margin.left && x <= margin.left + graphWidth) {
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, margin.top + graphHeight);
+        ctx.stroke();
+      }
+    }
+
+    // V1 STYLING: Tick marks on time axis
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    const oneHour = 60 * 60 * 1000;
+    for (let time = gridStartTime.getTime(); time <= graphEndTime.getTime(); time += oneHour) {
+      const x = xScale(time);
+      if (x >= margin.left && x <= margin.left + graphWidth) {
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top + graphHeight);
+        ctx.lineTo(x, margin.top + graphHeight + 8);
+        ctx.stroke();
+      }
+    }
+
+    const tenMinutes = 10 * 60 * 1000;
+    ctx.lineWidth = 0.5;
+    for (let time = graphStartTime.getTime(); time <= graphEndTime.getTime(); time += tenMinutes) {
+      const x = xScale(time);
+      if (x >= margin.left && x <= margin.left + graphWidth) {
+        const date = new Date(time);
+        if (date.getMinutes() !== 0) {
+          ctx.beginPath();
+          ctx.moveTo(x, margin.top + graphHeight);
+          ctx.lineTo(x, margin.top + graphHeight + 4);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // V1 STYLING: X-axis label
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.fillText('Time', displayWidth / 2, displayHeight - 60);
+
+    // V1 STYLING: Draw pressure line with area fill
+    if (emulatedData.points.length > 0) {
+      // Fill area under curve
+      ctx.fillStyle = 'rgba(173, 216, 230, 0.3)';
+      ctx.beginPath();
+      ctx.moveTo(xScale(emulatedData.points[0].time.getTime()), yScale(0));
+      for (const point of emulatedData.points) {
+        ctx.lineTo(xScale(point.time.getTime()), yScale(point.pressure));
+      }
+      ctx.lineTo(xScale(emulatedData.points[emulatedData.points.length - 1].time.getTime()), yScale(0));
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw line
+      ctx.strokeStyle = '#0066cc';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(xScale(emulatedData.points[0].time.getTime()), yScale(emulatedData.points[0].pressure));
+      for (const point of emulatedData.points) {
+        ctx.lineTo(xScale(point.time.getTime()), yScale(point.pressure));
+      }
+      ctx.stroke();
+    }
+
+    // Add watermark for emulated data (less intrusive than before)
+    ctx.save();
+    ctx.font = 'bold 32px Arial';
+    ctx.fillStyle = 'rgba(200, 200, 200, 0.2)';
+    ctx.translate(displayWidth / 2, displayHeight / 2);
+    ctx.rotate(-Math.PI / 8);
     ctx.textAlign = 'center';
     ctx.fillText('EMULATED DATA', 0, 0);
     ctx.restore();
 
-    // Draw graph
-    const padding = 60;
-    const graphWidth = canvas.width - 2 * padding;
-    const graphHeight = canvas.height - 2 * padding;
-
-    // Find max pressure for scaling
-    const maxPressure = Math.max(...emulatedData.points.map(p => p.pressure));
-    const yScale = graphHeight / (maxPressure * 1.1); // 10% padding at top
-
-    // Draw axes
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, canvas.height - padding);
-    ctx.lineTo(canvas.width - padding, canvas.height - padding);
-    ctx.stroke();
-
-    // Draw pressure line
-    ctx.strokeStyle = '#2563eb';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    const timeRange = emulatedData.endDateTime.getTime() - emulatedData.startDateTime.getTime();
-
-    emulatedData.points.forEach((point, index) => {
-      const x =
-        padding +
-        ((point.time.getTime() - emulatedData.startDateTime.getTime()) / timeRange) * graphWidth;
-      const y = canvas.height - padding - point.pressure * yScale;
-
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    ctx.stroke();
-
-    // Add labels
-    ctx.fillStyle = '#333';
-    ctx.font = '12px Arial';
+    // V1 STYLING: Information box (bottom center)
+    ctx.fillStyle = 'black';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'center';
+    const baseY = displayHeight - 45;
+    ctx.fillText(`Test: ${testNumber}`, displayWidth / 2, baseY);
+    ctx.fillText(`Working Pressure: ${config.workingPressure} ${config.pressureUnit} | Temperature: ${config.temperature}°${config.temperatureUnit}`, displayWidth / 2, baseY + 12);
+  };
 
-    // X-axis label
-    ctx.fillText('Time', canvas.width / 2, canvas.height - 20);
-
-    // Y-axis label
-    ctx.save();
-    ctx.translate(20, canvas.height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(`Pressure (${config.pressureUnit})`, 0, 0);
-    ctx.restore();
-
-    // Title
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText(`${testName} - Emulated Profile`, canvas.width / 2, 30);
+  /**
+   * Format date time for display
+   */
+  const formatDateTime = (date: Date): string => {
+    const dateStr = date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timeStr = date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `${dateStr} ${timeStr}`;
   };
 
   /**

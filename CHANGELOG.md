@@ -48,6 +48,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Auto-redirect to results page on completion
   - Server actions: startTestRun(), recordMeasurement(), completeTestRun()
 
+### Changed
+- **Graph Styling Updated to Match V1 (#91, #92)** - Consistent visual appearance across all graph components
+  - Updated emulation export dialog canvas rendering to use v1 styling (white background, #0066cc line color, light gray grid)
+  - Updated pressure-test-graph.tsx ECharts config to match v1 colors and grid lines
+  - Applied v1 margin system (top: 80, right: 50, bottom: 120, left: 80)
+  - Standardized pressure scaling: `Math.ceil(maxPressure * 1.1 / 5) * 5`
+  - Added 5% time buffer on graph edges for better visualization
+  - Grid lines: light gray (#f0f0f0) for Y-axis, darker gray (#d0d0d0) for X-axis
+  - Pressure line: #0066cc with 2px width (matching v1)
+  - Area fill: rgba(173, 216, 230, 0.3) light blue (matching v1)
+  - Proper tick marks on time axis (1 hour major, 10 minute minor)
+  - High DPI rendering (2x scale) for crisp canvas output
+
 ### Fixed
 - Permission denied error on /tests/[id]/edit and /tests/[id]/run directories blocking Turbopack compilation
 - DateTimeSettings component useTranslations error by removing next-intl dependency and using hardcoded English text
