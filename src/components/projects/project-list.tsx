@@ -9,8 +9,12 @@ import { getProjects } from '@/lib/actions/projects';
 import { ProjectCard } from './project-card';
 import { ProjectEmpty } from './project-empty';
 
-export async function ProjectList() {
-  const { projects, error } = await getProjects();
+interface ProjectListProps {
+  isArchived?: boolean;
+}
+
+export async function ProjectList({ isArchived = false }: ProjectListProps) {
+  const { projects, error } = await getProjects({ isArchived });
 
   if (error) {
     return (
@@ -23,7 +27,7 @@ export async function ProjectList() {
   }
 
   if (projects.length === 0) {
-    return <ProjectEmpty />;
+    return <ProjectEmpty isArchived={isArchived} />;
   }
 
   return (

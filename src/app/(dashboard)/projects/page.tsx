@@ -10,16 +10,34 @@ import { CreateProjectDialog } from '@/components/projects/create-project-dialog
  *
  * Displays all projects for the authenticated user.
  * Allows creating, editing, archiving, and deleting projects.
+ *
+ * Query Parameters:
+ * - archived: 'true' to show only archived projects, 'false' or omitted for active projects
  */
-export default function ProjectsPage() {
+
+interface ProjectsPageProps {
+  searchParams: Promise<{
+    archived?: string;
+  }>;
+}
+
+export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
+  // Parse search params (await Promise in Next.js 16+)
+  const params = await searchParams;
+  const showArchived = params.archived === 'true';
+
   return (
     <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {showArchived ? 'Archived Projects' : 'Projects'}
+          </h1>
           <p className="text-muted-foreground mt-2">
-            Organize your pressure tests into projects
+            {showArchived
+              ? 'View and restore archived projects'
+              : 'Organize your pressure tests into projects'}
           </p>
         </div>
 
@@ -34,7 +52,7 @@ export default function ProjectsPage() {
 
       {/* Project List */}
       <Suspense fallback={<ProjectListSkeleton />}>
-        <ProjectList />
+        <ProjectList isArchived={showArchived} />
       </Suspense>
     </div>
   );
