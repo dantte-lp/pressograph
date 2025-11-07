@@ -44,7 +44,6 @@ import type {
 import {
   generateRealisticTestData,
   convertToMinutes,
-  type DriftConfig
 } from '@/lib/utils/pressure-drift-simulator';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 
@@ -157,19 +156,6 @@ export function A4PreviewGraph({
     return useTimeBased && endDateTime ? new Date(endDateTime).getTime() : 0;
   }, [useTimeBased, endDateTime]);
 
-  // Calculate padded time bounds for axis display
-  const paddingMs = useMemo(() => {
-    return paddingHours * 60 * 60 * 1000; // Convert hours to milliseconds
-  }, [paddingHours]);
-
-  const paddedStartTime = useMemo(() => {
-    return useTimeBased && startTime ? startTime - paddingMs : 0;
-  }, [useTimeBased, startTime, paddingMs]);
-
-  const paddedEndTime = useMemo(() => {
-    return useTimeBased && endTime ? endTime + paddingMs : 0;
-  }, [useTimeBased, endTime, paddingMs]);
-
   /**
    * Dynamic interval configuration
    * Calculates optimal interval based on test duration
@@ -254,7 +240,7 @@ export function A4PreviewGraph({
       );
 
       // Convert milliseconds to minutes for chart display
-      dataPoints = convertToMinutes(realisticData);
+      dataPoints = convertToMinutes(realisticData, startTimeMs);
     } else {
       // Original simplified logic (no drift)
       // Start: 0 pressure at time 0
