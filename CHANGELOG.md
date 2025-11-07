@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Critical UI Centering and Sign-out Redirect Fix (2025-11-07 - Part 2)
+- **Fixed:** Two remaining critical production issues
+  - **Issue 1: Sign-in Form Still Not Centered Properly**
+    - **Problem:** Sign-in form not perfectly centered on screen
+    - **Root Cause:** Use of `container` class adding unwanted horizontal constraints
+    - **Solution Applied:**
+      - **File:** `/opt/projects/repositories/pressograph/src/app/auth/signin/page.tsx`
+      - Removed `container` class that was limiting width
+      - Changed to: `flex min-h-screen w-full items-center justify-center`
+      - Uses full viewport width with `w-full` and proper flexbox centering
+      - Added `bg-background` for proper background color
+      - Added `p-4` for responsive padding on mobile devices
+      - Changed inner container from `mx-auto flex w-full` to `flex w-full max-w-sm`
+    - **Code Changes:**
+      ```diff
+      - <div className="container relative flex min-h-screen flex-col items-center justify-center">
+      -   <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
+      + <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
+      +   <div className="flex w-full max-w-sm flex-col justify-center space-y-6">
+      ```
+    - **Status:** ✅ Sign-in form now perfectly centered on all viewport sizes
+
+  - **Issue 2: Sign Out Still Redirects to localhost**
+    - **Problem:** After sign out, user redirected to `http://localhost:3000/`
+    - **Root Cause:** Using relative URL `/` which resolves to localhost in container
+    - **Solution Applied:**
+      - **File:** `/opt/projects/repositories/pressograph/src/components/layout/header.tsx`
+      - Changed from relative URL `/` to absolute production URL
+      - Uses `window.location.href = 'https://dev-pressograph.infra4.dev/'`
+      - Ensures redirect always goes to production domain
+      - Removed unused `signIn` import
+    - **Code Changes:**
+      ```diff
+      - window.location.href = '/';
+      + window.location.href = 'https://dev-pressograph.infra4.dev/';
+      ```
+    - **Status:** ✅ Sign out now correctly redirects to production domain
+
 #### Critical Redirect and Layout Issues (2025-11-07)
 - **Fixed:** Six critical production issues with localhost redirects and page layouts
   - **Issue 1: Sign In CallbackUrl Shows localhost**

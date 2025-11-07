@@ -24,8 +24,8 @@ export const dynamic = 'force-dynamic';
 
 export default function SignInPage() {
   return (
-    <div className="container relative flex min-h-screen flex-col items-center justify-center">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
+    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
+      <div className="flex w-full max-w-sm flex-col justify-center space-y-6">
         {/* Logo and Branding */}
         <div className="flex flex-col space-y-2 text-center">
           <Link href="/" className="mx-auto mb-2">
