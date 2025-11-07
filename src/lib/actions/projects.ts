@@ -13,6 +13,7 @@ import { getServerSession } from 'next-auth';
 import { eq, and, desc, ilike, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { projects, type Project, type NewProject, type ProjectSettings } from '@/lib/db/schema/projects';
+import { users } from '@/lib/db/schema/users';
 import { authOptions } from '@/lib/auth/config';
 
 /**
@@ -93,6 +94,47 @@ export async function getProject(projectId: string) {
   } catch (error) {
     console.error('[getProject] Error:', error);
     return { project: null, error: 'Failed to fetch project' };
+  }
+}
+
+/**
+ * Get project by ID with owner information for detail page
+ */
+export async function getProjectById(projectId: string) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    const result = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        description: projects.description,
+        organizationId: projects.organizationId,
+        ownerId: projects.ownerId,
+        ownerName: users.name,
+        isArchived: projects.isArchived,
+        settings: projects.settings,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+      })
+      .from(projects)
+      .innerJoin(users, eq(projects.ownerId, users.id))
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.ownerId, session.user.id)
+        )
+      )
+      .limit(1);
+
+    return result[0] ?? null;
+  } catch (error) {
+    console.error('[getProjectById] Error:', error);
+    return null;
   }
 }
 
