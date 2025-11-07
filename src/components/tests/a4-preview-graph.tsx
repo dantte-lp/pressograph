@@ -76,6 +76,7 @@ interface A4PreviewGraphProps {
   temperatureUnit?: 'C' | 'F';
   startDateTime?: string;
   endDateTime?: string;
+  paddingHours?: number;
 }
 
 type ChartDataPoint = [number, number];
@@ -94,6 +95,7 @@ export function A4PreviewGraph({
   pressureUnit = 'MPa',
   startDateTime,
   endDateTime,
+  paddingHours = 0,
 }: A4PreviewGraphProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
@@ -108,7 +110,7 @@ export function A4PreviewGraph({
     return Boolean(startDateTime && endDateTime);
   }, [startDateTime, endDateTime]);
 
-  // Calculate time bounds (already includes 1-hour padding from parent component)
+  // Calculate time bounds (ACTUAL test times, not padded)
   const startTime = useMemo(() => {
     return useTimeBased && startDateTime ? new Date(startDateTime).getTime() : 0;
   }, [useTimeBased, startDateTime]);
@@ -117,6 +119,19 @@ export function A4PreviewGraph({
   const endTime = useMemo(() => {
     return useTimeBased && endDateTime ? new Date(endDateTime).getTime() : 0;
   }, [useTimeBased, endDateTime]);
+
+  // Calculate padded time bounds for axis display
+  const paddingMs = useMemo(() => {
+    return paddingHours * 60 * 60 * 1000; // Convert hours to milliseconds
+  }, [paddingHours]);
+
+  const paddedStartTime = useMemo(() => {
+    return useTimeBased && startTime ? startTime - paddingMs : 0;
+  }, [useTimeBased, startTime, paddingMs]);
+
+  const paddedEndTime = useMemo(() => {
+    return useTimeBased && endTime ? endTime + paddingMs : 0;
+  }, [useTimeBased, endTime, paddingMs]);
 
   /**
    * Dynamic interval configuration
@@ -288,7 +303,11 @@ export function A4PreviewGraph({
       /**
        * X-AXIS CONFIGURATION WITH TICK MARKS
        * Professional appearance with major and minor tick marks
-       * In time-based mode, the range includes 1-hour padding (set by parent component)
+       *
+       * CRITICAL FIX FOR ISSUES 7.1, 7.2, 7.3:
+       * - Axis range includes padding (shows empty space before/after test)
+       * - Data points start at paddingHours offset (actual test start time)
+       * - Y-axis is positioned at the LEFT edge (axis min), not at time 0
        */
       xAxis: {
         type: 'value',
@@ -300,9 +319,11 @@ export function A4PreviewGraph({
           fontWeight: 600,
           color: '#374151',
         },
-        min: useTimeBased ? 0 : 0,
+        // Axis range: From padded start to padded end
+        // This creates empty space before/after the actual test data
+        min: useTimeBased ? -paddingHours * 60 : 0,
         max: useTimeBased
-          ? (endTime - startTime) / (60 * 1000) // Convert milliseconds to minutes
+          ? (endTime - startTime) / (60 * 1000) + paddingHours * 60 // Total range with padding
           : sanitizedDuration * 60,
         // Major tick intervals (with labels)
         interval: xAxisInterval,
@@ -311,6 +332,8 @@ export function A4PreviewGraph({
         axisLabel: {
           formatter: (value: number) => {
             if (useTimeBased) {
+              // Convert minutes offset to actual timestamp
+              // Note: value can be negative (before test start) due to padding
               const timestamp = startTime + value * 60 * 1000;
               const date = new Date(timestamp);
               const dateStr = date.toLocaleDateString('ru-RU', {
@@ -388,12 +411,13 @@ export function A4PreviewGraph({
         type: 'value',
         name: `Давление (${pressureUnit})`,
         nameLocation: 'middle',
-        nameGap: 45, // Reduced from 50 to position closer to axis
+        nameGap: 45,
         nameTextStyle: {
           fontSize: 13,
           fontWeight: 600,
           color: '#374151',
         },
+        position: 'left', // Explicitly position at left edge
         min: 0,
         max: Math.ceil((maxPressure * 1.2) / 5) * 5,
         interval: 5,
@@ -402,10 +426,11 @@ export function A4PreviewGraph({
           fontSize: 11,
           fontWeight: 500,
           color: '#4b5563',
-          margin: 8, // Space between numbers and axis line
+          margin: 8,
         },
         axisLine: {
           show: true,
+          onZero: false, // CRITICAL: Don't align to X-axis zero, align to chart left edge
           lineStyle: {
             color: '#9ca3af',
             width: 1.5,
@@ -537,6 +562,7 @@ export function A4PreviewGraph({
     endTime,
     sanitizedDuration,
     xAxisInterval,
+    paddingHours,
   ]);
 
   /**

@@ -99,19 +99,9 @@ function PreviewPageContent() {
     );
   }
 
-  // Calculate 1-hour padding before and after test
-  const paddingHours = 1;
-  const paddingMs = paddingHours * 60 * 60 * 1000;
-
-  // Add padding to start and end times
-  const startWithPadding = config.startDateTime
-    ? new Date(new Date(config.startDateTime).getTime() - paddingMs).toISOString()
-    : undefined;
-  const endWithPadding = config.endDateTime
-    ? new Date(new Date(config.endDateTime).getTime() + paddingMs).toISOString()
-    : undefined;
-
   // CLEAN VERSION: Only the graph, no buttons, no text, no UI elements
+  // Note: Pass ACTUAL (non-padded) start/end times to A4PreviewGraph
+  // The component will handle padding internally for proper graph rendering
   return (
     <div className="w-screen h-screen bg-white flex items-center justify-center p-0 m-0 overflow-hidden">
       {/* A4 Landscape Graph - ONLY THE GRAPH */}
@@ -133,8 +123,9 @@ function PreviewPageContent() {
           intermediateStages={config.intermediateStages || []}
           pressureUnit={config.pressureUnit || 'MPa'}
           temperatureUnit={config.temperatureUnit || 'C'}
-          startDateTime={startWithPadding}
-          endDateTime={endWithPadding}
+          startDateTime={config.startDateTime}
+          endDateTime={config.endDateTime}
+          paddingHours={1}
         />
       </div>
     </div>
