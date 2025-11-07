@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Graph Preview tab to test detail page for in-page visualization
+- Comprehensive RUN test functionality specification document (docs/development/RUN_TEST_FUNCTIONALITY.md)
+- Responsive tab layout for test detail page (2 columns on mobile, 5 on desktop)
 - Test Results Display page for viewing completed test run data (#97) - 99835d5e
 - Server action getTestRunById() for fetching test run details with measurements and files
 - New GitHub issues for Sprint 3 features: Edit Test Form (#95), Run Test Interface (#96), Batch Operations (#98), Share Links Management (#99), Advanced Filtering (#100), Real-time Updates (#101)
