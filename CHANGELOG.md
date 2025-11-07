@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Comprehensive graph functionality comparison V1 vs V2 analysis document (docs/development/GRAPH_COMPARISON_V1_V2.md)
+- GitHub issues for missing graph features: PNG export (#91), PDF export (#92), JSON import/export (#93), pressure drift simulation (#94)
 - Comprehensive i18n and date-fns research documentation (docs/development/I18N_DATEFNS_RESEARCH.md)
 - TypeScript type augmentation for type-safe translation keys
 - date-fns locale integration with next-intl for consistent localization
