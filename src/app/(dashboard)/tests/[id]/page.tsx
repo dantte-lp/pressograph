@@ -9,7 +9,7 @@ import { getTestById } from '@/lib/actions/tests';
 import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
-import { PressureTestPreviewEnhanced } from '@/components/tests/pressure-test-preview-enhanced';
+import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
 import { EmulationExportDialog } from '@/components/tests/emulation-export-dialog';
 import { EChartsExportDialog } from '@/components/tests/echarts-export-dialog';
 import { ExportConfigButton } from '@/components/tests/export-config-button';
@@ -281,12 +281,14 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
               />
             </CardHeader>
             <CardContent>
-              <PressureTestPreviewEnhanced
+              <PressureTestPreview
                 workingPressure={test.config.workingPressure}
                 maxPressure={test.config.maxPressure}
                 testDuration={test.config.testDuration}
                 intermediateStages={test.config.intermediateStages || []}
                 pressureUnit={test.config.pressureUnit || 'MPa'}
+                startDateTime={test.config.startDateTime || undefined}
+                endDateTime={test.config.endDateTime || undefined}
               />
             </CardContent>
           </Card>
