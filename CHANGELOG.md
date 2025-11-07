@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CRITICAL: X-Axis Labels Missing in Exported Graphs** - Fixed missing time labels in PNG exports
+  - Added explicit `show: true` to X-axis `axisLabel` configuration for export
+  - Implemented complete axis configuration with `axisTick` and `minorTick` for proper rendering
+  - Added TypeScript type assertions (`as const`, `as ECOption`) for ECharts strict typing
+  - Ensured labels are visible at all export resolutions (HD+, FHD, QHD, 4K)
+  - Export graphs now display time markings (e.g., "0h", "2h", "4h") for report usability
+  - Updated: `/src/components/tests/echarts-export-dialog.tsx`
+  - Impact: Makes exported graphs usable for documentation - no longer missing time context
+
+- **Export Dialog Layout Optimization** - Implemented responsive multi-column grid for compact display
+  - Changed from single-column vertical stack to responsive grid layout
+  - Mobile (< 768px): 1 column
+  - Tablet (768px-1023px): 2 columns
+  - Desktop (≥1024px): 3 columns
+  - Reduced font sizes and spacing for denser information display
+  - Combined and simplified Test Info section
+  - Settings blocks now use available screen space efficiently
+  - Maintains full functionality while reducing vertical scrolling
+  - Updated: `/src/components/tests/echarts-export-dialog.tsx`
+
+- **TypeScript Strict Mode Compliance** - Fixed compilation errors in A4 preview graph component
+  - Removed unused `DriftConfig` type import
+  - Removed unused variables: `paddingMs`, `paddedStartTime`, `paddedEndTime`
+  - Fixed `convertToMinutes()` call with required `startTimeMs` parameter
+  - No functional changes - code cleanup only
+  - Updated: `/src/components/tests/a4-preview-graph.tsx`
+
 - **Hydration Mismatch in Tests Table** - Resolved React hydration error in tests table component
   - Created `RelativeTime` and `ConditionalRelativeTime` components for SSR-safe date formatting
   - Components display absolute timestamps during SSR/initial render, then switch to relative time
