@@ -64,11 +64,23 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 import { PressureTestPreview } from './pressure-test-preview';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
+import {
+  generateRealisticTestData,
+  convertToMinutes,
+  type DriftConfig,
+} from '@/lib/utils/pressure-drift-simulator';
+import {
+  calculateZoomedTimeWindow,
+  getZoomInterval,
+  type TimeScale,
+  type TimeWindow,
+} from '@/lib/utils/time-zoom';
 
 // Register ECharts components for export (tree-shaking optimization)
 echarts.use([
@@ -154,6 +166,8 @@ export function EChartsExportDialog({
   const [showMaxLine, setShowMaxLine] = useState(true);
   const [enableDrift, setEnableDrift] = useState(false);
   const [enableCanvasStyle, setEnableCanvasStyle] = useState(false);
+  const [timeScale, setTimeScale] = useState<TimeScale>('auto');
+  const [customWindow, setCustomWindow] = useState<TimeWindow>({ start: 0, end: 0 });
 
   // Collapsible sections state (all open by default)
   const [qualityOpen, setQualityOpen] = useState(true);
@@ -164,14 +178,78 @@ export function EChartsExportDialog({
   const sanitizedDuration = config.testDuration > 0 ? config.testDuration : 24;
 
   /**
-   * Calculate pressure profile data points
-   * (Duplicated from PressureTestPreview for export - avoids component coupling)
+   * Calculate zoomed time window using utility function
    */
-  const calculateProfileData = useMemo(() => {
+  const zoomedTimeWindow = useMemo(() => {
+    return calculateZoomedTimeWindow(
+      sanitizedDuration,
+      timeScale,
+      timeScale === 'custom' ? customWindow : undefined
+    );
+  }, [sanitizedDuration, timeScale, customWindow]);
+
+  /**
+   * Generate pressure profile data points dynamically
+   * Uses drift simulation when enabled, idealized data otherwise
+   *
+   * @param useDrift - Whether to apply realistic drift simulation
+   * @returns Array of [minutes, pressure] data points
+   */
+  const generateProfileData = (useDrift: boolean): [number, number][] => {
     const totalMinutes = sanitizedDuration * 60;
     const rampUpDuration = 0.5; // 30 seconds
     const depressurizeDuration = 0.5; // 30 seconds
 
+    // Use realistic drift simulation if enabled
+    if (useDrift) {
+      // Convert test parameters to milliseconds for drift simulator
+      const startTimeMs = 0;
+      const endTimeMs = totalMinutes * 60 * 1000;
+      const rampDuration = 30 * 1000; // 30 seconds in milliseconds
+
+      // Convert intermediate stages to absolute time format
+      const stages: Array<{ startTime: number; endTime: number; pressure: number }> = [];
+      let currentTimeMs = rampUpDuration * 60 * 1000; // After initial ramp-up
+
+      const intermediateStages = config.intermediateStages || [];
+      if (intermediateStages.length > 0) {
+        intermediateStages.forEach((stage: IntermediateStage) => {
+          // Add wait time after previous stage
+          currentTimeMs += stage.time * 60 * 1000;
+          const stageStartMs = currentTimeMs;
+          const stageEndMs = stageStartMs + stage.duration * 60 * 1000;
+
+          stages.push({
+            startTime: stageStartMs,
+            endTime: stageEndMs,
+            pressure: stage.pressure,
+          });
+
+          currentTimeMs = stageEndMs + rampDuration; // Account for ramp down
+        });
+      }
+
+      // Generate realistic data with drift and noise
+      const realisticData = generateRealisticTestData(
+        {
+          startTime: startTimeMs,
+          endTime: endTimeMs,
+          workingPressure: config.workingPressure,
+          intermediateStages: stages,
+        },
+        {
+          driftMagnitude: 0.002, // ±0.2% drift
+          noiseMagnitude: 0.001, // ±0.1% noise
+          samplingRate: 1, // 1 second intervals
+          seed: Date.now(),
+        }
+      );
+
+      // Convert milliseconds to minutes for chart display
+      return convertToMinutes(realisticData, startTimeMs);
+    }
+
+    // Idealized data (no drift)
     const dataPoints: [number, number][] = [];
 
     // Start: 0 pressure at time 0
@@ -214,7 +292,7 @@ export function EChartsExportDialog({
     dataPoints.push([totalMinutes, 0]);
 
     return dataPoints;
-  }, [config, sanitizedDuration]);
+  };
 
   /**
    * Handle export using ECharts Best Practices
@@ -262,42 +340,34 @@ export function EChartsExportDialog({
         devicePixelRatio: pixelRatio, // 2x resolution: 3840x2160
       });
 
-      // Step 3: Calculate optimal interval for export
+      // Step 3: Calculate optimal interval for export with improved logic
+      // New requirements: 1h intervals up to 30h, then scale up appropriately
       const calculateXAxisInterval = (durationHours: number): number => {
-        const targetTicks = 10;
-        const commonIntervals = [1, 2, 3, 4, 6, 12, 24];
-        const validIntervals: Array<{ interval: number; tickCount: number }> = [];
-
-        for (const interval of commonIntervals) {
-          const tickCount = durationHours / interval;
-          if (tickCount >= 8 && tickCount <= 15) {
-            validIntervals.push({ interval, tickCount });
-          }
+        // Updated thresholds per user requirements
+        if (durationHours <= 30) {
+          return 60; // 1 hour intervals for tests up to 30 hours
+        } else if (durationHours <= 60) {
+          return 120; // 2 hour intervals for 30-60 hour tests
+        } else if (durationHours <= 96) {
+          return 180; // 3 hour intervals for 60-96 hour tests (4 days)
+        } else {
+          return 240; // 4 hour intervals for tests longer than 96 hours
         }
-
-        if (validIntervals.length > 0) {
-          validIntervals.sort((a, b) => a.interval - b.interval);
-          return validIntervals[0].interval * 60;
-        }
-
-        let bestInterval = commonIntervals[0];
-        let bestDiff = Infinity;
-
-        for (const interval of commonIntervals) {
-          const tickCount = durationHours / interval;
-          const diff = Math.abs(tickCount - targetTicks);
-          if (diff < bestDiff) {
-            bestDiff = diff;
-            bestInterval = interval;
-          }
-        }
-
-        return bestInterval * 60;
       };
 
-      const xAxisInterval = calculateXAxisInterval(sanitizedDuration);
+      // Use zoomed duration for interval calculation if zoom is active
+      const displayDuration = zoomedTimeWindow.isZoomed
+        ? zoomedTimeWindow.durationHours
+        : sanitizedDuration;
+      const xAxisInterval = zoomedTimeWindow.isZoomed
+        ? getZoomInterval(displayDuration)
+        : calculateXAxisInterval(displayDuration);
+
       const pressureUnit = config.pressureUnit || 'MPa';
       const totalMinutes = sanitizedDuration * 60;
+
+      // Generate profile data dynamically based on drift setting
+      const profileData = generateProfileData(enableDrift);
 
       // Step 4: Apply chart options at export resolution
       let exportOption = {
@@ -334,8 +404,8 @@ export function EChartsExportDialog({
             color: '#1f2937',
             fontWeight: 500,
           },
-          min: 0,
-          max: totalMinutes,
+          min: zoomedTimeWindow.min,
+          max: zoomedTimeWindow.max,
           interval: xAxisInterval,
           minInterval: xAxisInterval,
           maxInterval: xAxisInterval,
@@ -371,7 +441,7 @@ export function EChartsExportDialog({
           },
           minorTick: {
             show: true,
-            splitNumber: 2,
+            splitNumber: 6, // 6 minor ticks = 10-minute intervals (60min / 6 = 10min)
             length: 4,
             lineStyle: {
               color: '#d1d5db',
@@ -422,11 +492,12 @@ export function EChartsExportDialog({
           {
             name: 'Pressure Profile',
             type: 'line',
-            data: calculateProfileData,
-            smooth: false,
+            data: profileData,
+            smooth: enableDrift, // Smooth curve for realistic drift, sharp for idealized
             symbol: 'none',
+            sampling: enableDrift ? 'lttb' : undefined, // Downsample high-frequency drift data
             lineStyle: {
-              width: 3,
+              width: enableDrift ? 2 : 3, // Thinner line for high-frequency drift data
               color: '#3b82f6',
             },
             areaStyle: {
@@ -715,6 +786,60 @@ export function EChartsExportDialog({
                         Canvas: v1.0 visual styling.
                       </p>
                     </div>
+
+                    {/* Time Scale Zoom Controls */}
+                    <div className="space-y-2">
+                      <Label htmlFor="time-scale-select" className="text-sm">Time Scale Zoom</Label>
+                      <Select value={timeScale} onValueChange={(value) => setTimeScale(value as TimeScale)}>
+                        <SelectTrigger id="time-scale-select" className="h-9">
+                          <SelectValue placeholder="Select time scale" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Full Duration (1x)</SelectItem>
+                          <SelectItem value="2x">First Half (2x)</SelectItem>
+                          <SelectItem value="4x">First Quarter (4x)</SelectItem>
+                          <SelectItem value="10x">First 10% (10x)</SelectItem>
+                          <SelectItem value="custom">Custom Range</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {timeScale === 'custom' && (
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <div>
+                            <Label htmlFor="zoom-start" className="text-xs">Start (min)</Label>
+                            <Input
+                              id="zoom-start"
+                              type="number"
+                              placeholder="0"
+                              min={0}
+                              max={sanitizedDuration * 60}
+                              value={customWindow.start}
+                              onChange={(e) => setCustomWindow((prev) => ({ ...prev, start: Number(e.target.value) }))}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="zoom-end" className="text-xs">End (min)</Label>
+                            <Input
+                              id="zoom-end"
+                              type="number"
+                              placeholder={String(sanitizedDuration * 60)}
+                              min={0}
+                              max={sanitizedDuration * 60}
+                              value={customWindow.end}
+                              onChange={(e) => setCustomWindow((prev) => ({ ...prev, end: Number(e.target.value) }))}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-muted-foreground">
+                        {zoomedTimeWindow.isZoomed
+                          ? `Showing ${zoomedTimeWindow.min}-${zoomedTimeWindow.max} min (${zoomedTimeWindow.durationHours.toFixed(1)}h)`
+                          : 'Showing full test duration'}
+                      </p>
+                    </div>
                   </CardContent>
                 </CollapsibleContent>
               </Card>
@@ -811,6 +936,8 @@ export function EChartsExportDialog({
                 enableCanvasStyle={enableCanvasStyle}
                 showMaxLine={showMaxLine}
                 enableDrift={enableDrift}
+                timeScale={timeScale}
+                timeWindow={timeScale === 'custom' ? customWindow : undefined}
               />
             </CardContent>
           </Card>
