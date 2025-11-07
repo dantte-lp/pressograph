@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Canvas-Style Configuration** - Optional v1.0 visual compatibility for all graph components (Issue #102 - Medium Priority)
+  - Added `enableCanvasStyle` and `canvasTheme` props to all graph components
+  - Applies Canvas blue (#0066cc) for pressure line when enabled
+  - Uses Canvas grid margins (80/50/80/120px) matching v1.0 implementation
+  - Arial font family for professional appearance
+  - Light sky blue area fill (#e6f2ff)
+  - All features are opt-in via props (default: disabled for modern styling)
+  - Components updated:
+    - `/src/components/tests/pressure-test-preview.tsx`
+    - `/src/components/tests/a4-preview-graph.tsx`
+    - `/src/components/tests/fullscreen-preview-dialog.tsx`
+    - `/src/components/tests/echarts-export-dialog.tsx`
+  - Utility: `/src/lib/utils/echarts-canvas-style.ts` provides theming functions
+  - Benefits: Allows users to choose between modern ECharts styling or classic Canvas v1.0 appearance
+
+- **Advanced Test Filtering UI** - Comprehensive filtering system for tests page (Issue #100 - Medium Priority)
+  - Multi-select status filters (Draft, Ready, Running, Completed, Failed, Cancelled)
+  - Search by test name, number, or description
+  - Project-based filtering with dropdown selector
+  - Tag-based filtering with multi-select checkboxes
+  - Date range picker for test creation dates (from/to)
+  - Active filters display with individual remove buttons
+  - Clear all filters button with active count badge
+  - URL-based state management for shareable filtered views
+  - Real-time filter application with visual feedback
+  - Component: `/src/components/tests/test-filters.tsx`
+  - Uses shadcn/ui primitives: Popover, Checkbox, Select, Badge, Card
+  - Accessible with proper ARIA labels and keyboard navigation
+
+- **Real-Time Test Polling** - Live test status updates with TanStack Query (Issue #101 - Medium Priority)
+  - Automatic polling every 30 seconds (configurable interval)
+  - Smart pause/resume based on page visibility API
+  - Status change detection with callback notifications
+  - Two specialized hooks:
+    - `useTestPolling()` - Monitor multiple tests in a list
+    - `useSingleTestPolling()` - Monitor individual test by ID
+  - Features:
+    - onStatusChange callback for toast notifications
+    - onComplete/onFail callbacks for single test monitoring
+    - hasRunningTests indicator for UI updates
+    - Manual pause/resume/refresh controls
+    - Optimistic UI update support
+  - Hook: `/src/hooks/use-test-polling.ts`
+  - Built on TanStack Query's refetchInterval
+  - Automatic cleanup and efficient query management
+  - TypeScript type safety with Test interface
+
 - **Drift Simulation Integration** - Realistic pressure drift simulation now fully integrated into all graph components (Issue #103 - High Priority)
   - Integrated into `PressureTestPreview` component with `enableDrift` prop
   - Integrated into `A4PreviewGraph` component with `enableDrift` prop
