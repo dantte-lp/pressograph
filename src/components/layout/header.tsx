@@ -123,9 +123,28 @@ export function Header() {
               </span>
               {/* Sign Out button */}
               <button
-                onClick={() => signOut({ redirect: false }).then(() => {
-                  window.location.href = 'https://dev-pressograph.infra4.dev/';
-                })}
+                onClick={async () => {
+                  console.log('[Header] Sign out initiated');
+                  console.log('[Header] window.location.origin:', window.location.origin);
+                  console.log('[Header] window.location.href:', window.location.href);
+
+                  try {
+                    // Prevent NextAuth from handling redirect
+                    await signOut({ redirect: false });
+                    console.log('[Header] NextAuth signOut complete');
+
+                    // Force absolute URL redirect
+                    const targetUrl = 'https://dev-pressograph.infra4.dev/';
+                    console.log('[Header] Redirecting to:', targetUrl);
+
+                    // Use window.location.replace to prevent back button issues
+                    window.location.replace(targetUrl);
+                  } catch (error) {
+                    console.error('[Header] Sign out error:', error);
+                    // Fallback: still try to redirect
+                    window.location.replace('https://dev-pressograph.infra4.dev/');
+                  }
+                }}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
               >
                 Sign Out

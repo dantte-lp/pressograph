@@ -188,17 +188,31 @@ export const authOptions: NextAuthOptions = {
 
     async redirect({ url, baseUrl }) {
       // Get production URL from environment or use baseUrl
-      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+      const productionUrl = process.env.NEXTAUTH_URL || 'https://dev-pressograph.infra4.dev';
+
+      console.log('[NextAuth Redirect]', {
+        url,
+        baseUrl,
+        productionUrl,
+        nodeEnv: process.env.NODE_ENV,
+      });
 
       // If starts with /, make it absolute with production URL
-      if (url.startsWith('/')) return `${productionUrl}${url}`;
+      if (url.startsWith('/')) {
+        const redirectTo = `${productionUrl}${url}`;
+        console.log('[NextAuth Redirect] Relative path:', redirectTo);
+        return redirectTo;
+      }
 
       // If contains localhost, extract path and use production URL
       if (url.includes('localhost')) {
         try {
           const urlObj = new URL(url);
-          return `${productionUrl}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
-        } catch {
+          const redirectTo = `${productionUrl}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+          console.log('[NextAuth Redirect] Localhost detected, replacing:', redirectTo);
+          return redirectTo;
+        } catch (error) {
+          console.error('[NextAuth Redirect] URL parsing error:', error);
           return productionUrl;
         }
       }
@@ -210,12 +224,14 @@ export const authOptions: NextAuthOptions = {
         const prodUrlObj = new URL(productionUrl);
 
         if (urlObj.origin === baseUrlObj.origin || urlObj.origin === prodUrlObj.origin) {
+          console.log('[NextAuth Redirect] Same origin, allowing:', url);
           return url;
         }
-      } catch {
-        // Invalid URL, return production URL
+      } catch (error) {
+        console.error('[NextAuth Redirect] URL comparison error:', error);
       }
 
+      console.log('[NextAuth Redirect] Default fallback to:', productionUrl);
       return productionUrl;
     },
   },
@@ -224,8 +240,11 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       console.log(`User ${user.email} signed in via ${account?.provider}`);
     },
-    async signOut() {
-      console.log(`User signed out`);
+    async signOut({ session, token }) {
+      console.log('[NextAuth Event] User signed out', {
+        session: session?.user?.email,
+        token: token?.sub,
+      });
     },
     async createUser({ user }) {
       console.log(`New user created: ${user.email}`);

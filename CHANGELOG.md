@@ -9,6 +9,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Enhanced Sign-Out Redirect Fix with Comprehensive Logging (2025-11-07 - Part 3)
+- **Fixed:** Persistent localhost redirect issue despite previous fixes
+  - **Issue:** Sign out still redirects to `http://localhost:3000/` instead of production URL
+  - **Request Chain:** Dashboard → Next.js chunk → localhost:3000 (incorrect)
+  - **Root Cause Analysis:**
+    - NextAuth's `signOut()` has internal redirect logic that runs before client code
+    - Previous `.then()` callback approach had race condition
+    - NextAuth client code uses `window.location.origin` which resolves to localhost in container
+    - Redirect happens before custom redirect code executes
+  - **Solution Applied:**
+    1. **Enhanced Header Component** (`/opt/projects/repositories/pressograph/src/components/layout/header.tsx`):
+       - Changed from `.then()` to proper `async/await` to prevent race conditions
+       - Added comprehensive logging to track execution flow
+       - Used `window.location.replace()` instead of `.href` (prevents back button issues)
+       - Added error handling with fallback redirect
+       - Explicit `await signOut({ redirect: false })`
+    2. **Enhanced NextAuth Redirect Callback** (`/opt/projects/repositories/pressograph/src/lib/auth/config.ts`):
+       - Added comprehensive logging for all redirect attempts
+       - Hardcoded fallback to production URL (`https://dev-pressograph.infra4.dev`)
+       - Enhanced localhost detection and replacement logic
+       - Added error handling for URL parsing
+    3. **Enhanced Sign Out Event Logging**:
+       - Added detailed logging to track sign out events
+       - Logs session and token information for debugging
+  - **Code Changes:**
+    ```diff
+    Header Component:
+    - onClick={() => signOut({ redirect: false }).then(() => {
+    -   window.location.href = 'https://dev-pressograph.infra4.dev/';
+    - })}
+    + onClick={async () => {
+    +   console.log('[Header] Sign out initiated');
+    +   try {
+    +     await signOut({ redirect: false });
+    +     console.log('[Header] NextAuth signOut complete');
+    +     const targetUrl = 'https://dev-pressograph.infra4.dev/';
+    +     window.location.replace(targetUrl);
+    +   } catch (error) {
+    +     console.error('[Header] Sign out error:', error);
+    +     window.location.replace('https://dev-pressograph.infra4.dev/');
+    +   }
+    + }}
+
+    NextAuth Config:
+    + async redirect({ url, baseUrl }) {
+    +   const productionUrl = process.env.NEXTAUTH_URL || 'https://dev-pressograph.infra4.dev';
+    +   console.log('[NextAuth Redirect]', { url, baseUrl, productionUrl });
+    +
+    +   if (url.includes('localhost')) {
+    +     const urlObj = new URL(url);
+    +     const redirectTo = `${productionUrl}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+    +     console.log('[NextAuth Redirect] Localhost detected, replacing:', redirectTo);
+    +     return redirectTo;
+    +   }
+    +   // ... enhanced logic
+    + }
+    ```
+  - **Testing Instructions:**
+    1. Clear browser cache and cookies
+    2. Open DevTools Console (watch for `[Header]` and `[NextAuth]` logs)
+    3. Sign in and navigate to dashboard
+    4. Click "Sign Out" button
+    5. Verify console logs show correct flow
+    6. Verify redirect goes to `https://dev-pressograph.infra4.dev/` (NOT localhost)
+  - **Expected Console Output:**
+    ```
+    [Header] Sign out initiated
+    [Header] window.location.origin: https://dev-pressograph.infra4.dev
+    [Header] NextAuth signOut complete
+    [Header] Redirecting to: https://dev-pressograph.infra4.dev/
+    ```
+  - **Documentation:** Created comprehensive test plan at `/opt/projects/repositories/pressograph/docs/SIGN_OUT_FIX_TEST_PLAN.md`
+  - **Status:** ⏳ Awaiting production testing and validation
+  - **Alternative Solution:** If issue persists, custom sign out implementation documented in test plan
+
 #### Critical UI Centering and Sign-out Redirect Fix (2025-11-07 - Part 2)
 - **Fixed:** Two remaining critical production issues
   - **Issue 1: Sign-in Form Still Not Centered Properly**
