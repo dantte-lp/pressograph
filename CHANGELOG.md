@@ -9,6 +9,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Test Detail and Test Runs Pages (2025-11-07)
+
+**Major Features:**
+
+1. **Test Detail Page (`/tests/[id]`)**
+   - Comprehensive test information display with tabbed interface
+   - **Overview Tab**: Status cards, test info, quick actions
+   - **Configuration Tab**: Full test parameters display with intermediate stages
+   - **Test Runs Tab**: Execution history summary with link to full runs page
+   - **Sharing Tab**: Public access settings and share link management
+   - Status badges with color-coded indicators (draft, ready, running, completed, failed, cancelled)
+   - Action buttons: Edit, Run Test (when ready), More actions dropdown
+   - Test metadata: test number, project, created date, run count, tags
+   - **Files:**
+     - `/src/app/(dashboard)/tests/[id]/page.tsx` - Main page component
+     - `/src/components/tests/test-status-badge.tsx` - Status indicator component
+     - `/src/components/tests/test-config-display.tsx` - Configuration display
+     - `/src/components/tests/test-actions-dropdown.tsx` - Actions menu
+   - **Server Actions:** `getTestById()` returns full test details with run statistics
+   - **Routes:** Dynamic route `/tests/[id]` with proper async params handling (Next.js 16)
+
+2. **Test Runs Page (`/tests/[id]/runs`)**
+   - Execution history for specific pressure test
+   - Paginated table showing all test runs with:
+     - Started and completed timestamps
+     - Duration with formatted display (hours, minutes, seconds)
+     - Operator name
+     - Status badges (Passed/Failed/Running with color indicators)
+     - "View Details" action for each run
+   - Empty state when no runs exist with "Run Test Now" CTA
+   - Breadcrumb navigation: Tests → Test Number → Runs
+   - **Files:**
+     - `/src/app/(dashboard)/tests/[id]/runs/page.tsx` - Runs page
+     - `/src/components/tests/test-runs-table.tsx` - Runs table component
+   - **Server Actions:** `getTestRuns()` with pagination support
+   - **Routes:** Dynamic route `/tests/[id]/runs`
+
+3. **Test Actions Dropdown Component**
+   - Client component with full action menu
+   - Actions: Download Graph, Share, Duplicate, Delete
+   - Delete action with confirmation dialog showing run count warning
+   - Client-side navigation after successful actions
+   - Toast notifications for all actions
+   - **File:** `/src/components/tests/test-actions-dropdown.tsx`
+
+4. **Test Status Badge Component**
+   - Reusable status indicator with icons and colors
+   - Six status types: draft (gray), ready (blue), running (yellow, animated), completed (green), failed (red), cancelled (orange)
+   - Dark mode support with proper contrast
+   - Consistent styling across all test views
+   - **File:** `/src/components/tests/test-status-badge.tsx`
+
+5. **Test Configuration Display Component**
+   - Displays complete pressure test parameters
+   - Core parameters: working pressure, max pressure, duration, temperature, allowable drop
+   - Intermediate stages with numbered steps and hold durations
+   - Additional info: equipment ID, operator name, notes
+   - Responsive grid layout
+   - **File:** `/src/components/tests/test-config-display.tsx`
+
+6. **Not Found Page for Tests**
+   - Custom 404 page for missing or inaccessible tests
+   - Helpful error message explaining possible reasons
+   - Navigation buttons to tests list and dashboard
+   - **File:** `/src/app/(dashboard)/tests/[id]/not-found.tsx`
+
+**New shadcn/ui Components:**
+- **Dialog** (`/src/components/ui/dialog.tsx`) - For confirmation modals
+- **Badge** (`/src/components/ui/badge.tsx`) - For status indicators and tags
+- **Alert** (`/src/components/ui/alert.tsx`) - For notifications (installed but not yet used)
+- **Table** (`/src/components/ui/table.tsx`) - For test runs table
+
+**Database Integration:**
+- Extended `tests.ts` actions with new functions:
+  - `getTestById()`: Fetch test with full details including run statistics
+  - `getTestRuns()`: Paginated test runs for specific test
+  - `deleteTest()`: Delete test with ownership verification
+- Proper type definitions: `TestDetail`, `TestRunListItem`, `PaginatedTestRuns`
+- Join queries for related data (projects, users, test runs)
+- Run count and last run date aggregation
+
+**Technical Improvements:**
+- Next.js 16 async params handling throughout
+- Server Components for initial data loading
+- Client Components only where interactivity needed
+- Proper TypeScript strict mode compliance
+- Loading states with skeletons
+- Error handling with not-found pages
+- Responsive layouts for mobile and desktop
+
+**User Experience:**
+- Breadcrumb navigation for easy backtracking
+- Empty states with helpful CTAs
+- Status-based conditional actions (e.g., "Run Test" only when status is "ready")
+- Warning when deleting tests with existing runs
+- Consistent styling with shadcn/ui design system
+- Dark mode support throughout
+
+**Routes Added:**
+- `/tests/[id]` - Test detail page
+- `/tests/[id]/runs` - Test runs history page
+
+**Build Status:**
+- ✅ Production build successful (zero TypeScript errors)
+- ✅ 25 routes compiled (2 new dynamic routes)
+- ✅ All type definitions correct
+- ✅ Proper Next.js 16 patterns implemented
+
 #### Projects and Tests Page Enhancements (2025-11-07)
 
 **New Features:**

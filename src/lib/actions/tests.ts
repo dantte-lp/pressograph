@@ -227,9 +227,108 @@ export async function getTests(
 }
 
 /**
- * Get test detail by ID
+ * Test detail with full configuration
  */
-export async function getTestById(testId: string) {
+export interface TestDetail {
+  id: string;
+  testNumber: string;
+  name: string;
+  description: string | null;
+  status: TestStatus;
+  templateType: string | null;
+  config: any;
+  tags: string[];
+  projectId: string;
+  projectName: string;
+  createdBy: string;
+  createdByName: string;
+  organizationId: string;
+  isPublic: boolean;
+  shareToken: string | null;
+  shareExpiresAt: Date | null;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  runCount: number;
+  lastRunDate: Date | null;
+}
+
+/**
+ * Get test by ID with full details
+ */
+export async function getTestById(testId: string): Promise<TestDetail | null> {
+  const session = await requireAuth();
+  const userId = session.user.id;
+
+  // Get test with joined data
+  const testData = await db
+    .select({
+      id: pressureTests.id,
+      testNumber: pressureTests.testNumber,
+      name: pressureTests.name,
+      description: pressureTests.description,
+      status: pressureTests.status,
+      templateType: pressureTests.templateType,
+      config: pressureTests.config,
+      tags: pressureTests.tags,
+      projectId: pressureTests.projectId,
+      projectName: projects.name,
+      createdBy: pressureTests.createdBy,
+      createdByName: users.name,
+      organizationId: pressureTests.organizationId,
+      isPublic: pressureTests.isPublic,
+      shareToken: pressureTests.shareToken,
+      shareExpiresAt: pressureTests.shareExpiresAt,
+      startedAt: pressureTests.startedAt,
+      completedAt: pressureTests.completedAt,
+      createdAt: pressureTests.createdAt,
+      updatedAt: pressureTests.updatedAt,
+    })
+    .from(pressureTests)
+    .innerJoin(projects, eq(pressureTests.projectId, projects.id))
+    .innerJoin(users, eq(pressureTests.createdBy, users.id))
+    .where(
+      and(
+        eq(pressureTests.id, testId),
+        eq(pressureTests.createdBy, userId)
+      )
+    )
+    .limit(1);
+
+  if (testData.length === 0) {
+    return null;
+  }
+
+  const test = testData[0];
+
+  // Get run count and last run date
+  const runStats = await db
+    .select({
+      count: count(),
+      lastRunDate: sql<Date>`MAX(${testRuns.startedAt})`,
+    })
+    .from(testRuns)
+    .where(eq(testRuns.pressureTestId, testId));
+
+  const runCount = runStats[0]?.count ?? 0;
+  const lastRunDate = runStats[0]?.lastRunDate ?? null;
+
+  return {
+    ...test,
+    status: test.status as TestStatus,
+    tags: (test.tags as string[]) || [],
+    createdByName: test.createdByName || 'Unknown',
+    runCount,
+    lastRunDate,
+  };
+}
+
+/**
+ * Get test detail by ID (keeping existing implementation)
+ * Note: Extended version with more fields available above as getTestById returning TestDetail
+ */
+export async function getTestByIdSimple(testId: string) {
   const session = await requireAuth();
   const userId = session.user.id;
 
@@ -260,6 +359,123 @@ export async function getTestById(testId: string) {
     .limit(1);
 
   return test[0] ?? null;
+}
+
+/**
+ * Test run list item
+ */
+export interface TestRunListItem {
+  id: string;
+  pressureTestId: string;
+  status: string;
+  executedBy: string;
+  executedByName: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  duration: number | null;
+  passed: boolean | null;
+  failureReason: string | null;
+  results: any;
+}
+
+/**
+ * Paginated test runs response
+ */
+export interface PaginatedTestRuns {
+  runs: TestRunListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * Get test runs for a specific test
+ */
+export async function getTestRuns(
+  testId: string,
+  pagination: PaginationParams = { page: 1, pageSize: 20 }
+): Promise<PaginatedTestRuns> {
+  const session = await requireAuth();
+  const userId = session.user.id;
+
+  // Verify test ownership
+  const test = await db
+    .select({ id: pressureTests.id })
+    .from(pressureTests)
+    .where(
+      and(
+        eq(pressureTests.id, testId),
+        eq(pressureTests.createdBy, userId)
+      )
+    )
+    .limit(1);
+
+  if (test.length === 0) {
+    return {
+      runs: [],
+      total: 0,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalPages: 0,
+    };
+  }
+
+  // Get total count
+  const countResult = await db
+    .select({ count: count() })
+    .from(testRuns)
+    .where(eq(testRuns.pressureTestId, testId));
+
+  const total = countResult[0]?.count ?? 0;
+
+  // Calculate pagination
+  const offset = (pagination.page - 1) * pagination.pageSize;
+  const totalPages = Math.ceil(total / pagination.pageSize);
+
+  // Get test runs with joined data
+  const runsData = await db
+    .select({
+      id: testRuns.id,
+      pressureTestId: testRuns.pressureTestId,
+      status: testRuns.status,
+      executedBy: testRuns.executedBy,
+      executedByName: users.name,
+      startedAt: testRuns.startedAt,
+      completedAt: testRuns.completedAt,
+      duration: testRuns.duration,
+      passed: testRuns.passed,
+      failureReason: testRuns.failureReason,
+      results: testRuns.results,
+    })
+    .from(testRuns)
+    .innerJoin(users, eq(testRuns.executedBy, users.id))
+    .where(eq(testRuns.pressureTestId, testId))
+    .orderBy(desc(testRuns.startedAt))
+    .limit(pagination.pageSize)
+    .offset(offset);
+
+  const runs: TestRunListItem[] = runsData.map(run => ({
+    id: run.id,
+    pressureTestId: run.pressureTestId,
+    status: run.status,
+    executedBy: run.executedBy,
+    executedByName: run.executedByName ?? 'Unknown',
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+    duration: run.duration,
+    passed: run.passed,
+    failureReason: run.failureReason,
+    results: run.results,
+  }));
+
+  return {
+    runs,
+    total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    totalPages,
+  };
 }
 
 /**
