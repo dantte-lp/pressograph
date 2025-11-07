@@ -336,14 +336,12 @@ export function PressureTestPreview({
         },
         min: xAxisMin,
         max: xAxisMax,
-        // CRITICAL: For time-based axes, interval/minInterval/maxInterval DO NOT WORK
-        // ECharts ignores these properties and calculates "nice" intervals automatically
-        // Instead, we must use axisLabel.interval to control label spacing
+        // CRITICAL: For time-based axes, use splitNumber to control the number of ticks
+        // splitNumber tells ECharts how many segments to divide the axis into
+        // Formula: totalRange / intervalSize
+        // Example: 26h range / 2h interval = 13 ticks
+        splitNumber: Math.ceil((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)),
         axisLabel: {
-          // Calculate how many intervals fit in the range, then show every Nth label
-          // Formula: floor(totalRange / intervalSize) - 1
-          // Example: 26h range / 2h interval = 13 ticks, interval = 12 (show every 12th + first/last)
-          interval: Math.floor((xAxisMax - xAxisMin) / (xAxisInterval * 60 * 1000)) - 1,
           formatter: (value: number) => {
             const date = new Date(value);
             const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
@@ -493,11 +491,9 @@ export function PressureTestPreview({
 
     if (useTimeBased) {
       const intervalMs = xAxisInterval * 60 * 1000;
-      const axisLabelInterval = Math.floor((xAxisMax - xAxisMin) / intervalMs) - 1;
-      const expectedLabels = Math.ceil((xAxisMax - xAxisMin) / intervalMs / (axisLabelInterval + 1));
+      const splitNumber = Math.ceil((xAxisMax - xAxisMin) / intervalMs);
       console.log(`[ECharts Config] Time-based axis - desired interval: ${intervalMs}ms (${xAxisInterval / 60}h)`);
-      console.log(`[ECharts Config] Time-based axis - axisLabel.interval: ${axisLabelInterval} (show every ${axisLabelInterval + 1} labels)`);
-      console.log(`[ECharts Config] Time-based axis - Expected visible labels: ~${expectedLabels}`);
+      console.log(`[ECharts Config] Time-based axis - splitNumber: ${splitNumber} ticks`);
       console.log(`[ECharts Config] Time-based axis - xAxisMin: ${xAxisMin}, xAxisMax: ${xAxisMax}`);
       console.log(`[ECharts Config] Time-based axis - Display range: ${(xAxisMax - xAxisMin) / (1000 * 60 * 60)} hours`);
     } else {
