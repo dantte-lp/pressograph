@@ -494,6 +494,22 @@ export function PressureTestPreview({
       ],
     };
 
+    // TODO: Remove debug logging after X-axis interval issue is resolved
+    // This logging shows EXACTLY what values are being passed to ECharts configuration
+    console.log(`[ECharts Config] useTimeBased: ${useTimeBased}`);
+    console.log(`[ECharts Config] xAxisInterval: ${xAxisInterval} minutes`);
+
+    if (useTimeBased) {
+      const intervalMs = xAxisInterval * 60 * 1000;
+      console.log(`[ECharts Config] Time-based axis - interval: ${intervalMs}ms, minInterval: ${intervalMs}ms, maxInterval: ${intervalMs}ms`);
+      console.log(`[ECharts Config] Time-based axis - xAxisMin: ${xAxisMin}, xAxisMax: ${xAxisMax}`);
+      console.log(`[ECharts Config] Time-based axis - Display range: ${(xAxisMax - xAxisMin) / (1000 * 60 * 60)} hours`);
+    } else {
+      console.log(`[ECharts Config] Value-based axis - interval: ${xAxisInterval}, minInterval: ${xAxisInterval}, maxInterval: ${xAxisInterval}`);
+      console.log(`[ECharts Config] Value-based axis - min: 0, max: ${sanitizedDuration * 60} minutes`);
+      console.log(`[ECharts Config] Value-based axis - Display range: ${sanitizedDuration} hours`);
+    }
+
     chart.setOption(option, { notMerge: true });
 
     // Handle resize

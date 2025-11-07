@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **ECharts Configuration Debug Logging** - Added detailed logging to track exact values passed to ECharts
+  - Logs `useTimeBased` value to verify axis type selection
+  - Logs `xAxisInterval` in minutes before passing to ECharts
+  - For time-based axis: Logs interval, minInterval, maxInterval in milliseconds, axis range, and total display hours
+  - For value-based axis: Logs interval, minInterval, maxInterval in minutes, axis min/max, and total display hours
+  - Helps identify if ECharts is receiving correct interval values or if internal auto-adjustment is occurring
+  - Example output for 24h test with value-based axis:
+    - `[ECharts Config] useTimeBased: false`
+    - `[ECharts Config] xAxisInterval: 120 minutes`
+    - `[ECharts Config] Value-based axis - interval: 120, minInterval: 120, maxInterval: 120`
+    - `[ECharts Config] Value-based axis - min: 0, max: 1440 minutes`
+    - `[ECharts Config] Value-based axis - Display range: 24 hours`
+  - TODO: Remove debug logging after X-axis interval issue is resolved
 - **X-Axis Interval Calculation Debug Logging** - Enhanced diagnostics for interval selection algorithm
   - Added comprehensive console logging to track interval calculation process
   - Logs display hours, all tested intervals (1h, 2h, 3h, 4h, 6h, 12h, 24h), tick counts, and validity
