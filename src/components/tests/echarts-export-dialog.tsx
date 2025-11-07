@@ -47,6 +47,7 @@ import type {
 import {
   Dialog,
   DialogContent,
+  DialogContentFullscreen,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -529,8 +530,8 @@ export function EChartsExportDialog({
           Export Graph (ECharts)
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContentFullscreen className="flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>Export Graph (ECharts High-Quality)</DialogTitle>
           <DialogDescription>
             Export the pressure test graph as PNG using ECharts best practices with dedicated rendering instance.
@@ -538,7 +539,7 @@ export function EChartsExportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Export Quality Section - Collapsible */}
           <Collapsible open={qualityOpen} onOpenChange={setQualityOpen}>
             <Card>
@@ -826,7 +827,7 @@ export function EChartsExportDialog({
           </Collapsible>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isExporting}>
             Cancel
           </Button>
@@ -844,7 +845,7 @@ export function EChartsExportDialog({
             )}
           </Button>
         </DialogFooter>
-      </DialogContent>
+      </DialogContentFullscreen>
     </Dialog>
   );
 }
