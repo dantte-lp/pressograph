@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **4K/HD/8K Export Quality Selector** - Professional-grade export with configurable resolution
+  - Quality presets with effective resolutions:
+    - HD: 1920×1080 @ 2x (3840×2160 effective)
+    - 4K: 3840×2160 @ 2x (7680×4320 effective) - Default
+    - 8K: 7680×4320 @ 2x (15360×8640 effective)
+  - Select dropdown in export dialog with resolution details
+  - Maintains A4 Landscape 16:9 aspect ratio
+  - Real-time display of selected resolution and effective pixels
+  - Export toast shows quality preset label
+  - Location: `/tests/[id]` - Export Graph (ECharts) dialog
+
+- **Realistic Pressure Drift Simulator** - High-precision sensor simulation
+  - Brownian motion for natural pressure drift (±0.2% typical)
+  - Gaussian noise using Box-Muller transform (±0.1% typical)
+  - High-frequency sampling (1 second intervals configurable)
+  - Smooth ramp transitions with S-curve acceleration/deceleration
+  - Bounded drift with soft boundaries and restoring force
+  - Seeded random generator for reproducible results
+  - Configurable parameters: drift magnitude, noise magnitude, sampling rate
+  - Based on original Pressograph v1.0 Canvas implementation
+  - New utility: `src/lib/utils/pressure-drift-simulator.ts`
+
+- **Canvas-Style ECharts Configuration** - Match original visual appearance
+  - Styling extracted from Pressograph v1.0 Canvas implementation
+  - Color scheme: Canvas blue (#0066cc) for pressure line
+  - Area fill: Light sky blue (rgba(173, 216, 230, 0.3))
+  - Grid margins: 80/50/80/120 (matching Canvas)
+  - Font family: Arial (matching Canvas)
+  - Light and dark theme support
+  - Utility functions to apply Canvas style to any ECharts option
+  - New utility: `src/lib/utils/echarts-canvas-style.ts`
+
+- **Working/Max Pressure Line Toggles** - Control reference line visibility
+  - Show/hide Working Pressure reference line
+  - Show/hide Max Pressure reference line
+  - Checkbox controls in export dialog
+  - Toggles apply to both preview and final export
+  - Display status in export details card ("Both", "Working Only", "Max Only", "None")
+  - Default: both lines shown (backward compatible)
+  - Props added to all graph components:
+    - `pressure-test-preview.tsx`
+    - `a4-preview-graph.tsx`
+    - `echarts-export-dialog.tsx`
+
 ### Fixed
 
 - **CRITICAL: Y-Axis Positioning and Time Padding Consistency** - Fixed Y-axis alignment and time padding across all preview locations
