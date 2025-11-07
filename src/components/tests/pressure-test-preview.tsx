@@ -92,6 +92,12 @@ interface PressureTestPreviewProps {
   startDateTime?: string;
   /** ISO 8601 format end date/time (enables time-based axis) */
   endDateTime?: string;
+  /** Show/hide working pressure reference line */
+  showWorkingLine?: boolean;
+  /** Show/hide max pressure reference line */
+  showMaxLine?: boolean;
+  /** Enable realistic pressure drift simulation */
+  enableDrift?: boolean;
 }
 
 /**
@@ -167,6 +173,9 @@ export function PressureTestPreview({
   className = '',
   startDateTime,
   endDateTime,
+  showWorkingLine = true,
+  showMaxLine = true,
+  enableDrift = false,
 }: PressureTestPreviewProps) {
   // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
@@ -666,34 +675,42 @@ export function PressureTestPreview({
               fontSize: 10,
             },
             data: [
-              {
-                name: 'Working Pressure',
-                yAxis: workingPressure,
-                lineStyle: {
-                  color: '#10b981',
-                  type: 'dashed',
-                  width: 1.5,
-                },
-                label: {
-                  formatter: `Working: ${workingPressure} ${pressureUnit}`,
-                  color: '#10b981',
-                  fontWeight: 500,
-                },
-              },
-              {
-                name: 'Max Pressure',
-                yAxis: maxPressure,
-                lineStyle: {
-                  color: '#ef4444',
-                  type: 'dashed',
-                  width: 1.5,
-                },
-                label: {
-                  formatter: `Max: ${maxPressure} ${pressureUnit}`,
-                  color: '#ef4444',
-                  fontWeight: 500,
-                },
-              },
+              ...(showWorkingLine
+                ? [
+                    {
+                      name: 'Working Pressure',
+                      yAxis: workingPressure,
+                      lineStyle: {
+                        color: '#10b981',
+                        type: 'dashed',
+                        width: 1.5,
+                      },
+                      label: {
+                        formatter: `Working: ${workingPressure} ${pressureUnit}`,
+                        color: '#10b981',
+                        fontWeight: 500,
+                      },
+                    },
+                  ]
+                : []),
+              ...(showMaxLine
+                ? [
+                    {
+                      name: 'Max Pressure',
+                      yAxis: maxPressure,
+                      lineStyle: {
+                        color: '#ef4444',
+                        type: 'dashed',
+                        width: 1.5,
+                      },
+                      label: {
+                        formatter: `Max: ${maxPressure} ${pressureUnit}`,
+                        color: '#ef4444',
+                        fontWeight: 500,
+                      },
+                    },
+                  ]
+                : []),
             ],
           },
         },

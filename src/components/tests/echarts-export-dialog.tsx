@@ -25,7 +25,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Download, FileImage } from 'lucide-react';
+import { Download, FileImage, Settings2 } from 'lucide-react';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -55,6 +55,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 import { PressureTestPreview } from './pressure-test-preview';
@@ -88,6 +97,35 @@ interface IntermediateStage {
   duration: number; // minutes
 }
 
+/**
+ * Export quality presets
+ */
+const EXPORT_QUALITY_PRESETS = {
+  HD: {
+    width: 1920,
+    height: 1080,
+    pixelRatio: 2,
+    label: 'Full HD (1080p)',
+    description: '3840 × 2160 effective resolution',
+  },
+  '4K': {
+    width: 3840,
+    height: 2160,
+    pixelRatio: 2,
+    label: '4K UHD (2160p)',
+    description: '7680 × 4320 effective resolution',
+  },
+  '8K': {
+    width: 7680,
+    height: 4320,
+    pixelRatio: 2,
+    label: '8K UHD (4320p)',
+    description: '15360 × 8640 effective resolution',
+  },
+} as const;
+
+type ExportQuality = keyof typeof EXPORT_QUALITY_PRESETS;
+
 interface EChartsExportDialogProps {
   testNumber: string;
   testName: string;
@@ -101,6 +139,9 @@ export function EChartsExportDialog({
 }: EChartsExportDialogProps) {
   const [open, setOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportQuality, setExportQuality] = useState<ExportQuality>('4K');
+  const [showWorkingLine, setShowWorkingLine] = useState(true);
+  const [showMaxLine, setShowMaxLine] = useState(true);
 
   // Sanitize test duration
   const sanitizedDuration = config.testDuration > 0 ? config.testDuration : 24;
@@ -181,11 +222,11 @@ export function EChartsExportDialog({
     let exportChart: ECharts | null = null;
 
     try {
-      // Step 1: Create hidden container with export dimensions
-      // 16:9 aspect ratio: 1920x1080 (Full HD)
-      const exportWidth = 1920;
-      const exportHeight = 1080;
-      const pixelRatio = 2; // 2x for high-DPI displays
+      // Step 1: Get quality preset dimensions
+      const qualityPreset = EXPORT_QUALITY_PRESETS[exportQuality];
+      const exportWidth = qualityPreset.width;
+      const exportHeight = qualityPreset.height;
+      const pixelRatio = qualityPreset.pixelRatio;
 
       const hiddenContainer = document.createElement('div');
       hiddenContainer.style.width = `${exportWidth}px`;
@@ -376,32 +417,40 @@ export function EChartsExportDialog({
                 fontWeight: 500,
               },
               data: [
-                {
-                  name: 'Working Pressure',
-                  yAxis: config.workingPressure,
-                  lineStyle: {
-                    color: '#10b981',
-                    type: 'dashed',
-                    width: 2,
-                  },
-                  label: {
-                    formatter: `Working: ${config.workingPressure} ${pressureUnit}`,
-                    color: '#10b981',
-                  },
-                },
-                {
-                  name: 'Max Pressure',
-                  yAxis: config.maxPressure,
-                  lineStyle: {
-                    color: '#ef4444',
-                    type: 'dashed',
-                    width: 2,
-                  },
-                  label: {
-                    formatter: `Max: ${config.maxPressure} ${pressureUnit}`,
-                    color: '#ef4444',
-                  },
-                },
+                ...(showWorkingLine
+                  ? [
+                      {
+                        name: 'Working Pressure',
+                        yAxis: config.workingPressure,
+                        lineStyle: {
+                          color: '#10b981',
+                          type: 'dashed',
+                          width: 2,
+                        },
+                        label: {
+                          formatter: `Working: ${config.workingPressure} ${pressureUnit}`,
+                          color: '#10b981',
+                        },
+                      },
+                    ]
+                  : []),
+                ...(showMaxLine
+                  ? [
+                      {
+                        name: 'Max Pressure',
+                        yAxis: config.maxPressure,
+                        lineStyle: {
+                          color: '#ef4444',
+                          type: 'dashed',
+                          width: 2,
+                        },
+                        label: {
+                          formatter: `Max: ${config.maxPressure} ${pressureUnit}`,
+                          color: '#ef4444',
+                        },
+                      },
+                    ]
+                  : []),
               ],
             },
           },
@@ -431,7 +480,7 @@ export function EChartsExportDialog({
       document.body.removeChild(hiddenContainer);
 
       toast.success('Export Successful', {
-        description: `High-quality export completed: ${exportWidth}x${exportHeight} @ ${pixelRatio}x (${exportWidth * pixelRatio}x${exportHeight * pixelRatio})`,
+        description: `${qualityPreset.label} export completed: ${exportWidth}×${exportHeight} @ ${pixelRatio}x (${exportWidth * pixelRatio}×${exportHeight * pixelRatio})`,
       });
 
       setOpen(false);
@@ -463,11 +512,95 @@ export function EChartsExportDialog({
           <DialogTitle>Export Graph (ECharts High-Quality)</DialogTitle>
           <DialogDescription>
             Export the pressure test graph as PNG using ECharts best practices with dedicated rendering instance.
-            Creates a new chart at export resolution (1920x1080) for crisp, professional output.
+            Configure quality, format, and display options below.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
+          {/* Export Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4" />
+                Export Settings
+              </CardTitle>
+              <CardDescription>Configure export quality and display options</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Quality Selector */}
+              <div className="space-y-2">
+                <Label htmlFor="quality-select">Export Quality</Label>
+                <Select value={exportQuality} onValueChange={(value) => setExportQuality(value as ExportQuality)}>
+                  <SelectTrigger id="quality-select">
+                    <SelectValue placeholder="Select quality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HD">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{EXPORT_QUALITY_PRESETS.HD.label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {EXPORT_QUALITY_PRESETS.HD.description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="4K">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{EXPORT_QUALITY_PRESETS['4K'].label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {EXPORT_QUALITY_PRESETS['4K'].description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="8K">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{EXPORT_QUALITY_PRESETS['8K'].label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {EXPORT_QUALITY_PRESETS['8K'].description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Selected: {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height} @ {EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x
+                  ({EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} effective)
+                </p>
+              </div>
+
+              {/* Pressure Line Toggles */}
+              <div className="space-y-2">
+                <Label>Reference Lines</Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="working-line"
+                      checked={showWorkingLine}
+                      onCheckedChange={(checked) => setShowWorkingLine(checked as boolean)}
+                    />
+                    <label
+                      htmlFor="working-line"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show Working Pressure Line ({config.workingPressure} {config.pressureUnit})
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="max-line"
+                      checked={showMaxLine}
+                      onCheckedChange={(checked) => setShowMaxLine(checked as boolean)}
+                    />
+                    <label
+                      htmlFor="max-line"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show Max Pressure Line ({config.maxPressure} {config.pressureUnit})
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {/* Graph Preview */}
           <Card>
             <CardHeader>
@@ -492,7 +625,7 @@ export function EChartsExportDialog({
           {/* Export Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Export Details (Best Practices)</CardTitle>
+              <CardTitle>Export Details</CardTitle>
               <CardDescription>
                 Following ECharts export best practices with dedicated instance
               </CardDescription>
@@ -504,32 +637,38 @@ export function EChartsExportDialog({
                   <dd className="text-foreground">PNG Image (Lossless)</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Rendering Method</dt>
-                  <dd className="text-foreground">Dedicated Instance</dd>
+                  <dt className="font-medium text-muted-foreground">Quality Preset</dt>
+                  <dd className="text-foreground">{EXPORT_QUALITY_PRESETS[exportQuality].label}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-muted-foreground">Display Resolution</dt>
-                  <dd className="text-foreground">1920 x 1080 (Full HD)</dd>
+                  <dd className="text-foreground">
+                    {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Actual Resolution</dt>
-                  <dd className="text-foreground">3840 x 2160 (2x DPI)</dd>
+                  <dt className="font-medium text-muted-foreground">Effective Resolution</dt>
+                  <dd className="text-foreground">
+                    {EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} ({EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x DPI)
+                  </dd>
                 </div>
                 <div>
                   <dt className="font-medium text-muted-foreground">Aspect Ratio</dt>
                   <dd className="text-foreground">16:9 (Wide)</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Quality</dt>
-                  <dd className="text-foreground">Native Resolution (No Scaling)</dd>
+                  <dt className="font-medium text-muted-foreground">Rendering Method</dt>
+                  <dd className="text-foreground">Dedicated Instance (No Scaling)</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-muted-foreground">Background</dt>
                   <dd className="text-foreground">White (Print-Ready)</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Use Case</dt>
-                  <dd className="text-foreground">Reports, Presentations, Printing</dd>
+                  <dt className="font-medium text-muted-foreground">Reference Lines</dt>
+                  <dd className="text-foreground">
+                    {showWorkingLine && showMaxLine ? 'Both' : showWorkingLine ? 'Working Only' : showMaxLine ? 'Max Only' : 'None'}
+                  </dd>
                 </div>
               </dl>
             </CardContent>

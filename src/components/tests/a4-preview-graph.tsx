@@ -77,6 +77,9 @@ interface A4PreviewGraphProps {
   startDateTime?: string;
   endDateTime?: string;
   paddingHours?: number;
+  showWorkingLine?: boolean;
+  showMaxLine?: boolean;
+  enableDrift?: boolean;
 }
 
 type ChartDataPoint = [number, number];
@@ -96,6 +99,9 @@ export function A4PreviewGraph({
   startDateTime,
   endDateTime,
   paddingHours = 0,
+  showWorkingLine = true,
+  showMaxLine = true,
+  enableDrift = false,
 }: A4PreviewGraphProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
@@ -519,32 +525,40 @@ export function A4PreviewGraph({
               fontWeight: 600,
             },
             data: [
-              {
-                name: 'Рабочее давление',
-                yAxis: workingPressure,
-                lineStyle: {
-                  color: '#10b981',
-                  type: 'dashed',
-                  width: 2,
-                },
-                label: {
-                  formatter: `Рабочее: ${workingPressure} ${pressureUnit}`,
-                  color: '#10b981',
-                },
-              },
-              {
-                name: 'Максимальное давление',
-                yAxis: maxPressure,
-                lineStyle: {
-                  color: '#ef4444',
-                  type: 'dashed',
-                  width: 2,
-                },
-                label: {
-                  formatter: `Макс: ${maxPressure} ${pressureUnit}`,
-                  color: '#ef4444',
-                },
-              },
+              ...(showWorkingLine
+                ? [
+                    {
+                      name: 'Рабочее давление',
+                      yAxis: workingPressure,
+                      lineStyle: {
+                        color: '#10b981',
+                        type: 'dashed',
+                        width: 2,
+                      },
+                      label: {
+                        formatter: `Рабочее: ${workingPressure} ${pressureUnit}`,
+                        color: '#10b981',
+                      },
+                    },
+                  ]
+                : []),
+              ...(showMaxLine
+                ? [
+                    {
+                      name: 'Максимальное давление',
+                      yAxis: maxPressure,
+                      lineStyle: {
+                        color: '#ef4444',
+                        type: 'dashed',
+                        width: 2,
+                      },
+                      label: {
+                        formatter: `Макс: ${maxPressure} ${pressureUnit}`,
+                        color: '#ef4444',
+                      },
+                    },
+                  ]
+                : []),
             ],
           },
         },
