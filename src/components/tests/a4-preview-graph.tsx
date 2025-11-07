@@ -73,6 +73,21 @@ interface IntermediateStage {
   duration: number;
 }
 
+/**
+ * Time scale zoom level for detailed viewing
+ */
+type TimeScale = 'auto' | '1x' | '2x' | '4x' | '10x';
+
+/**
+ * Custom time window for zoomed view (in minutes from test start)
+ */
+interface TimeWindow {
+  /** Start time in minutes from test start */
+  start: number;
+  /** End time in minutes from test start */
+  end: number;
+}
+
 interface A4PreviewGraphProps {
   workingPressure: number;
   maxPressure: number;
@@ -90,6 +105,10 @@ interface A4PreviewGraphProps {
   enableCanvasStyle?: boolean;
   /** Theme for Canvas style (light or dark) */
   canvasTheme?: 'light' | 'dark';
+  /** Time scale zoom level (default: 'auto' - full test duration) */
+  timeScale?: TimeScale;
+  /** Custom time window (overrides timeScale if provided) */
+  timeWindow?: TimeWindow;
 }
 
 type ChartDataPoint = [number, number];

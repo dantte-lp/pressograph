@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Time Scale Zoom Parameter** - Focus on specific time periods for detailed analysis (Issue #104 - Low Priority) [PARTIAL]
+  - Added `timeScale` prop to graph components ('auto', '1x', '2x', '4x', '10x')
+  - Added `timeWindow` prop for custom time ranges (in minutes from test start)
+  - Zoom levels:
+    - 'auto' or '1x': Full test duration (no zoom)
+    - '2x': First half of test (50% of duration)
+    - '4x': First quarter of test (25% of duration)
+    - '10x': First 10% of test (10% of duration)
+    - Custom: Specify exact start/end minutes via `timeWindow` prop
+  - Dynamic X-axis interval adjustment for optimal tick spacing at all zoom levels
+  - Smaller intervals for zoomed views (5min, 10min, 15min) vs full view (1h, 2h, 3h)
+  - Utility functions in `/src/lib/utils/time-zoom.ts`:
+    - `calculateZoomedTimeWindow()`: Calculate min/max/duration for any zoom level
+    - `getZoomInterval()`: Get optimal X-axis interval for zoomed display
+    - `formatTimeWindowDescription()`: Format zoom info for display
+  - Components updated:
+    - `/src/components/tests/pressure-test-preview.tsx` (IMPLEMENTED)
+    - `/src/components/tests/a4-preview-graph.tsx` (PENDING)
+    - `/src/components/tests/echarts-export-dialog.tsx` (PENDING - UI controls needed)
+    - `/src/components/tests/fullscreen-preview-dialog.tsx` (PENDING - prop pass-through)
+  - Use cases:
+    - Detailed analysis of specific test stages
+    - Print optimization for focused sections
+    - Anomaly investigation in narrow time windows
+    - Documentation with zoomed views for training
+  - Note: This is a non-interactive zoom (parameter-based), not interactive pan/zoom UI
+
 - **Canvas-Style Configuration** - Optional v1.0 visual compatibility for all graph components (Issue #102 - Medium Priority)
   - Added `enableCanvasStyle` and `canvasTheme` props to all graph components
   - Applies Canvas blue (#0066cc) for pressure line when enabled

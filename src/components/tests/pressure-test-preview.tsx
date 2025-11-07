@@ -45,6 +45,12 @@ import {
   type DriftConfig
 } from '@/lib/utils/pressure-drift-simulator';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
+import {
+  calculateZoomedTimeWindow,
+  getZoomInterval,
+  type TimeScale,
+  type TimeWindow,
+} from '@/lib/utils/time-zoom';
 
 // Register ECharts components (tree-shaking optimization)
 echarts.use([
@@ -108,6 +114,10 @@ interface PressureTestPreviewProps {
   enableCanvasStyle?: boolean;
   /** Theme for Canvas style (light or dark) */
   canvasTheme?: 'light' | 'dark';
+  /** Time scale zoom level (default: 'auto' - full test duration) */
+  timeScale?: TimeScale;
+  /** Custom time window (overrides timeScale if provided) */
+  timeWindow?: TimeWindow;
 }
 
 /**
@@ -188,6 +198,8 @@ export function PressureTestPreview({
   enableDrift = false,
   enableCanvasStyle = false,
   canvasTheme = 'light',
+  timeScale = 'auto',
+  timeWindow,
 }: PressureTestPreviewProps) {
   // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
@@ -288,10 +300,24 @@ export function PressureTestPreview({
     return sanitizedDuration;
   }, [useTimeBased, startTime, endTime, sanitizedDuration, paddingHours]);
 
+  /**
+   * Calculate zoomed time window using utility function
+   */
+  const zoomedTimeWindow = useMemo(() => {
+    return calculateZoomedTimeWindow(sanitizedDuration, timeScale, timeWindow);
+  }, [sanitizedDuration, timeScale, timeWindow]);
+
   // Memoize the calculated interval to avoid excessive recalculations
+  // Use zoomed display hours if zoom is active, otherwise use full display hours
   const xAxisInterval = useMemo(() => {
-    return calculateXAxisInterval(totalDisplayHours);
-  }, [calculateXAxisInterval, totalDisplayHours]);
+    const displayHours = zoomedTimeWindow.isZoomed
+      ? zoomedTimeWindow.durationHours
+      : totalDisplayHours;
+    // Use optimized zoom interval calculation
+    return zoomedTimeWindow.isZoomed
+      ? getZoomInterval(displayHours)
+      : calculateXAxisInterval(displayHours);
+  }, [calculateXAxisInterval, zoomedTimeWindow, totalDisplayHours]);
 
   /**
    * Calculate pressure profile data points
@@ -541,10 +567,10 @@ export function PressureTestPreview({
           fontSize: 11,
           color: '#4b5563',
         },
-        min: useTimeBased ? -paddingHours * 60 : 0,
+        min: useTimeBased ? -paddingHours * 60 : zoomedTimeWindow.min,
         max: useTimeBased
           ? (endTime - startTime) / (60 * 1000) + paddingHours * 60 // Total range with padding
-          : sanitizedDuration * 60,
+          : zoomedTimeWindow.max,
         interval: xAxisInterval,
         minInterval: xAxisInterval,
         maxInterval: xAxisInterval,
