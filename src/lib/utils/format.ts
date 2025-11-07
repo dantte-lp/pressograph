@@ -3,6 +3,7 @@
  */
 
 import { format, formatDistanceToNow } from 'date-fns';
+import type { Locale as DateFnsLocale } from 'date-fns';
 
 /**
  * Format bytes to human-readable string
@@ -125,17 +126,19 @@ export function formatPressure(pressure: number, unit: string = 'bar'): string {
  * formatting on both server and client sides via date-fns.
  *
  * @param date - Date to format (Date object or string)
+ * @param locale - Optional date-fns locale for localized output
  * @returns Formatted date string
  *
  * @example
  * ```ts
+ * import { ru } from 'date-fns/locale';
  * formatDate(new Date('2025-01-15')) // "Jan 15, 2025"
- * formatDate('2025-01-15T10:30:00Z') // "Jan 15, 2025"
+ * formatDate(new Date('2025-01-15'), ru) // "янв. 15, 2025"
  * ```
  */
-export function formatDate(date: Date | string): string {
+export function formatDate(date: Date | string, locale?: DateFnsLocale): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return format(d, 'MMM dd, yyyy');
+  return format(d, 'MMM dd, yyyy', { locale });
 }
 
 /**
@@ -145,32 +148,36 @@ export function formatDate(date: Date | string): string {
  * formatting on both server and client sides via date-fns.
  *
  * @param date - Date to format (Date object or string)
+ * @param locale - Optional date-fns locale for localized output
  * @returns Formatted date and time string
  *
  * @example
  * ```ts
+ * import { ru } from 'date-fns/locale';
  * formatDateTime(new Date('2025-01-15T10:30:00')) // "Jan 15, 2025 at 10:30 AM"
- * formatDateTime('2025-01-15T14:45:00Z') // "Jan 15, 2025 at 2:45 PM"
+ * formatDateTime(new Date('2025-01-15T14:45:00Z'), ru) // "янв. 15, 2025 в 14:45"
  * ```
  */
-export function formatDateTime(date: Date | string): string {
+export function formatDateTime(date: Date | string, locale?: DateFnsLocale): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return format(d, 'MMM dd, yyyy \'at\' h:mm a');
+  return format(d, 'MMM dd, yyyy \'at\' h:mm a', { locale });
 }
 
 /**
  * Format date to relative time (e.g., "2 hours ago")
  *
  * @param date - Date to format (Date object or string)
+ * @param locale - Optional date-fns locale for localized output
  * @returns Relative time string
  *
  * @example
  * ```ts
+ * import { ru } from 'date-fns/locale';
  * formatRelativeTime(new Date(Date.now() - 3600000)) // "about 1 hour ago"
- * formatRelativeTime('2025-01-15T10:30:00Z') // "2 days ago"
+ * formatRelativeTime(new Date(Date.now() - 3600000), ru) // "около 1 часа назад"
  * ```
  */
-export function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(date: Date | string, locale?: DateFnsLocale): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return formatDistanceToNow(d, { addSuffix: true });
+  return formatDistanceToNow(d, { addSuffix: true, locale });
 }

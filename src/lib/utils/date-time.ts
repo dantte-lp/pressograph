@@ -1,5 +1,6 @@
-import { format as dateFnsFormat } from 'date-fns';
+import { format as dateFnsFormat, formatDistanceToNow } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import type { Locale as DateFnsLocale } from 'date-fns';
 
 export type DateFormat = 'MM/DD/YYYY' | 'DD.MM.YYYY' | 'YYYY-MM-DD';
 export type TimeFormat = '12h' | '24h';
@@ -8,6 +9,7 @@ export interface DateTimeConfig {
   dateFormat: DateFormat;
   timeFormat: TimeFormat;
   timezone: string;
+  locale?: DateFnsLocale; // Optional date-fns locale for localized formatting
 }
 
 /**
@@ -61,34 +63,50 @@ function getTimeFormatString(timeFormat: TimeFormat): string {
 
 /**
  * Format a date according to user preferences
+ *
+ * @param date - Date to format
+ * @param config - Optional configuration including dateFormat and locale
+ * @returns Formatted date string
  */
 export function formatDate(
   date: Date | string | number,
   config: Partial<DateTimeConfig> = {}
 ): string {
-  const { dateFormat = DEFAULT_DATETIME_CONFIG.dateFormat } = config;
+  const { dateFormat = DEFAULT_DATETIME_CONFIG.dateFormat, locale } = config;
 
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
 
-  return dateFnsFormat(dateObj, getDateFormatString(dateFormat));
+  return dateFnsFormat(dateObj, getDateFormatString(dateFormat), {
+    locale,
+  });
 }
 
 /**
  * Format a time according to user preferences
+ *
+ * @param date - Date to format
+ * @param config - Optional configuration including timeFormat and locale
+ * @returns Formatted time string
  */
 export function formatTime(
   date: Date | string | number,
   config: Partial<DateTimeConfig> = {}
 ): string {
-  const { timeFormat = DEFAULT_DATETIME_CONFIG.timeFormat } = config;
+  const { timeFormat = DEFAULT_DATETIME_CONFIG.timeFormat, locale } = config;
 
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
 
-  return dateFnsFormat(dateObj, getTimeFormatString(timeFormat));
+  return dateFnsFormat(dateObj, getTimeFormatString(timeFormat), {
+    locale,
+  });
 }
 
 /**
- * Format date and time according to user preferences with timezone
+ * Format date and time according to user preferences with timezone and locale
+ *
+ * @param date - Date to format
+ * @param config - Optional configuration including dateFormat, timeFormat, timezone, and locale
+ * @returns Formatted date and time string with timezone
  */
 export function formatDateTime(
   date: Date | string | number,
@@ -98,6 +116,7 @@ export function formatDateTime(
     dateFormat = DEFAULT_DATETIME_CONFIG.dateFormat,
     timeFormat = DEFAULT_DATETIME_CONFIG.timeFormat,
     timezone = DEFAULT_DATETIME_CONFIG.timezone,
+    locale,
   } = config;
 
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
@@ -105,10 +124,10 @@ export function formatDateTime(
   const formatString = `${getDateFormatString(dateFormat)} ${getTimeFormatString(timeFormat)}`;
 
   try {
-    return formatInTimeZone(dateObj, timezone, formatString);
+    return formatInTimeZone(dateObj, timezone, formatString, { locale });
   } catch (error) {
     console.error('Error formatting date with timezone:', error);
-    return dateFnsFormat(dateObj, formatString);
+    return dateFnsFormat(dateObj, formatString, { locale });
   }
 }
 
@@ -130,28 +149,29 @@ export function toUserTimezone(
 }
 
 /**
- * Format relative time (e.g., "2 hours ago", "in 3 days")
+ * Format relative time using date-fns with locale support
+ *
+ * @param date - Date to format
+ * @param locale - Optional date-fns locale for localized output
+ * @returns Localized relative time string (e.g., "2 hours ago", "2 часа назад")
+ *
+ * @example
+ * ```ts
+ * import { ru } from 'date-fns/locale';
+ * formatRelativeTime(new Date('2025-11-06'), ru);
+ * // Output: "1 день назад"
+ * ```
  */
-export function formatRelativeTime(date: Date | string | number, locale: string = 'en'): string {
+export function formatRelativeTime(
+  date: Date | string | number,
+  locale?: DateFnsLocale
+): string {
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
 
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-
-  if (Math.abs(diffInSeconds) < 60) {
-    return rtf.format(-diffInSeconds, 'second');
-  } else if (Math.abs(diffInSeconds) < 3600) {
-    return rtf.format(-Math.floor(diffInSeconds / 60), 'minute');
-  } else if (Math.abs(diffInSeconds) < 86400) {
-    return rtf.format(-Math.floor(diffInSeconds / 3600), 'hour');
-  } else if (Math.abs(diffInSeconds) < 2592000) {
-    return rtf.format(-Math.floor(diffInSeconds / 86400), 'day');
-  } else if (Math.abs(diffInSeconds) < 31536000) {
-    return rtf.format(-Math.floor(diffInSeconds / 2592000), 'month');
-  } else {
-    return rtf.format(-Math.floor(diffInSeconds / 31536000), 'year');
-  }
+  return formatDistanceToNow(dateObj, {
+    addSuffix: true,
+    locale,
+  });
 }
 
 /**
