@@ -372,7 +372,7 @@ export function EmulationExportDialog({
       throw new Error('Canvas not available');
     }
 
-    await exportGraphAsPNG(canvasRef.current, testNumber, testName, true);
+    await exportGraphAsPNG(canvasRef.current, testNumber, testName, true, config);
   };
 
   /**

@@ -127,22 +127,294 @@ export function downloadFile(content: string | Blob, filename: string, mimeType:
 }
 
 /**
+ * Render graph to a fresh canvas for export (without watermark)
+ * This ensures clean export matching v1 behavior
+ *
+ * @param config - Test configuration
+ * @param testNumber - Test identification number
+ * @param testName - Human-readable test name
+ * @returns Rendered canvas element with high resolution
+ */
+function renderGraphForExport(
+  config: PressureTestConfig,
+  testNumber: string,
+  testName: string
+): HTMLCanvasElement {
+  // Create temporary canvas for export
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to get canvas context');
+
+  // Generate emulated data
+  const emulatedData = generateEmulatedTestData(config);
+
+  // High resolution for export (matching v1: 1123x794 at scale 4)
+  const scale = 4;
+  const displayWidth = 1123;
+  const displayHeight = 794;
+  canvas.width = displayWidth * scale;
+  canvas.height = displayHeight * scale;
+  ctx.scale(scale, scale);
+
+  // Background (white)
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+  // Graph margins
+  const margin = { top: 80, right: 50, bottom: 120, left: 80 };
+  const graphWidth = displayWidth - margin.left - margin.right;
+  const graphHeight = displayHeight - margin.top - margin.bottom;
+
+  // Time buffer (5% on each side)
+  const timeRange = emulatedData.endDateTime.getTime() - emulatedData.startDateTime.getTime();
+  const timeBuffer = timeRange * 0.05;
+  const graphStartTime = new Date(emulatedData.startDateTime.getTime() - timeBuffer);
+  const graphEndTime = new Date(emulatedData.endDateTime.getTime() + timeBuffer);
+  const graphTimeRange = graphEndTime.getTime() - graphStartTime.getTime();
+
+  // Pressure scaling
+  const pressureMaxRaw = config.maxPressure * 1.1;
+  const pressureMax = Math.ceil(pressureMaxRaw / 5) * 5;
+
+  const xScale = (time: number) => {
+    return margin.left + ((time - graphStartTime.getTime()) / graphTimeRange) * graphWidth;
+  };
+
+  const yScale = (pressure: number) => {
+    return margin.top + graphHeight - (pressure / pressureMax) * graphHeight;
+  };
+
+  // Title (Russian format matching v1)
+  ctx.font = 'bold 20px Arial';
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  ctx.fillText(testName || 'Испытание давления', displayWidth / 2, 40);
+
+  // Draw axes
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(margin.left, margin.top);
+  ctx.lineTo(margin.left, margin.top + graphHeight);
+  ctx.lineTo(margin.left + graphWidth, margin.top + graphHeight);
+  ctx.stroke();
+
+  // Grid lines (Y-axis) - light gray
+  ctx.strokeStyle = '#f0f0f0';
+  ctx.lineWidth = 1;
+  const gridStep = 5;
+  const numSteps = Math.ceil(pressureMax / gridStep);
+
+  for (let i = 0; i <= numSteps; i++) {
+    const pressure = i * gridStep;
+    if (pressure <= pressureMax) {
+      const y = yScale(pressure);
+      ctx.beginPath();
+      ctx.moveTo(margin.left, y);
+      ctx.lineTo(margin.left + graphWidth, y);
+      ctx.stroke();
+    }
+  }
+
+  // Y-axis labels
+  ctx.font = '12px Arial';
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'right';
+
+  for (let i = 0; i <= numSteps; i++) {
+    const pressure = i * gridStep;
+    if (pressure <= pressureMax) {
+      const y = yScale(pressure);
+      ctx.fillText(pressure.toFixed(0), margin.left - 10, y + 5);
+    }
+  }
+
+  // Y-axis label (Russian)
+  ctx.save();
+  ctx.translate(20, displayHeight / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.font = '14px Arial';
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  ctx.fillText('Давление, МПа', 0, 0);
+  ctx.restore();
+
+  // Grid lines (X-axis) - darker gray
+  const testDuration = config.testDuration;
+  const timeInterval = testDuration <= 30 ? 2 * 60 * 60 * 1000 : 4 * 60 * 60 * 1000;
+
+  const gridStartTime = new Date(graphStartTime);
+  gridStartTime.setMinutes(0, 0, 0);
+  const intervalHours = timeInterval / (60 * 60 * 1000);
+  gridStartTime.setHours(Math.floor(gridStartTime.getHours() / intervalHours) * intervalHours);
+
+  if (gridStartTime > graphStartTime) {
+    gridStartTime.setHours(gridStartTime.getHours() - intervalHours);
+  }
+
+  ctx.font = '11px Arial';
+  ctx.textAlign = 'center';
+
+  // Helper function to format date/time (matching v1)
+  const formatDateTime = (date: Date): string => {
+    const dateStr = date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timeStr = date.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    return `${timeStr} ${dateStr}`;
+  };
+
+  for (
+    let time = gridStartTime.getTime();
+    time <= graphEndTime.getTime() + timeInterval;
+    time += timeInterval
+  ) {
+    const x = xScale(time);
+    if (x >= margin.left && x <= margin.left + graphWidth) {
+      ctx.strokeStyle = '#d0d0d0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, margin.top);
+      ctx.lineTo(x, margin.top + graphHeight);
+      ctx.stroke();
+
+      const date = new Date(time);
+      const timeStr = formatDateTime(date).split(' ');
+      ctx.fillStyle = 'black';
+      ctx.fillText(timeStr[0], x, margin.top + graphHeight + 20);
+      ctx.fillText(timeStr[1], x, margin.top + graphHeight + 35);
+    }
+  }
+
+  // Fine grid lines (30 minutes)
+  const thirtyMinutes = 30 * 60 * 1000;
+  ctx.strokeStyle = '#f0f0f0';
+  ctx.lineWidth = 0.5;
+  for (
+    let time = graphStartTime.getTime();
+    time <= graphEndTime.getTime();
+    time += thirtyMinutes
+  ) {
+    const x = xScale(time);
+    if (x >= margin.left && x <= margin.left + graphWidth) {
+      ctx.beginPath();
+      ctx.moveTo(x, margin.top);
+      ctx.lineTo(x, margin.top + graphHeight);
+      ctx.stroke();
+    }
+  }
+
+  // Tick marks on time axis
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1;
+  const oneHour = 60 * 60 * 1000;
+  for (let time = gridStartTime.getTime(); time <= graphEndTime.getTime(); time += oneHour) {
+    const x = xScale(time);
+    if (x >= margin.left && x <= margin.left + graphWidth) {
+      ctx.beginPath();
+      ctx.moveTo(x, margin.top + graphHeight);
+      ctx.lineTo(x, margin.top + graphHeight + 8);
+      ctx.stroke();
+    }
+  }
+
+  const tenMinutes = 10 * 60 * 1000;
+  ctx.lineWidth = 0.5;
+  for (let time = graphStartTime.getTime(); time <= graphEndTime.getTime(); time += tenMinutes) {
+    const x = xScale(time);
+    if (x >= margin.left && x <= margin.left + graphWidth) {
+      const date = new Date(time);
+      if (date.getMinutes() !== 0) {
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top + graphHeight);
+        ctx.lineTo(x, margin.top + graphHeight + 4);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // X-axis label (Russian)
+  ctx.font = 'bold 14px Arial';
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  ctx.fillText('Время', displayWidth / 2, displayHeight - 60);
+
+  // Draw pressure line with area fill
+  if (emulatedData.points.length > 0) {
+    // Fill area under curve
+    ctx.fillStyle = 'rgba(173, 216, 230, 0.3)';
+    ctx.beginPath();
+    ctx.moveTo(xScale(emulatedData.points[0].time.getTime()), yScale(0));
+    for (const point of emulatedData.points) {
+      ctx.lineTo(xScale(point.time.getTime()), yScale(point.pressure));
+    }
+    ctx.lineTo(xScale(emulatedData.points[emulatedData.points.length - 1].time.getTime()), yScale(0));
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw line
+    ctx.strokeStyle = '#0066cc';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(xScale(emulatedData.points[0].time.getTime()), yScale(emulatedData.points[0].pressure));
+    for (const point of emulatedData.points) {
+      ctx.lineTo(xScale(point.time.getTime()), yScale(point.pressure));
+    }
+    ctx.stroke();
+  }
+
+  // Footer information (Russian, matching v1)
+  ctx.fillStyle = 'black';
+  ctx.font = '11px Arial';
+  ctx.textAlign = 'center';
+  const baseY = displayHeight - 45;
+  ctx.fillText(`Испытание №${testNumber}`, displayWidth / 2, baseY);
+
+  // Format date from emulatedData
+  const dateStr = emulatedData.startDateTime.toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  ctx.fillText(`Дата: ${dateStr}`, displayWidth / 2, baseY + 12);
+  ctx.fillText(
+    `Рабочее давление: ${config.workingPressure} МПа | Температура: ${config.temperature}°C`,
+    displayWidth / 2,
+    baseY + 24
+  );
+
+  return canvas;
+}
+
+/**
  * Export graph canvas to PNG
  *
- * This function is meant to be called client-side with a rendered canvas element.
- * For emulated exports, the canvas should be pre-rendered with emulated data.
+ * Creates a fresh high-resolution canvas for export (no watermark, no preview artifacts).
+ * Matches v1 export behavior.
  *
- * @param canvas - Rendered canvas element
+ * @param _canvas - Canvas reference (unused, kept for API compatibility)
  * @param testNumber - Test identification number
  * @param testName - Human-readable test name
  * @param isEmulation - Whether this is emulated data
+ * @param config - Test configuration
  */
 export async function exportGraphAsPNG(
-  canvas: HTMLCanvasElement,
+  _canvas: HTMLCanvasElement,
   testNumber: string,
   testName: string,
-  isEmulation: boolean
+  isEmulation: boolean,
+  config?: PressureTestConfig
 ): Promise<void> {
+  if (!config) {
+    throw new Error('Test configuration is required for export');
+  }
+
   const filename = generateExportFilename({
     testNumber,
     testName,
@@ -150,9 +422,12 @@ export async function exportGraphAsPNG(
     isEmulation,
   });
 
+  // Render fresh canvas for export (matching v1 approach)
+  const exportCanvas = renderGraphForExport(config, testNumber, testName);
+
   // Convert canvas to blob
   return new Promise((resolve, reject) => {
-    canvas.toBlob(
+    exportCanvas.toBlob(
       (blob) => {
         if (!blob) {
           reject(new Error('Failed to create PNG blob'));
@@ -170,22 +445,27 @@ export async function exportGraphAsPNG(
 /**
  * Export graph canvas to PDF
  *
- * This function is meant to be called client-side with a rendered canvas element.
- * For emulated exports, the canvas should be pre-rendered with emulated data.
+ * Creates a fresh high-resolution canvas for export and embeds ONLY the graph image.
+ * No watermark, no metadata page - just the clean graph matching v1 behavior.
+ * User requirement: "при экспорте должен быть только график, без каких-либо текстовых данных"
  *
- * @param canvas - Rendered canvas element
+ * @param _canvas - Canvas reference (unused, kept for API compatibility)
  * @param testNumber - Test identification number
  * @param testName - Human-readable test name
  * @param isEmulation - Whether this is emulated data
- * @param config - Test configuration for metadata
+ * @param config - Test configuration for rendering
  */
 export async function exportGraphAsPDF(
-  canvas: HTMLCanvasElement,
+  _canvas: HTMLCanvasElement,
   testNumber: string,
   testName: string,
   isEmulation: boolean,
-  config: PressureTestConfig
+  config?: PressureTestConfig
 ): Promise<void> {
+  if (!config) {
+    throw new Error('Test configuration is required for export');
+  }
+
   const filename = generateExportFilename({
     testNumber,
     testName,
@@ -193,7 +473,13 @@ export async function exportGraphAsPDF(
     isEmulation,
   });
 
-  // Create PDF in landscape A4 format
+  // Render fresh canvas for export (matching v1 approach)
+  const exportCanvas = renderGraphForExport(config, testNumber, testName);
+
+  // Convert canvas to data URL
+  const imgData = exportCanvas.toDataURL('image/png', 1.0);
+
+  // Create PDF in landscape A4 format (matching v1)
   const pdf = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -201,105 +487,10 @@ export async function exportGraphAsPDF(
   });
 
   // A4 landscape dimensions: 297mm x 210mm
-  const pageWidth = 297;
-  const pageHeight = 210;
-  const margin = 10;
+  // Add image to fill the entire page (no margins, matching v1)
+  pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
 
-  // Add watermark for emulated data
-  if (isEmulation) {
-    pdf.setFontSize(60);
-    pdf.setTextColor(200, 200, 200);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('EMULATED DATA', pageWidth / 2, pageHeight / 2, {
-      align: 'center',
-      angle: 45,
-    });
-  }
-
-  // Add graph image
-  const imgData = canvas.toDataURL('image/png', 1.0);
-  const imgWidth = pageWidth - 2 * margin;
-  const imgHeight = (canvas.height / canvas.width) * imgWidth;
-
-  pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, Math.min(imgHeight, pageHeight - 2 * margin));
-
-  // Add metadata footer
-  pdf.setFontSize(8);
-  pdf.setTextColor(100, 100, 100);
-  pdf.setFont('helvetica', 'normal');
-
-  const footerY = pageHeight - 5;
-  pdf.text(`Test: ${testNumber} - ${testName}`, margin, footerY);
-  pdf.text(
-    `Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
-    pageWidth / 2,
-    footerY,
-    { align: 'center' }
-  );
-  pdf.text(
-    isEmulation ? 'SIMULATED DATA' : 'Pressograph 2.0',
-    pageWidth - margin,
-    footerY,
-    { align: 'right' }
-  );
-
-  // Add second page with test details
-  pdf.addPage();
-  pdf.setFontSize(16);
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Test Configuration', margin, margin + 10);
-
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  let y = margin + 20;
-
-  const details = [
-    ['Test Number:', testNumber],
-    ['Test Name:', testName],
-    ['Working Pressure:', `${config.workingPressure} ${config.pressureUnit}`],
-    ['Max Pressure:', `${config.maxPressure} ${config.pressureUnit}`],
-    ['Test Duration:', `${config.testDuration} hours`],
-    ['Temperature:', `${config.temperature}°${config.temperatureUnit}`],
-    ['Allowable Pressure Drop:', `${config.allowablePressureDrop} ${config.pressureUnit}`],
-  ];
-
-  if (config.notes) {
-    details.push(['Notes:', config.notes]);
-  }
-
-  if (isEmulation) {
-    details.push(['DATA TYPE:', '⚠️  EMULATED/SIMULATED - NOT FROM ACTUAL TEST RUN']);
-  }
-
-  for (const [label, value] of details) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(label, margin, y);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(value.toString(), margin + 60, y);
-    y += 7;
-  }
-
-  // Add intermediate stages if present
-  if (config.intermediateStages && config.intermediateStages.length > 0) {
-    y += 5;
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Intermediate Stages:', margin, y);
-    y += 7;
-
-    pdf.setFont('helvetica', 'normal');
-    for (let i = 0; i < config.intermediateStages.length; i++) {
-      const stage = config.intermediateStages[i];
-      pdf.text(
-        `${i + 1}. Time: ${stage.time} min, Pressure: ${stage.pressure} ${config.pressureUnit}, Duration: ${stage.duration} min`,
-        margin + 5,
-        y
-      );
-      y += 6;
-    }
-  }
-
-  // Save PDF
+  // Save PDF (ONLY the graph, no second page with metadata)
   pdf.save(filename);
 }
 

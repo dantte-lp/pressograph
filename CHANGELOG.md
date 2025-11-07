@@ -62,6 +62,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - High DPI rendering (2x scale) for crisp canvas output
 
 ### Fixed
+- **PNG Export Rendering (#91)** - Fixed broken PNG export functionality
+  - Resolved issue where exported PNG showed transparent background with no graph content
+  - Implemented v1-style fresh canvas rendering for each export operation
+  - Export now creates high-resolution (1123x794 @ 4x scale) canvas matching v1 quality
+  - Removed preview canvas dependency - export renders independently
+  - Added Russian language support for axis labels (matching v1)
+  - Graph shows ONLY the visual chart without watermarks in export
+- **PDF Export Rendering (#92)** - Fixed broken PDF export functionality
+  - Resolved issue where PDF showed no graph on first page, only text on second page
+  - User requirement: "при экспорте должен быть только график, без каких-либо текстовых данных"
+  - PDF now contains ONLY the graph image (no metadata page, no watermarks)
+  - Implemented v1-style canvas-to-PDF pipeline with full-page A4 landscape output
+  - All text (title, labels, footer) rendered on canvas as part of the image
+  - Matches v1 export behavior exactly
 - Permission denied error on /tests/[id]/edit and /tests/[id]/run directories blocking Turbopack compilation
 - DateTimeSettings component useTranslations error by removing next-intl dependency and using hardcoded English text
 - LocaleSwitcher emoji flags not rendering in Chrome by replacing with text-based country codes (EN | English, RU | Русский)
