@@ -19,7 +19,9 @@
 import { requireAuth } from '@/lib/auth/server-auth';
 import { ProfileForm } from '@/components/profile/profile-form';
 import { PasswordChangeForm } from '@/components/profile/password-change-form';
-import { UserIcon } from 'lucide-react';
+import { DateTimeSettings } from '@/components/settings/date-time-settings';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserIcon, ClockIcon } from 'lucide-react';
 
 export const metadata = {
   title: 'Profile | Pressograph',
@@ -61,6 +63,26 @@ export default async function ProfilePage() {
         />
 
         <PasswordChangeForm />
+
+        {/* Date & Time Preferences */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="bg-primary text-primary-foreground p-2 rounded-lg">
+                <ClockIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Date & Time Preferences</CardTitle>
+                <CardDescription>
+                  Configure how dates and times are displayed throughout the application
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <DateTimeSettings />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
