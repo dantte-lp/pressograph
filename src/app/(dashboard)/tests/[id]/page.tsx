@@ -9,6 +9,7 @@ import { getTestById } from '@/lib/actions/tests';
 import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
+import { PressureTestPreviewEnhanced } from '@/components/tests/pressure-test-preview-enhanced';
 import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 /**
@@ -105,9 +106,10 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
+          <TabsTrigger value="graph">Graph Preview</TabsTrigger>
           <TabsTrigger value="runs">
             Test Runs
             {test.runCount > 0 && (
@@ -240,6 +242,27 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             </CardHeader>
             <CardContent>
               <TestConfigDisplay config={test.config} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Graph Preview Tab */}
+        <TabsContent value="graph">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pressure Test Graph Preview</CardTitle>
+              <CardDescription>
+                Visual representation of the configured test profile
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PressureTestPreviewEnhanced
+                workingPressure={test.config.workingPressure}
+                maxPressure={test.config.maxPressure}
+                testDuration={test.config.testDuration}
+                intermediateStages={test.config.intermediateStages || []}
+                pressureUnit={test.config.pressureUnit || 'MPa'}
+              />
             </CardContent>
           </Card>
         </TabsContent>
