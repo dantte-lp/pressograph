@@ -10,6 +10,7 @@ import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
 import { PressureTestPreviewEnhanced } from '@/components/tests/pressure-test-preview-enhanced';
+import { EmulationExportDialog } from '@/components/tests/emulation-export-dialog';
 import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 /**
@@ -198,10 +199,11 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                     View All Runs
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  Download Latest Graph
-                </Button>
+                <EmulationExportDialog
+                  testNumber={test.testNumber}
+                  testName={test.name}
+                  config={test.config}
+                />
                 <Button variant="outline" size="sm" className="w-full justify-start" disabled>
                   <Share2Icon className="mr-2 h-4 w-4" />
                   Create Share Link
@@ -249,11 +251,18 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
         {/* Graph Preview Tab */}
         <TabsContent value="graph">
           <Card>
-            <CardHeader>
-              <CardTitle>Pressure Test Graph Preview</CardTitle>
-              <CardDescription>
-                Visual representation of the configured test profile
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div className="space-y-1">
+                <CardTitle>Pressure Test Graph Preview</CardTitle>
+                <CardDescription>
+                  Visual representation of the configured test profile
+                </CardDescription>
+              </div>
+              <EmulationExportDialog
+                testNumber={test.testNumber}
+                testName={test.name}
+                config={test.config}
+              />
             </CardHeader>
             <CardContent>
               <PressureTestPreviewEnhanced
