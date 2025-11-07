@@ -7,13 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import {
-  CheckIcon,
-  ChevronRightIcon,
-  ChevronLeftIcon,
   PlusIcon,
   TrashIcon,
   SaveIcon,
-  PlayIcon,
 } from 'lucide-react';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useFormCache } from '@/lib/hooks/use-form-cache';
@@ -46,14 +42,14 @@ const intermediateStageSchema = z.object({
 });
 
 const testFormSchema = z.object({
-  // Step 1: Basic Information
+  // Basic Information
   name: z.string().min(1, 'Test name is required').max(255, 'Name too long'),
   projectId: z.string().uuid('Please select a project'),
   testNumber: z.string().min(3, 'Test number must be at least 3 characters').max(100, 'Test number too long').optional().or(z.literal('')),
   description: z.string().optional(),
   tags: z.array(z.string()).default([]),
 
-  // Step 2: Core Parameters
+  // Core Parameters
   workingPressure: z.number().min(0, 'Working pressure must be positive'),
   maxPressure: z.number().min(0, 'Max pressure must be positive'),
   testDuration: z.number().min(0.1, 'Duration must be at least 0.1 hours'),
@@ -69,7 +65,7 @@ const testFormSchema = z.object({
   startDateTime: z.string().optional(),
   endDateTime: z.string().optional(),
 
-  // Step 3: Intermediate Stages
+  // Intermediate Stages
   intermediateStages: z.array(intermediateStageSchema).default([]),
 
   // Template
@@ -96,18 +92,9 @@ interface CreateTestFormProps {
   organizationId: string;
 }
 
-const STEPS = [
-  { id: 1, name: 'Basic Information', description: 'Name, project, and description' },
-  { id: 2, name: 'Core Parameters', description: 'Pressure, temperature, and duration' },
-  { id: 3, name: 'Intermediate Stages', description: 'Optional pressure steps (optional)' },
-  { id: 4, name: 'Review & Create', description: 'Review and submit' },
-];
-
 export function CreateTestForm({ projects, sourceTest, userId, organizationId }: CreateTestFormProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
   const [isPending, startTransition] = useTransition();
-  const [tagInput, setTagInput] = useState('');
 
   // Initialize form with source test data if duplicating
   const defaultValues: Partial<TestFormData> = sourceTest
@@ -164,7 +151,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     formState: { errors },
     watch,
     setValue,
-    trigger,
   } = form;
 
   const watchedStages = watch('intermediateStages') || [];
@@ -184,15 +170,16 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const testDuration = watch('testDuration');
   const pressureUnit = watch('pressureUnit') || 'MPa';
   const temperatureUnit = watch('temperatureUnit') || 'C';
+  const startDateTime = watch('startDateTime');
 
   // Debounce graph updates for better performance (300ms delay)
-  // Use nullish coalescing (??) to allow 0 values while providing defaults for undefined/null
   const debouncedWorkingPressure = useDebounce(workingPressure ?? 10, 300);
   const debouncedMaxPressure = useDebounce(maxPressure ?? 15, 300);
   const debouncedTestDuration = useDebounce(testDuration ?? 24, 300);
   const debouncedStages = useDebounce(watchedStages, 300);
 
   // Add tag
+  const [tagInput, setTagInput] = useState('');
   const handleAddTag = () => {
     const trimmed = tagInput.trim();
     if (trimmed && !watchedTags.includes(trimmed)) {
@@ -203,17 +190,14 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
   // Remove tag
   const handleRemoveTag = (tag: string) => {
-    setValue(
-      'tags',
-      watchedTags.filter((t) => t !== tag)
-    );
+    setValue('tags', watchedTags.filter((t) => t !== tag));
   };
 
-  // Add intermediate stage with empty/default values
+  // Add intermediate stage
   const handleAddStage = () => {
     setValue('intermediateStages', [
       ...watchedStages,
-      { time: 0, pressure: 0, duration: 0 }, // Start with zeros, not hardcoded values
+      { time: 0, pressure: 0, duration: 0 },
     ]);
   };
 
@@ -244,7 +228,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     try {
       const start = new Date(startDateTime);
       const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
-      // Return in ISO format compatible with datetime-local input
       const year = end.getFullYear();
       const month = String(end.getMonth() + 1).padStart(2, '0');
       const day = String(end.getDate()).padStart(2, '0');
@@ -258,7 +241,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
   // Handle imported configuration
   const handleImportConfig = (config: Partial<PressureTestConfig>) => {
-    // Update form fields with imported values
     if (config.workingPressure !== undefined) setValue('workingPressure', config.workingPressure);
     if (config.maxPressure !== undefined) setValue('maxPressure', config.maxPressure);
     if (config.testDuration !== undefined) setValue('testDuration', config.testDuration);
@@ -275,7 +257,6 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   };
 
   // Watch for changes in start date/time or duration to auto-calculate end date/time
-  const startDateTime = watch('startDateTime');
   const watchedDuration = watch('testDuration');
 
   // Auto-update end date/time when start or duration changes
@@ -295,42 +276,14 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     }
   };
 
-  // Navigate between steps
-  const handleNext = async () => {
-    let fieldsToValidate: (keyof TestFormData)[] = [];
-
-    if (currentStep === 1) {
-      fieldsToValidate = ['name', 'projectId', 'testNumber', 'description', 'tags'];
-    } else if (currentStep === 2) {
-      fieldsToValidate = [
-        'workingPressure',
-        'maxPressure',
-        'testDuration',
-        'temperature',
-        'allowablePressureDrop',
-        'pressureUnit',
-        'temperatureUnit',
-      ];
-    }
-
-    const isValid = await trigger(fieldsToValidate);
-    if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
-    }
-  };
-
-  const handlePrev = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  // Submit form
-  const onSubmit = async (data: any, saveAsDraft: boolean = false) => {
+  // Submit form - single save button
+  const onSubmit = async (data: any) => {
     startTransition(async () => {
       try {
         const result = await createTest({
           name: data.name,
           projectId: data.projectId,
-          testNumber: data.testNumber || undefined, // Include custom test number if provided
+          testNumber: data.testNumber || undefined,
           description: data.description || null,
           tags: data.tags,
           templateType: data.templateType,
@@ -349,15 +302,14 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             startDateTime: data.startDateTime || undefined,
             endDateTime: data.endDateTime || undefined,
           },
-          status: saveAsDraft ? 'draft' : 'ready',
+          status: 'ready', // Always create as 'ready' status
           userId,
           organizationId,
         });
 
         if (result.success && result.test) {
-          // Clear cache on successful submission (Tier 3: Database now has data)
           clearCache();
-          toast.success(saveAsDraft ? 'Test saved as draft' : 'Test created successfully');
+          toast.success('Test created successfully');
           router.push(`/tests/${result.test.id}`);
         } else {
           toast.error(result.error || 'Failed to create test');
@@ -370,228 +322,161 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   };
 
   return (
-    <div className="space-y-6">
-      {/* Step Progress Indicator */}
-      <Card>
-        <CardContent className="pt-6">
-          <nav aria-label="Progress">
-            <ol className="flex items-center justify-between">
-              {STEPS.map((step, stepIdx) => (
-                <li key={step.id} className="relative flex-1">
-                  {stepIdx !== 0 && (
-                    <div
-                      className="absolute left-0 top-5 -ml-px h-0.5 w-full"
-                      style={{ left: 'calc(-50% + 20px)', width: 'calc(100% - 40px)' }}
-                    >
-                      <div
-                        className={`h-full ${
-                          currentStep > step.id ? 'bg-primary' : 'bg-muted'
-                        }`}
-                      />
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left Column: Form Fields (2 columns) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div className="space-y-1">
+                  <CardTitle>Basic Information</CardTitle>
+                  <CardDescription>
+                    Provide test name, project, and optional details
+                  </CardDescription>
+                </div>
+                <ImportConfigButton onImport={handleImportConfig} size="sm" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Test Name <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Daily Pressure Test - Pipeline A"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Project <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a project" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="testNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Test Number (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., PT-2025-001 (auto-generated if left empty)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        Leave empty to auto-generate. Must be unique within your organization.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Optional description of the test"
+                    rows={3}
+                    {...register('description')}
+                  />
+                  {errors.description && <FormError error={errors.description.message} />}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="tags"
+                      placeholder="Add tag and press Enter"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddTag();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddTag}>
+                      Add
+                    </Button>
+                  </div>
+                  {watchedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {watchedTags.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="gap-1">
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
                     </div>
                   )}
-                  <div className="group relative flex flex-col items-center">
-                    <span
-                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                        currentStep > step.id
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : currentStep === step.id
-                          ? 'border-primary bg-background text-primary'
-                          : 'border-muted bg-background text-muted-foreground'
-                      }`}
-                    >
-                      {currentStep > step.id ? (
-                        <CheckIcon className="h-5 w-5" />
-                      ) : (
-                        <span className="text-sm font-medium">{step.id}</span>
-                      )}
-                    </span>
-                    <span className="mt-2 text-center">
-                      <span
-                        className={`block text-sm font-medium ${
-                          currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {step.name}
-                      </span>
-                      <span className="hidden text-xs text-muted-foreground sm:block">
-                        {step.description}
-                      </span>
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </CardContent>
-      </Card>
-
-      {/* Form Content */}
-      <Form {...form}>
-        <form onSubmit={handleSubmit((data) => onSubmit(data, false))}>
-          {/* Step 1: Basic Information */}
-          {currentStep === 1 && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div className="space-y-1">
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>
-                  Provide a name, select a project, and add optional details
-                </CardDescription>
-              </div>
-              <ImportConfigButton onImport={handleImportConfig} size="sm" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <FormField
-                control={control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Test Name <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Daily Pressure Test - Pipeline A"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Project <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a project" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control}
-                name="testNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Test Number (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., PT-2025-001 (auto-generated if left empty)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Leave empty to auto-generate. Must be unique within your organization.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Optional description of the test"
-                  rows={4}
-                  {...register('description')}
-                />
-                {errors.description && <FormError error={errors.description.message} />}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="tags"
-                    placeholder="Add tag and press Enter"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                  />
-                  <Button type="button" variant="outline" onClick={handleAddTag}>
-                    Add
-                  </Button>
                 </div>
-                {watchedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {watchedTags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="gap-1">
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="templateType">Template Type</Label>
-                <Controller
-                  name="templateType"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || 'daily'}>
-                      <SelectTrigger id="templateType">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily Test</SelectItem>
-                        <SelectItem value="extended">Extended Test</SelectItem>
-                        <SelectItem value="custom">Custom Test</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" asChild>
-                <a href="/tests">Cancel</a>
-              </Button>
-              <Button type="button" onClick={handleNext}>
-                Next
-                <ChevronRightIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
+                <div className="space-y-2">
+                  <Label htmlFor="templateType">Template Type</Label>
+                  <Controller
+                    name="templateType"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value || 'daily'}>
+                        <SelectTrigger id="templateType">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Daily Test</SelectItem>
+                          <SelectItem value="extended">Extended Test</SelectItem>
+                          <SelectItem value="custom">Custom Test</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Step 2: Core Parameters */}
-        {currentStep === 2 && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="lg:col-span-1">
+            {/* Core Parameters */}
+            <Card>
               <CardHeader>
                 <CardTitle>Core Parameters</CardTitle>
                 <CardDescription>
@@ -599,16 +484,59 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={control}
-                  name="workingPressure"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Working Pressure <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <div className="flex gap-2">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="workingPressure"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Working Pressure <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormField
+                            control={control}
+                            name="pressureUnit"
+                            render={({ field: unitField }) => (
+                              <FormItem>
+                                <Select onValueChange={unitField.onChange} value={unitField.value || 'MPa'}>
+                                  <FormControl>
+                                    <SelectTrigger className="w-24">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="MPa">MPa</SelectItem>
+                                    <SelectItem value="Bar">Bar</SelectItem>
+                                    <SelectItem value="PSI">PSI</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="maxPressure"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Max Pressure <span className="text-destructive">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -618,188 +546,276 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
                         </FormControl>
-                        <FormField
-                          control={control}
-                          name="pressureUnit"
-                          render={({ field: unitField }) => (
-                            <FormItem>
-                              <Select onValueChange={unitField.onChange} value={unitField.value || 'MPa'}>
-                                <FormControl>
-                                  <SelectTrigger className="w-24">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="MPa">MPa</SelectItem>
-                                  <SelectItem value="Bar">Bar</SelectItem>
-                                  <SelectItem value="PSI">PSI</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name="maxPressure"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Max Pressure <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="testDuration">
-                    Test Duration (hours) <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="testDuration"
-                    type="number"
-                    step="0.1"
-                    value={watchedDuration || 0}
-                    onChange={(e) => handleDurationChange(parseFloat(e.target.value) || 0)}
-                    aria-invalid={!!errors.testDuration}
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  {errors.testDuration && <FormError error={errors.testDuration.message} />}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="temperature">
-                    Temperature <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="flex gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="testDuration">
+                      Test Duration (hours) <span className="text-destructive">*</span>
+                    </Label>
                     <Input
-                      id="temperature"
+                      id="testDuration"
                       type="number"
                       step="0.1"
-                      {...register('temperature', { valueAsNumber: true })}
-                      aria-invalid={!!errors.temperature}
+                      value={watchedDuration || 0}
+                      onChange={(e) => handleDurationChange(parseFloat(e.target.value) || 0)}
+                      aria-invalid={!!errors.testDuration}
                     />
-                    <Controller
-                      name="temperatureUnit"
-                      control={control}
-                      render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value || 'C'}>
-                          <SelectTrigger className="w-16">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="C">°C</SelectItem>
-                            <SelectItem value="F">°F</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
+                    {errors.testDuration && <FormError error={errors.testDuration.message} />}
                   </div>
-                  {errors.temperature && <FormError error={errors.temperature.message} />}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="temperature">
+                      Temperature <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="temperature"
+                        type="number"
+                        step="0.1"
+                        {...register('temperature', { valueAsNumber: true })}
+                        aria-invalid={!!errors.temperature}
+                      />
+                      <Controller
+                        name="temperatureUnit"
+                        control={control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value || 'C'}>
+                            <SelectTrigger className="w-16">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="C">°C</SelectItem>
+                              <SelectItem value="F">°F</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    {errors.temperature && <FormError error={errors.temperature.message} />}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="allowablePressureDrop">
+                      Allowable Pressure Drop <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="allowablePressureDrop"
+                      type="number"
+                      step="0.01"
+                      {...register('allowablePressureDrop', { valueAsNumber: true })}
+                      aria-invalid={!!errors.allowablePressureDrop}
+                    />
+                    {errors.allowablePressureDrop && (
+                      <FormError error={errors.allowablePressureDrop.message} />
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="allowablePressureDrop">
-                    Allowable Pressure Drop <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="allowablePressureDrop"
-                    type="number"
-                    step="0.01"
-                    {...register('allowablePressureDrop', { valueAsNumber: true })}
-                    aria-invalid={!!errors.allowablePressureDrop}
-                  />
-                  {errors.allowablePressureDrop && (
-                    <FormError error={errors.allowablePressureDrop.message} />
-                  )}
+                <Separator />
+
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Test Schedule (Optional)</h4>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="startDateTime">Start Date & Time</Label>
+                      <Input
+                        id="startDateTime"
+                        type="datetime-local"
+                        value={startDateTime || ''}
+                        onChange={(e) => handleStartDateTimeChange(e.target.value)}
+                        className="text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        When the test should begin
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="endDateTime">End Date & Time (Auto-calculated)</Label>
+                      <Input
+                        id="endDateTime"
+                        type="datetime-local"
+                        {...register('endDateTime')}
+                        className="text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Calculated from start + duration, or set manually
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium">Test Schedule (Optional)</h4>
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="startDateTime">Start Date & Time</Label>
-                    <Input
-                      id="startDateTime"
-                      type="datetime-local"
-                      value={startDateTime || ''}
-                      onChange={(e) => handleStartDateTimeChange(e.target.value)}
-                      className="text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      When the test should begin
-                    </p>
+                    <Label htmlFor="equipmentId">Equipment ID</Label>
+                    <Input id="equipmentId" placeholder="e.g., PUMP-001" {...register('equipmentId')} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="endDateTime">End Date & Time (Auto-calculated)</Label>
-                    <Input
-                      id="endDateTime"
-                      type="datetime-local"
-                      {...register('endDateTime')}
-                      className="text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Calculated from start + duration, or set manually
-                    </p>
+                    <Label htmlFor="operatorName">Operator Name</Label>
+                    <Input id="operatorName" placeholder="e.g., John Doe" {...register('operatorName')} />
                   </div>
                 </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="equipmentId">Equipment ID</Label>
-                  <Input id="equipmentId" placeholder="e.g., PUMP-001" {...register('equipmentId')} />
-                </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="operatorName">Operator Name</Label>
-                  <Input id="operatorName" placeholder="e.g., John Doe" {...register('operatorName')} />
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea id="notes" placeholder="Additional notes" rows={3} {...register('notes')} />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea id="notes" placeholder="Additional notes" rows={3} {...register('notes')} />
-              </div>
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={handlePrev}>
-                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                  Previous
+            </Card>
+
+            {/* Intermediate Stages */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Intermediate Stages (Optional)</CardTitle>
+                <CardDescription>
+                  Add optional pressure steps during the test
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {watchedStages.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No intermediate stages added yet.</p>
+                    <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm border rounded-lg">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium">#</th>
+                            <th className="px-3 py-2 text-left font-medium" title="Minutes AFTER previous stage's hold duration ends">
+                              Time (min)
+                            </th>
+                            <th className="px-3 py-2 text-left font-medium" title="Cumulative time from test start">
+                              Cumulative
+                            </th>
+                            <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
+                            <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
+                            <th className="px-3 py-2 text-center font-medium">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {watchedStages.map((_stage, index) => {
+                            const stagePressure = watchedStages[index]?.pressure || 0;
+                            const isPressureBelowWorking = stagePressure > 0 && stagePressure < workingPressure;
+
+                            // Calculate cumulative time
+                            let cumulativeMinutes = 0;
+                            for (let i = 0; i <= index; i++) {
+                              cumulativeMinutes += watchedStages[i]?.time || 0;
+                              if (i < index) {
+                                cumulativeMinutes += watchedStages[i]?.duration || 0;
+                              }
+                            }
+
+                            const hours = Math.floor(cumulativeMinutes / 60);
+                            const mins = Math.round(cumulativeMinutes % 60);
+                            const cumulativeDisplay = hours > 0
+                              ? `${hours}:${mins.toString().padStart(2, '0')}`
+                              : `${mins}m`;
+
+                            return (
+                              <tr key={index} className="border-t hover:bg-muted/30">
+                                <td className="px-3 py-2 font-medium">{index + 1}</td>
+                                <td className="px-3 py-1.5">
+                                  <Input
+                                    type="number"
+                                    step="1"
+                                    placeholder="0"
+                                    className="h-8 w-20 text-xs"
+                                    value={watchedStages[index]?.time || 0}
+                                    onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
+                                    title="Minutes AFTER previous stage's hold duration ends"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-xs text-muted-foreground font-mono">
+                                  {cumulativeDisplay}
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="0.0"
+                                    className={`h-8 w-20 text-xs ${isPressureBelowWorking ? 'border-destructive focus:ring-destructive' : ''}`}
+                                    value={watchedStages[index]?.pressure || 0}
+                                    onChange={(e) => handleUpdateStageField(index, 'pressure', parseFloat(e.target.value) || 0)}
+                                    title={isPressureBelowWorking ? `Pressure must be >= ${workingPressure} ${pressureUnit}` : ''}
+                                    aria-invalid={isPressureBelowWorking}
+                                  />
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <Input
+                                    type="number"
+                                    step="1"
+                                    placeholder="0"
+                                    className="h-8 w-20 text-xs"
+                                    value={watchedStages[index]?.duration || 0}
+                                    onChange={(e) => handleUpdateStageField(index, 'duration', parseFloat(e.target.value) || 0)}
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveStage(index)}
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <TrashIcon className="h-3.5 w-3.5 text-destructive" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
+                      <span>Total Stages: {watchedStages.length}</span>
+                    </div>
+                  </div>
+                )}
+
+                <Button type="button" variant="outline" onClick={handleAddStage} className="w-full">
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Add Stage
                 </Button>
-                <Button type="button" onClick={handleNext}>
-                  Next
-                  <ChevronRightIcon className="ml-2 h-4 w-4" />
+
+                {errors.intermediateStages && (
+                  <FormError error={errors.intermediateStages.message || 'Invalid intermediate stages configuration'} />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Single Save Button */}
+            <Card>
+              <CardFooter className="flex justify-between pt-6">
+                <Button type="button" variant="outline" asChild disabled={isPending}>
+                  <a href="/tests">Cancel</a>
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  <SaveIcon className="mr-2 h-4 w-4" />
+                  {isPending ? 'Creating Test...' : 'Create Test'}
                 </Button>
               </CardFooter>
             </Card>
+          </div>
 
-            {/* Graph Preview */}
-            <Card className="lg:col-span-1">
+          {/* Right Column: Live Preview (1 column) */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Preview</CardTitle>
+                    <CardTitle>Live Preview</CardTitle>
                     <CardDescription>
                       Real-time pressure profile visualization
                     </CardDescription>
@@ -829,341 +845,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               </CardContent>
             </Card>
           </div>
-        )}
-
-        {/* Step 3: Intermediate Stages */}
-        {currentStep === 3 && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Intermediate Stages</CardTitle>
-                <CardDescription>
-                  Add optional pressure steps during the test (you can skip this step)
-                </CardDescription>
-              </CardHeader>
-            <CardContent className="space-y-4">
-              {watchedStages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No intermediate stages added yet.</p>
-                  <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {/* Compact table view */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border rounded-lg">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-medium">#</th>
-                          <th className="px-3 py-2 text-left font-medium" title="Minutes AFTER previous stage's hold duration ends">
-                            Time (min)
-                          </th>
-                          <th className="px-3 py-2 text-left font-medium" title="Cumulative time from test start">
-                            Cumulative
-                          </th>
-                          <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
-                          <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
-                          <th className="px-3 py-2 text-center font-medium">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {watchedStages.map((_stage, index) => {
-                          const stagePressure = watchedStages[index]?.pressure || 0;
-                          const isPressureBelowWorking = stagePressure > 0 && stagePressure < workingPressure;
-
-                          // Calculate cumulative time for this stage
-                          let cumulativeMinutes = 0;
-                          for (let i = 0; i <= index; i++) {
-                            cumulativeMinutes += watchedStages[i]?.time || 0; // Wait time after previous stage
-                            if (i < index) {
-                              cumulativeMinutes += watchedStages[i]?.duration || 0; // Hold duration
-                            }
-                          }
-
-                          // Format cumulative time as H:M
-                          const hours = Math.floor(cumulativeMinutes / 60);
-                          const mins = Math.round(cumulativeMinutes % 60);
-                          const cumulativeDisplay = hours > 0
-                            ? `${hours}:${mins.toString().padStart(2, '0')}`
-                            : `${mins}m`;
-
-                          return (
-                            <tr key={index} className="border-t hover:bg-muted/30">
-                              <td className="px-3 py-2 font-medium">{index + 1}</td>
-                              <td className="px-3 py-1.5">
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  placeholder="0"
-                                  className="h-8 w-20 text-xs"
-                                  value={watchedStages[index]?.time || 0}
-                                  onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
-                                  title="Minutes AFTER previous stage's hold duration ends"
-                                />
-                              </td>
-                              <td className="px-3 py-2 text-xs text-muted-foreground font-mono">
-                                {cumulativeDisplay}
-                              </td>
-                              <td className="px-3 py-1.5">
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="0.0"
-                                  className={`h-8 w-20 text-xs ${isPressureBelowWorking ? 'border-destructive focus:ring-destructive' : ''}`}
-                                  value={watchedStages[index]?.pressure || 0}
-                                  onChange={(e) => handleUpdateStageField(index, 'pressure', parseFloat(e.target.value) || 0)}
-                                  title={isPressureBelowWorking ? `Pressure must be >= ${workingPressure} ${pressureUnit}` : ''}
-                                  aria-invalid={isPressureBelowWorking}
-                                />
-                              </td>
-                              <td className="px-3 py-1.5">
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  placeholder="0"
-                                  className="h-8 w-20 text-xs"
-                                  value={watchedStages[index]?.duration || 0}
-                                  onChange={(e) => handleUpdateStageField(index, 'duration', parseFloat(e.target.value) || 0)}
-                                />
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemoveStage(index)}
-                                  className="h-7 w-7 p-0"
-                                >
-                                  <TrashIcon className="h-3.5 w-3.5 text-destructive" />
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Summary */}
-                  <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
-                    <span>Total Stages: {watchedStages.length}</span>
-                  </div>
-                </div>
-              )}
-
-              <Button type="button" variant="outline" onClick={handleAddStage} className="w-full">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Add Stage
-              </Button>
-
-              {/* Display intermediate stages validation error */}
-              {errors.intermediateStages && (
-                <FormError error={errors.intermediateStages.message || 'Invalid intermediate stages configuration'} />
-              )}
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={handlePrev}>
-                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                  Previous
-                </Button>
-                <Button type="button" onClick={handleNext}>
-                  Next
-                  <ChevronRightIcon className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-
-            {/* Graph Preview */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Preview</CardTitle>
-                    <CardDescription>
-                      See how intermediate stages affect the pressure profile
-                    </CardDescription>
-                  </div>
-                  <PreviewDialog
-                    workingPressure={debouncedWorkingPressure}
-                    maxPressure={debouncedMaxPressure}
-                    testDuration={debouncedTestDuration}
-                    intermediateStages={debouncedStages}
-                    pressureUnit={pressureUnit}
-                    temperatureUnit={temperatureUnit}
-                    startDateTime={startDateTime}
-                    endDateTime={watch('endDateTime')}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <PressureTestPreview
-                  workingPressure={debouncedWorkingPressure}
-                  maxPressure={debouncedMaxPressure}
-                  testDuration={debouncedTestDuration}
-                  intermediateStages={debouncedStages}
-                  pressureUnit={pressureUnit}
-                  startDateTime={startDateTime || undefined}
-                  endDateTime={watch('endDateTime') || undefined}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Step 4: Review & Create */}
-        {currentStep === 4 && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Review & Create</CardTitle>
-                <CardDescription>Review your test configuration and submit</CardDescription>
-              </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Basic Info Review */}
-              <div>
-                <h3 className="font-medium mb-2">Basic Information</h3>
-                <dl className="grid grid-cols-1 gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Name:</dt>
-                    <dd className="font-medium">{watch('name')}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Project:</dt>
-                    <dd className="font-medium">
-                      {projects.find((p) => p.id === watch('projectId'))?.name}
-                    </dd>
-                  </div>
-                  {watch('description') && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Description:</dt>
-                      <dd className="font-medium">{watch('description')}</dd>
-                    </div>
-                  )}
-                  {watchedTags.length > 0 && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Tags:</dt>
-                      <dd className="flex gap-1">
-                        {watchedTags.map((tag) => (
-                          <Badge key={tag} variant="secondary">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              </div>
-
-              <Separator />
-
-              {/* Core Parameters Review */}
-              <div>
-                <h3 className="font-medium mb-2">Core Parameters</h3>
-                <dl className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Working Pressure:</dt>
-                    <dd className="font-medium">
-                      {watch('workingPressure')} {watch('pressureUnit')}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Max Pressure:</dt>
-                    <dd className="font-medium">
-                      {watch('maxPressure')} {watch('pressureUnit')}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Duration:</dt>
-                    <dd className="font-medium">{watch('testDuration')} hours</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Temperature:</dt>
-                    <dd className="font-medium">
-                      {watch('temperature')}°{watch('temperatureUnit')}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Allowable Drop:</dt>
-                    <dd className="font-medium">
-                      {watch('allowablePressureDrop')} {watch('pressureUnit')}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              {watchedStages.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="font-medium mb-2">Intermediate Stages</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {watchedStages.length} stage{watchedStages.length !== 1 ? 's' : ''} configured
-                    </p>
-                  </div>
-                </>
-              )}
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={handlePrev}>
-                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                  Previous
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleSubmit((data) => onSubmit(data, true))()}
-                    disabled={isPending}
-                  >
-                    <SaveIcon className="mr-2 h-4 w-4" />
-                    Save as Draft
-                  </Button>
-                  <Button type="submit" disabled={isPending}>
-                    <PlayIcon className="mr-2 h-4 w-4" />
-                    {isPending ? 'Creating...' : 'Create Test'}
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-
-            {/* Graph Preview */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Final Preview</CardTitle>
-                    <CardDescription>
-                      Complete pressure test profile
-                    </CardDescription>
-                  </div>
-                  <PreviewDialog
-                    workingPressure={debouncedWorkingPressure}
-                    maxPressure={debouncedMaxPressure}
-                    testDuration={debouncedTestDuration}
-                    intermediateStages={debouncedStages}
-                    pressureUnit={pressureUnit}
-                    temperatureUnit={temperatureUnit}
-                    startDateTime={startDateTime}
-                    endDateTime={watch('endDateTime')}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <PressureTestPreview
-                  workingPressure={debouncedWorkingPressure}
-                  maxPressure={debouncedMaxPressure}
-                  testDuration={debouncedTestDuration}
-                  intermediateStages={debouncedStages}
-                  pressureUnit={pressureUnit}
-                  startDateTime={startDateTime || undefined}
-                  endDateTime={watch('endDateTime') || undefined}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-        </form>
-      </Form>
-    </div>
+        </div>
+      </form>
+    </Form>
   );
 }

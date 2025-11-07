@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Simplified Test Creation Form** - Removed multi-step wizard, implemented single-page layout with ONE save button
+  - Converted from 4-step wizard (Basic Info → Core Parameters → Intermediate Stages → Review) to unified single-page form
+  - Removed step progress indicator and navigation buttons (Previous/Next)
+  - Removed "Save as Draft" button - all tests now created as "ready" status
+  - Removed final "Review & Create" step - validation happens inline
+  - Implemented 2-column layout: Form fields (left 2/3) + Live Preview (right 1/3)
+  - Live preview remains sticky on scroll for constant visual feedback
+  - All form sections now visible simultaneously: Basic Info, Core Parameters, Intermediate Stages
+  - Single "Create Test" button at bottom with Cancel option
+  - Improved UX: No context switching between steps, faster test creation workflow
+  - Maintains all validation, autosave (LocalStorage), and import functionality
+  - Component: `/src/components/tests/create-test-form.tsx`
+  - Impact: Significantly faster test creation - reduced from minimum 4 clicks to 1 click
+
 ### Added
 
 - **Custom Test Number Customization** - Allow users to specify custom test numbers during test creation and editing
