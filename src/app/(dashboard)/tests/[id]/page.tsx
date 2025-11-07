@@ -9,6 +9,7 @@ import { getTestById } from '@/lib/actions/tests';
 import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
+import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 /**
  * Test Detail Page
@@ -65,7 +66,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
               {test.projectName}
             </Link>
             <span>•</span>
-            <span>Created {test.createdAt.toLocaleDateString()}</span>
+            <span>Created {formatDate(test.createdAt)}</span>
             <span>•</span>
             <span>{test.runCount} run{test.runCount !== 1 ? 's' : ''}</span>
           </div>
@@ -135,19 +136,19 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   {test.startedAt && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Started</span>
-                      <span className="text-sm">{test.startedAt.toLocaleString()}</span>
+                      <span className="text-sm">{formatDateTime(test.startedAt)}</span>
                     </div>
                   )}
                   {test.completedAt && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Completed</span>
-                      <span className="text-sm">{test.completedAt.toLocaleString()}</span>
+                      <span className="text-sm">{formatDateTime(test.completedAt)}</span>
                     </div>
                   )}
                   {test.lastRunDate && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Last Run</span>
-                      <span className="text-sm">{test.lastRunDate.toLocaleString()}</span>
+                      <span className="text-sm">{formatDateTime(test.lastRunDate)}</span>
                     </div>
                   )}
                 </div>
@@ -177,7 +178,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Last Updated</span>
-                    <span className="text-sm">{test.updatedAt.toLocaleDateString()}</span>
+                    <span className="text-sm">{formatDate(test.updatedAt)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -326,7 +327,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
 
                     {test.shareExpiresAt && (
                       <div className="text-sm text-muted-foreground">
-                        Expires: {test.shareExpiresAt.toLocaleString()}
+                        Expires: {formatDateTime(test.shareExpiresAt)}
                       </div>
                     )}
                   </>
