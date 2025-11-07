@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Interactive Zoom Controls for All Graphs** - Implemented ECharts dataZoom functionality across all graph components
+  - Added slider-based dataZoom at bottom of charts for X-axis zooming
+  - Implemented mouse wheel zoom at cursor position
+  - Added click-and-drag panning functionality
+  - Integrated toolbox with zoom area selection and reset controls
+  - Theme-aware styling for light and dark modes with Tailwind CSS colors
+  - Added comprehensive zoom controls help tooltip with usage instructions
+  - Features integrated into:
+    - Preview graphs: `pressure-test-preview.tsx`, `a4-preview-graph.tsx`
+    - Fullscreen preview: `fullscreen-preview-dialog.tsx` (via PressureTestPreview)
+    - Export dialog: `echarts-export-dialog.tsx` with "Export only zoomed view" option
+  - Zoom functionality complements existing Time Scale Zoom presets
+  - Programmatic zoom synchronization: Time Scale dropdown sets initial zoom, interactive controls allow further adjustment
+  - Export behavior: Optional checkbox to export either full graph or currently zoomed portion
+  - Components: All graph visualization components updated with DataZoomComponent and ToolboxComponent
+  - Impact: Enhanced user experience for detailed graph analysis and exploration
+
+### Removed
+
+- **Test Runs Functionality** - Completely removed test execution/running features
+  - Removed all test run pages and components (`/tests/[id]/runs`, `/tests/[id]/run`)
+  - Removed test run server actions and API endpoints
+  - Removed `test_runs` and `test_measurements` database tables from schema
+  - Removed test run related fields from dashboard statistics
+  - Updated application to focus solely on graph generation and visualization
+  - Test configurations are now purely for visual graph generation
+  - Removed run counts and execution history tracking
+  - Impact: Simplified application architecture, focusing on core graph generation features
+  - Files affected:
+    - Removed: `src/lib/actions/test-runs.ts`
+    - Removed: `src/lib/db/schema/test-runs.ts`
+    - Removed: `src/lib/db/schema/test-measurements.ts`
+    - Removed: `src/components/tests/test-runs-table.tsx`
+    - Removed: `src/components/tests/run-test-interface-client.tsx`
+    - Removed: `src/app/(dashboard)/tests/[id]/runs/` directory
+    - Removed: `src/app/(dashboard)/tests/[id]/run/` directory
+    - Modified: Database schema, relations, dashboard statistics, test detail pages
+
 ### Fixed
 
 - **CRITICAL: Export Graph Data Binding** - Export now uses actual database test data (Issue #104)

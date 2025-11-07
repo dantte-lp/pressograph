@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useTheme } from 'next-themes';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -29,6 +30,8 @@ import {
   GridComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  ToolboxComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { ECharts, ComposeOption } from 'echarts/core';
@@ -38,11 +41,12 @@ import type {
   TooltipComponentOption,
   GridComponentOption,
   LegendComponentOption,
+  DataZoomComponentOption,
+  ToolboxComponentOption,
 } from 'echarts/components';
 import {
   generateRealisticTestData,
   convertToMinutes,
-  type DriftConfig
 } from '@/lib/utils/pressure-drift-simulator';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 import {
@@ -60,6 +64,8 @@ echarts.use([
   GridComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  ToolboxComponent,
   CanvasRenderer,
 ]);
 
@@ -70,6 +76,8 @@ type ECOption = ComposeOption<
   | TooltipComponentOption
   | GridComponentOption
   | LegendComponentOption
+  | DataZoomComponentOption
+  | ToolboxComponentOption
 >;
 
 /**
@@ -204,6 +212,10 @@ export function PressureTestPreview({
   // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
+
+  // Theme for dataZoom styling
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Data validation: Sanitize testDuration to prevent division by zero or negative intervals
   // Defaults to 24 hours if invalid
@@ -689,6 +701,78 @@ export function PressureTestPreview({
         },
       },
 
+      // Interactive DataZoom configuration
+      dataZoom: [
+        // Slider at bottom
+        {
+          type: 'slider',
+          xAxisIndex: 0,
+          filterMode: 'none',
+          start: 0,
+          end: 100,
+          handleSize: 8,
+          height: 30,
+          bottom: 60, // Leave space for X-axis labels
+          borderColor: isDark ? '#4b5563' : '#d1d5db',
+          fillerColor: isDark
+            ? 'rgba(59, 130, 246, 0.3)'
+            : 'rgba(59, 130, 246, 0.2)',
+          borderRadius: 4,
+          handleStyle: {
+            color: '#3b82f6',
+            borderColor: isDark ? '#1e3a8a' : '#1e40af',
+          },
+          textStyle: {
+            color: isDark ? '#9ca3af' : '#6b7280',
+          },
+          dataBackground: {
+            lineStyle: {
+              color: '#3b82f6',
+              opacity: isDark ? 0.6 : 0.5,
+            },
+            areaStyle: {
+              color: isDark
+                ? 'rgba(59, 130, 246, 0.15)'
+                : 'rgba(59, 130, 246, 0.1)',
+            },
+          },
+        },
+        // Inside zoom (mouse wheel + drag)
+        {
+          type: 'inside',
+          xAxisIndex: 0,
+          filterMode: 'none',
+          start: 0,
+          end: 100,
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: false,
+        },
+      ],
+
+      // Toolbox with zoom controls
+      toolbox: {
+        show: true,
+        feature: {
+          dataZoom: {
+            title: {
+              zoom: 'Zoom area',
+              back: 'Reset zoom',
+            },
+          },
+          restore: {
+            title: 'Restore',
+          },
+          saveAsImage: {
+            title: 'Save as PNG',
+            name: `pressure-test-preview`,
+            pixelRatio: 2,
+          },
+        },
+        right: 20,
+        top: 20,
+      },
+
       // Data series configuration
       series: [
         {
@@ -816,6 +900,7 @@ export function PressureTestPreview({
     endTime,
     enableCanvasStyle,
     canvasTheme,
+    isDark,
   ]);
 
   /**
@@ -857,6 +942,32 @@ export function PressureTestPreview({
       window.removeEventListener('resize', handleResize);
     };
   }, [chartOption]);
+
+  /**
+   * Integrate dataZoom with Time Scale Zoom presets
+   *
+   * When timeScale changes, programmatically update dataZoom to show the selected range.
+   * This creates a complementary relationship:
+   * - Time Scale dropdown sets the initial zoom preset
+   * - Interactive dataZoom allows further adjustment
+   */
+  useEffect(() => {
+    if (!chartInstance.current || !zoomedTimeWindow.isZoomed) return;
+
+    const chart = chartInstance.current;
+    const totalMinutes = sanitizedDuration * 60;
+
+    // Calculate percentage of total duration
+    const startPercent = (zoomedTimeWindow.min / totalMinutes) * 100;
+    const endPercent = (zoomedTimeWindow.max / totalMinutes) * 100;
+
+    // Apply zoom programmatically using dispatchAction
+    chart.dispatchAction({
+      type: 'dataZoom',
+      start: startPercent,
+      end: endPercent,
+    });
+  }, [timeScale, timeWindow, sanitizedDuration, zoomedTimeWindow]);
 
   /**
    * Cleanup on unmount
@@ -918,6 +1029,19 @@ export function PressureTestPreview({
           <span className="text-muted-foreground">Intermediate Stages:</span>
           <span className="font-medium">{intermediateStages?.length || 0}</span>
         </div>
+      </div>
+
+      {/* Zoom Controls Help */}
+      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">
+          Interactive Zoom Controls:
+        </p>
+        <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-0.5 ml-4 list-disc">
+          <li>Drag the slider below the graph to zoom X-axis</li>
+          <li>Mouse wheel to zoom in/out at cursor position</li>
+          <li>Click and drag the graph to pan</li>
+          <li>Use toolbox buttons (top-right) to zoom area or reset</li>
+        </ul>
       </div>
     </div>
   );

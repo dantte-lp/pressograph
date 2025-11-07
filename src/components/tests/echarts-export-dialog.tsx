@@ -34,6 +34,8 @@ import {
   GridComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  ToolboxComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { ECharts, ComposeOption } from 'echarts/core';
@@ -43,6 +45,8 @@ import type {
   TooltipComponentOption,
   GridComponentOption,
   LegendComponentOption,
+  DataZoomComponentOption,
+  ToolboxComponentOption,
 } from 'echarts/components';
 import {
   Dialog,
@@ -73,7 +77,6 @@ import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 import {
   generateRealisticTestData,
   convertToMinutes,
-  type DriftConfig,
 } from '@/lib/utils/pressure-drift-simulator';
 import {
   calculateZoomedTimeWindow,
@@ -90,6 +93,8 @@ echarts.use([
   GridComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  ToolboxComponent,
   CanvasRenderer,
 ]);
 
@@ -100,6 +105,8 @@ type ECOption = ComposeOption<
   | TooltipComponentOption
   | GridComponentOption
   | LegendComponentOption
+  | DataZoomComponentOption
+  | ToolboxComponentOption
 >;
 
 /**
@@ -168,6 +175,7 @@ export function EChartsExportDialog({
   const [enableCanvasStyle, setEnableCanvasStyle] = useState(false);
   const [timeScale, setTimeScale] = useState<TimeScale>('auto');
   const [customWindow, setCustomWindow] = useState<TimeWindow>({ start: 0, end: 0 });
+  const [exportZoomedView, setExportZoomedView] = useState(false);
 
   // Collapsible sections state (all open by default)
   const [qualityOpen, setQualityOpen] = useState(true);
@@ -184,7 +192,7 @@ export function EChartsExportDialog({
     return calculateZoomedTimeWindow(
       sanitizedDuration,
       timeScale,
-      timeScale === 'custom' ? customWindow : undefined
+      customWindow.end > 0 ? customWindow : undefined
     );
   }, [sanitizedDuration, timeScale, customWindow]);
 
@@ -364,7 +372,6 @@ export function EChartsExportDialog({
         : calculateXAxisInterval(displayDuration);
 
       const pressureUnit = config.pressureUnit || 'MPa';
-      const totalMinutes = sanitizedDuration * 60;
 
       // Generate profile data dynamically based on drift setting
       const profileData = generateProfileData(enableDrift);
@@ -488,6 +495,30 @@ export function EChartsExportDialog({
             },
           },
         },
+        // Add dataZoom only if NOT exporting zoomed view
+        // This allows interactive zoom in the export preview
+        ...(exportZoomedView
+          ? {}
+          : {
+              dataZoom: [
+                {
+                  type: 'slider',
+                  xAxisIndex: 0,
+                  filterMode: 'none',
+                  start: 0,
+                  end: 100,
+                  show: false, // Hide in export
+                },
+                {
+                  type: 'inside',
+                  xAxisIndex: 0,
+                  filterMode: 'none',
+                  start: 0,
+                  end: 100,
+                  disabled: true, // Disable in export
+                },
+              ],
+            }),
         series: [
           {
             name: 'Pressure Profile',
@@ -799,11 +830,11 @@ export function EChartsExportDialog({
                           <SelectItem value="2x">First Half (2x)</SelectItem>
                           <SelectItem value="4x">First Quarter (4x)</SelectItem>
                           <SelectItem value="10x">First 10% (10x)</SelectItem>
-                          <SelectItem value="custom">Custom Range</SelectItem>
+                          <SelectItem value="1x">Custom Range</SelectItem>
                         </SelectContent>
                       </Select>
 
-                      {timeScale === 'custom' && (
+                      {timeScale === '1x' && (
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           <div>
                             <Label htmlFor="zoom-start" className="text-xs">Start (min)</Label>
@@ -838,6 +869,28 @@ export function EChartsExportDialog({
                         {zoomedTimeWindow.isZoomed
                           ? `Showing ${zoomedTimeWindow.min}-${zoomedTimeWindow.max} min (${zoomedTimeWindow.durationHours.toFixed(1)}h)`
                           : 'Showing full test duration'}
+                      </p>
+                    </div>
+
+                    {/* Export Zoomed View Toggle */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Export Behavior</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="export-zoomed"
+                          checked={exportZoomedView}
+                          onCheckedChange={(checked) => setExportZoomedView(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="export-zoomed"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Export only visible zoomed area
+                        </label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        When enabled, only the currently zoomed portion will be exported.
+                        Uncheck to export the full graph regardless of zoom state.
                       </p>
                     </div>
                   </CardContent>
@@ -937,7 +990,7 @@ export function EChartsExportDialog({
                 showMaxLine={showMaxLine}
                 enableDrift={enableDrift}
                 timeScale={timeScale}
-                timeWindow={timeScale === 'custom' ? customWindow : undefined}
+                timeWindow={customWindow.end > 0 ? customWindow : undefined}
               />
             </CardContent>
           </Card>

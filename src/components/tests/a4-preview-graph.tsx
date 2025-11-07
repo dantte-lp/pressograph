@@ -23,6 +23,7 @@
  */
 
 import { useEffect, useRef, useMemo } from 'react';
+import { useTheme } from 'next-themes';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -31,6 +32,8 @@ import {
   GridComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  ToolboxComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { ECharts, ComposeOption } from 'echarts/core';
@@ -40,6 +43,8 @@ import type {
   TooltipComponentOption,
   GridComponentOption,
   LegendComponentOption,
+  DataZoomComponentOption,
+  ToolboxComponentOption,
 } from 'echarts/components';
 import {
   generateRealisticTestData,
@@ -55,6 +60,8 @@ echarts.use([
   GridComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  ToolboxComponent,
   CanvasRenderer,
 ]);
 
@@ -64,6 +71,8 @@ type ECOption = ComposeOption<
   | TooltipComponentOption
   | GridComponentOption
   | LegendComponentOption
+  | DataZoomComponentOption
+  | ToolboxComponentOption
 >;
 
 interface IntermediateStage {
@@ -135,6 +144,10 @@ export function A4PreviewGraph({
 }: A4PreviewGraphProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
+
+  // Theme for dataZoom styling
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Sanitize duration
   const sanitizedDuration = useMemo(() => {
@@ -310,7 +323,7 @@ export function A4PreviewGraph({
       },
 
       tooltip: {
-        trigger: 'axis',
+        trigger: 'axis' as const,
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderColor: '#d1d5db',
         borderWidth: 2,
@@ -383,9 +396,9 @@ export function A4PreviewGraph({
        * - Y-axis is positioned at the LEFT edge (axis min), not at time 0
        */
       xAxis: {
-        type: 'value',
+        type: 'value' as const,
         name: useTimeBased ? 'Дата и время' : 'Время (часы)',
-        nameLocation: 'middle',
+        nameLocation: 'middle' as const,
         nameGap: 35,
         nameTextStyle: {
           fontSize: 13,
@@ -464,7 +477,7 @@ export function A4PreviewGraph({
         splitLine: {
           show: true,
           lineStyle: {
-            type: 'solid',
+            type: 'solid' as const,
             color: '#e5e7eb',
             width: 1,
           },
@@ -473,7 +486,7 @@ export function A4PreviewGraph({
         minorSplitLine: {
           show: true,
           lineStyle: {
-            type: 'dashed',
+            type: 'dashed' as const,
             color: '#f3f4f6',
             width: 0.5,
           },
@@ -481,9 +494,9 @@ export function A4PreviewGraph({
       },
 
       yAxis: {
-        type: 'value',
+        type: 'value' as const,
         name: `Давление (${pressureUnit})`,
-        nameLocation: 'middle',
+        nameLocation: 'middle' as const,
         nameGap: 45,
         nameTextStyle: {
           fontSize: 13,
@@ -532,7 +545,7 @@ export function A4PreviewGraph({
         splitLine: {
           show: true,
           lineStyle: {
-            type: 'solid',
+            type: 'solid' as const,
             color: '#e5e7eb',
             width: 1,
           },
@@ -541,17 +554,89 @@ export function A4PreviewGraph({
         minorSplitLine: {
           show: true,
           lineStyle: {
-            type: 'dashed',
+            type: 'dashed' as const,
             color: '#f3f4f6',
             width: 0.5,
           },
         },
       },
 
+      // Interactive DataZoom configuration
+      dataZoom: [
+        // Slider at bottom
+        {
+          type: 'slider',
+          xAxisIndex: 0,
+          filterMode: 'none',
+          start: 0,
+          end: 100,
+          handleSize: 8,
+          height: 30,
+          bottom: 60,
+          borderColor: isDark ? '#4b5563' : '#d1d5db',
+          fillerColor: isDark
+            ? 'rgba(59, 130, 246, 0.3)'
+            : 'rgba(59, 130, 246, 0.2)',
+          borderRadius: 4,
+          handleStyle: {
+            color: '#3b82f6',
+            borderColor: isDark ? '#1e3a8a' : '#1e40af',
+          },
+          textStyle: {
+            color: isDark ? '#9ca3af' : '#6b7280',
+          },
+          dataBackground: {
+            lineStyle: {
+              color: '#3b82f6',
+              opacity: isDark ? 0.6 : 0.5,
+            },
+            areaStyle: {
+              color: isDark
+                ? 'rgba(59, 130, 246, 0.15)'
+                : 'rgba(59, 130, 246, 0.1)',
+            },
+          },
+        },
+        // Inside zoom (mouse wheel + drag)
+        {
+          type: 'inside',
+          xAxisIndex: 0,
+          filterMode: 'none',
+          start: 0,
+          end: 100,
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: false,
+        },
+      ],
+
+      // Toolbox with zoom controls
+      toolbox: {
+        show: true,
+        feature: {
+          dataZoom: {
+            title: {
+              zoom: 'Zoom area',
+              back: 'Reset zoom',
+            },
+          },
+          restore: {
+            title: 'Restore',
+          },
+          saveAsImage: {
+            title: 'Save as PNG',
+            name: `a4-preview-graph`,
+            pixelRatio: 2,
+          },
+        },
+        right: 20,
+        top: 20,
+      },
+
       series: [
         {
           name: 'Профиль давления',
-          type: 'line',
+          type: 'line' as const,
           data: profileData,
           smooth: enableDrift, // Smooth for realistic drift, sharp for idealized
           // Enable LTTB downsampling for high-frequency data
@@ -638,10 +723,10 @@ export function A4PreviewGraph({
 
     // Apply Canvas-style configuration if enabled
     if (enableCanvasStyle) {
-      return applyCanvasStyle(baseOption, canvasTheme);
+      return applyCanvasStyle(baseOption, canvasTheme) as ECOption;
     }
 
-    return baseOption;
+    return baseOption as ECOption;
   }, [
     profileData,
     workingPressure,
@@ -658,6 +743,7 @@ export function A4PreviewGraph({
     showMaxLine,
     enableCanvasStyle,
     canvasTheme,
+    isDark,
   ]);
 
   /**
