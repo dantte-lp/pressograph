@@ -46,6 +46,7 @@ import {
   convertToMinutes,
   type DriftConfig
 } from '@/lib/utils/pressure-drift-simulator';
+import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 
 // Register ECharts components
 echarts.use([
@@ -85,6 +86,10 @@ interface A4PreviewGraphProps {
   showWorkingLine?: boolean;
   showMaxLine?: boolean;
   enableDrift?: boolean;
+  /** Apply Canvas-style configuration (v1.0 visual compatibility) */
+  enableCanvasStyle?: boolean;
+  /** Theme for Canvas style (light or dark) */
+  canvasTheme?: 'light' | 'dark';
 }
 
 type ChartDataPoint = [number, number];
@@ -107,6 +112,8 @@ export function A4PreviewGraph({
   showWorkingLine = true,
   showMaxLine = true,
   enableDrift = false,
+  enableCanvasStyle = false,
+  canvasTheme = 'light',
 }: A4PreviewGraphProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
@@ -277,9 +284,10 @@ export function A4PreviewGraph({
 
   /**
    * Generate chart configuration with 30-minute intervals
+   * Optionally applies Canvas-style configuration for v1.0 visual compatibility.
    */
   const chartOption = useMemo((): ECOption => {
-    return {
+    const baseOption = {
       title: {
         text: 'График испытания давлением',
         subtext: `Интервалы: ${xAxisInterval} минут | Формат: A4 Landscape (297×210 мм)`,
@@ -622,6 +630,13 @@ export function A4PreviewGraph({
 
       animation: false, // Disable animation for print
     };
+
+    // Apply Canvas-style configuration if enabled
+    if (enableCanvasStyle) {
+      return applyCanvasStyle(baseOption, canvasTheme);
+    }
+
+    return baseOption;
   }, [
     profileData,
     workingPressure,
@@ -636,6 +651,8 @@ export function A4PreviewGraph({
     enableDrift,
     showWorkingLine,
     showMaxLine,
+    enableCanvasStyle,
+    canvasTheme,
   ]);
 
   /**

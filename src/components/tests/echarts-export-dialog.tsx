@@ -68,6 +68,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 import { PressureTestPreview } from './pressure-test-preview';
+import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 
 // Register ECharts components for export (tree-shaking optimization)
 echarts.use([
@@ -152,6 +153,7 @@ export function EChartsExportDialog({
   const [showWorkingLine, setShowWorkingLine] = useState(true);
   const [showMaxLine, setShowMaxLine] = useState(true);
   const [enableDrift, setEnableDrift] = useState(false);
+  const [enableCanvasStyle, setEnableCanvasStyle] = useState(false);
 
   // Collapsible sections state (all open by default)
   const [qualityOpen, setQualityOpen] = useState(true);
@@ -298,7 +300,7 @@ export function EChartsExportDialog({
       const totalMinutes = sanitizedDuration * 60;
 
       // Step 4: Apply chart options at export resolution
-      const exportOption: ECOption = {
+      let exportOption: ECOption = {
         backgroundColor: '#ffffff', // White background for professional output
         title: {
           text: `${testName} - Pressure Profile`,
@@ -472,6 +474,11 @@ export function EChartsExportDialog({
         ],
         animation: false, // Disable animation for export
       };
+
+      // Apply Canvas-style configuration if enabled
+      if (enableCanvasStyle) {
+        exportOption = applyCanvasStyle(exportOption, 'light');
+      }
 
       // Apply options to export instance
       exportChart.setOption(exportOption);
@@ -651,21 +658,38 @@ export function EChartsExportDialog({
                   {/* Drift Simulation Toggle */}
                   <div className="space-y-2">
                     <Label>Rendering Quality</Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="enable-drift"
-                        checked={enableDrift}
-                        onCheckedChange={(checked) => setEnableDrift(checked as boolean)}
-                      />
-                      <label
-                        htmlFor="enable-drift"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Enable Realistic Pressure Drift Simulation
-                      </label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="enable-drift"
+                          checked={enableDrift}
+                          onCheckedChange={(checked) => setEnableDrift(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="enable-drift"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Enable Realistic Pressure Drift Simulation
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="enable-canvas-style"
+                          checked={enableCanvasStyle}
+                          onCheckedChange={(checked) => setEnableCanvasStyle(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="enable-canvas-style"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Apply Canvas-style Configuration (v1.0 compatibility)
+                        </label>
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Adds high-frequency sampling (1-second intervals) with Brownian motion drift and Gaussian noise for realistic sensor behavior. Increases data points significantly.
+                      Drift: Adds high-frequency sampling (1-second intervals) with Brownian motion drift and Gaussian noise for realistic sensor behavior.
+                      <br />
+                      Canvas Style: Applies original Pressograph v1.0 visual styling (Canvas blue #0066cc, Arial font, professional margins).
                     </p>
                   </div>
                 </CardContent>
@@ -690,6 +714,7 @@ export function EChartsExportDialog({
                 startDateTime={config.startDateTime}
                 endDateTime={config.endDateTime}
                 showWorkingLine={showWorkingLine}
+                enableCanvasStyle={enableCanvasStyle}
                 showMaxLine={showMaxLine}
                 enableDrift={enableDrift}
               />

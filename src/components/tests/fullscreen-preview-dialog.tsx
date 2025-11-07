@@ -57,6 +57,10 @@ interface FullscreenPreviewDialogProps {
   showMaxLine?: boolean;
   /** Enable realistic pressure drift simulation */
   enableDrift?: boolean;
+  /** Apply Canvas-style configuration (v1.0 visual compatibility) */
+  enableCanvasStyle?: boolean;
+  /** Theme for Canvas style (light or dark) */
+  canvasTheme?: 'light' | 'dark';
 }
 
 /**
@@ -107,6 +111,8 @@ export function FullscreenPreviewDialog({
   showWorkingLine = true,
   showMaxLine = true,
   enableDrift = false,
+  enableCanvasStyle = false,
+  canvasTheme = 'light',
 }: FullscreenPreviewDialogProps) {
   return (
     <Dialog>
@@ -155,6 +161,8 @@ export function FullscreenPreviewDialog({
                   showWorkingLine={showWorkingLine}
                   showMaxLine={showMaxLine}
                   enableDrift={enableDrift}
+                  enableCanvasStyle={enableCanvasStyle}
+                  canvasTheme={canvasTheme}
                   className="h-full"
                 />
               </div>

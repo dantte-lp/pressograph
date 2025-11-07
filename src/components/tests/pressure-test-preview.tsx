@@ -44,6 +44,7 @@ import {
   convertToMinutes,
   type DriftConfig
 } from '@/lib/utils/pressure-drift-simulator';
+import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 
 // Register ECharts components (tree-shaking optimization)
 echarts.use([
@@ -103,6 +104,10 @@ interface PressureTestPreviewProps {
   showMaxLine?: boolean;
   /** Enable realistic pressure drift simulation */
   enableDrift?: boolean;
+  /** Apply Canvas-style configuration (v1.0 visual compatibility) */
+  enableCanvasStyle?: boolean;
+  /** Theme for Canvas style (light or dark) */
+  canvasTheme?: 'light' | 'dark';
 }
 
 /**
@@ -181,6 +186,8 @@ export function PressureTestPreview({
   showWorkingLine = true,
   showMaxLine = true,
   enableDrift = false,
+  enableCanvasStyle = false,
+  canvasTheme = 'light',
 }: PressureTestPreviewProps) {
   // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
@@ -438,9 +445,10 @@ export function PressureTestPreview({
    *
    * Memoized to prevent unnecessary recalculations on re-renders.
    * Includes all chart styling, axes configuration, and data series.
+   * Optionally applies Canvas-style configuration for v1.0 visual compatibility.
    */
   const chartOption = useMemo((): ECOption => {
-    return {
+    const baseOption = {
       // Chart title (Russian labels for consistency with export)
       title: {
         text: 'Предварительный просмотр испытания',
@@ -787,6 +795,13 @@ export function PressureTestPreview({
       animationDuration: 300,
       animationEasing: 'cubicOut',
     };
+
+    // Apply Canvas-style configuration if enabled
+    if (enableCanvasStyle) {
+      return applyCanvasStyle(baseOption, canvasTheme);
+    }
+
+    return baseOption;
   }, [
     profileData,
     workingPressure,
@@ -801,6 +816,8 @@ export function PressureTestPreview({
     showWorkingLine,
     showMaxLine,
     endTime,
+    enableCanvasStyle,
+    canvasTheme,
   ]);
 
   /**
