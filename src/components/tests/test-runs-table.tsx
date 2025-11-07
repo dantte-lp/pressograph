@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getTestRuns } from '@/lib/actions/tests';
+import { formatDateTime } from '@/lib/utils/format';
 
 interface TestRunsTableProps {
   testId: string;
@@ -102,10 +103,10 @@ export async function TestRunsTable({
             {runs.map((run) => (
               <TableRow key={run.id}>
                 <TableCell className="font-medium">
-                  {run.startedAt.toLocaleString()}
+                  {formatDateTime(run.startedAt)}
                 </TableCell>
                 <TableCell>
-                  {run.completedAt ? run.completedAt.toLocaleString() : 'In progress'}
+                  {run.completedAt ? formatDateTime(run.completedAt) : 'In progress'}
                 </TableCell>
                 <TableCell>{formatDuration(run.duration)}</TableCell>
                 <TableCell>{run.executedByName}</TableCell>
