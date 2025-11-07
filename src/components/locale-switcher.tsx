@@ -16,8 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { locales } from '@/i18n';
-import type { Locale } from '@/i18n';
+
+// Locales definition (duplicated from i18n.ts to avoid server-side imports in client component)
+export const locales = ['en', 'ru'] as const;
+export type Locale = (typeof locales)[number];
 
 /**
  * Locale display names

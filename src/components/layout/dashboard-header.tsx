@@ -16,6 +16,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,6 +84,9 @@ export function DashboardHeader({
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
+          {/* Language Switcher */}
+          <LocaleSwitcher size="sm" />
+
           {/* Theme Toggle */}
           <ThemeToggle />
 
