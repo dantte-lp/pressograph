@@ -14,6 +14,7 @@ export * from "./pressure-tests";
 export * from "./test-runs";
 export * from "./test-measurements";
 export * from "./file-uploads";
+export * from "./share-links";
 
 // Supporting entities
 export * from "./audit-logs";

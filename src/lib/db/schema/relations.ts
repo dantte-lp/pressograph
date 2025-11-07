@@ -16,6 +16,7 @@ import { projects } from "./projects";
 import { pressureTests } from "./pressure-tests";
 import { testRuns } from "./test-runs";
 import { fileUploads } from "./file-uploads";
+import { shareLinks } from "./share-links";
 import { auditLogs } from "./audit-logs";
 import { apiKeys } from "./api-keys";
 import { notifications } from "./notifications";
@@ -44,6 +45,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdTests: many(pressureTests, { relationName: "test_creator" }),
   createdRuns: many(testRuns, { relationName: "run_creator" }),
   uploadedFiles: many(fileUploads, { relationName: "file_uploader" }),
+  createdShareLinks: many(shareLinks),
   performedAudits: many(auditLogs, { relationName: "audit_performer" }),
   createdApiKeys: many(apiKeys, { relationName: "api_key_creator" }),
   notifications: many(notifications),
@@ -87,6 +89,7 @@ export const pressureTestsRelations = relations(pressureTests, ({ one, many }) =
     relationName: "test_creator",
   }),
   testRuns: many(testRuns),
+  shareLinks: many(shareLinks),
 }));
 
 /**
@@ -162,6 +165,20 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
   user: one(users, {
     fields: [userPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+/**
+ * Share Link Relations
+ */
+export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
+  pressureTest: one(pressureTests, {
+    fields: [shareLinks.pressureTestId],
+    references: [pressureTests.id],
+  }),
+  createdBy: one(users, {
+    fields: [shareLinks.createdBy],
     references: [users.id],
   }),
 }));
