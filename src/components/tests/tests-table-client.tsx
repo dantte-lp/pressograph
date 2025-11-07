@@ -32,11 +32,11 @@ import {
   FileDownIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 import { formatBytes } from '@/lib/utils/format';
 import type { PaginatedTests, TestFilters, PaginationParams } from '@/lib/actions/tests';
 import { DeleteTestDialog } from './delete-test-dialog';
 import { BatchDeleteTestsDialog } from './batch-delete-tests-dialog';
+import { RelativeTime, ConditionalRelativeTime } from '@/components/ui/relative-time';
 
 interface TestsTableClientProps {
   data: PaginatedTests;
@@ -236,12 +236,17 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                 </TableCell>
                 <TableCell>{test.runCount}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {test.lastRunDate
-                    ? formatDistanceToNow(test.lastRunDate, { addSuffix: true })
-                    : 'Never'}
+                  <ConditionalRelativeTime
+                    date={test.lastRunDate}
+                    neverText="Never"
+                    fallbackFormat="PP p"
+                  />
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {formatDistanceToNow(test.createdAt, { addSuffix: true })}
+                  <RelativeTime
+                    date={test.createdAt}
+                    fallbackFormat="PP p"
+                  />
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
