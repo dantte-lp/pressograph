@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Test Deletion Dialog UX** - Replaced native browser confirm dialogs with shadcn AlertDialog components
+  - Created `DeleteTestDialog` component with checkbox confirmation pattern
+  - Created `BatchDeleteTestsDialog` for batch deletion operations
+  - Removed all `window.confirm()` and `alert()` calls from tests table
+  - Added proper loading states and toast notifications (using sonner)
+  - Improved accessibility with ARIA labels and keyboard navigation
+  - Delete buttons now disabled until confirmation checkbox is checked
+  - Consistent UX pattern matching project deletion dialogs
+  - Better error handling with user-friendly messages
+
 ### Added
 - **ECharts Best Practices Documentation** - Comprehensive guide for ECharts implementation in Pressograph 2.0
   - Created `/docs/ECHARTS_BEST_PRACTICES.md` with 12 major sections covering all aspects of ECharts development
