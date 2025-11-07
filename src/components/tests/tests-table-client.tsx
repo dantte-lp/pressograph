@@ -1,0 +1,257 @@
+'use client';
+
+import { useState } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  MoreHorizontalIcon,
+  EyeIcon,
+  DownloadIcon,
+  Share2Icon,
+  CopyIcon,
+  PlayIcon,
+  Trash2Icon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
+import { formatBytes } from '@/lib/utils/format';
+import type { PaginatedTests, TestFilters, PaginationParams } from '@/lib/actions/tests';
+import { deleteTest } from '@/lib/actions/tests';
+
+interface TestsTableClientProps {
+  data: PaginatedTests;
+  filters: TestFilters;
+  pagination: PaginationParams;
+}
+
+const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  draft: 'outline',
+  ready: 'secondary',
+  running: 'default',
+  completed: 'default',
+  failed: 'destructive',
+  cancelled: 'outline',
+};
+
+export function TestsTableClient({ data, filters, pagination }: TestsTableClientProps) {
+  const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (testId: string, testNumber: string) => {
+    if (!confirm(`Are you sure you want to delete test ${testNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingId(testId);
+    try {
+      const result = await deleteTest(testId);
+      if (result.success) {
+        router.refresh();
+      } else {
+        alert(result.error ?? 'Failed to delete test');
+      }
+    } catch (error) {
+      console.error('Error deleting test:', error);
+      alert('Failed to delete test');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const buildPageUrl = (newPage: number) => {
+    const params = new URLSearchParams();
+    params.set('page', newPage.toString());
+    if (pagination.pageSize !== 20) params.set('pageSize', pagination.pageSize.toString());
+    if (filters.search) params.set('search', filters.search);
+    if (filters.projectId) params.set('project', filters.projectId);
+    if (filters.status) params.set('status', filters.status.join(','));
+    if (filters.sortBy) params.set('sortBy', filters.sortBy);
+    return `/tests?${params.toString()}`;
+  };
+
+  if (data.tests.length === 0) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center text-center">
+        <div className="text-muted-foreground mb-4 text-5xl">📊</div>
+        <h3 className="mb-2 text-lg font-semibold">No Tests Found</h3>
+        <p className="text-muted-foreground mb-4 text-sm">
+          {filters.search || filters.projectId || filters.status
+            ? 'Try adjusting your filters or search query'
+            : 'Create your first pressure test to get started'}
+        </p>
+        <Button asChild>
+          <Link href="/tests/new">Create Test</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Test Number</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Project</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Runs</TableHead>
+              <TableHead>Last Run</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.tests.map((test) => (
+              <TableRow key={test.id}>
+                <TableCell className="font-medium">{test.testNumber}</TableCell>
+                <TableCell>
+                  <Link
+                    href={`/tests/${test.id}`}
+                    className="hover:underline"
+                  >
+                    {test.name}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link
+                    href={`/projects/${test.projectId}`}
+                    className="text-muted-foreground hover:underline"
+                  >
+                    {test.projectName}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={statusColors[test.status] ?? 'default'}>
+                    {test.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{test.runCount}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {test.lastRunDate
+                    ? formatDistanceToNow(test.lastRunDate, { addSuffix: true })
+                    : 'Never'}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {formatDistanceToNow(test.createdAt, { addSuffix: true })}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={deletingId === test.id}
+                      >
+                        <MoreHorizontalIcon className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/tests/${test.id}`}>
+                          <EyeIcon className="mr-2 h-4 w-4" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/tests/${test.id}/runs`}>
+                          <PlayIcon className="mr-2 h-4 w-4" />
+                          View Runs
+                        </Link>
+                      </DropdownMenuItem>
+                      {test.latestGraphSize && (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/api/tests/${test.id}/download`}>
+                            <DownloadIcon className="mr-2 h-4 w-4" />
+                            Download Graph ({formatBytes(test.latestGraphSize)})
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem>
+                        <Share2Icon className="mr-2 h-4 w-4" />
+                        Create Share Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/tests/${test.id}/duplicate`}>
+                          <CopyIcon className="mr-2 h-4 w-4" />
+                          Duplicate Test
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleDelete(test.id, test.testNumber)}
+                        disabled={deletingId === test.id}
+                      >
+                        <Trash2Icon className="mr-2 h-4 w-4" />
+                        {deletingId === test.id ? 'Deleting...' : 'Delete'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      {data.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground text-sm">
+            Showing {(data.page - 1) * data.pageSize + 1} to{' '}
+            {Math.min(data.page * data.pageSize, data.total)} of {data.total} tests
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              disabled={data.page <= 1}
+            >
+              <Link href={buildPageUrl(data.page - 1)}>
+                <ChevronLeftIcon className="h-4 w-4" />
+                Previous
+              </Link>
+            </Button>
+            <span className="text-sm">
+              Page {data.page} of {data.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              disabled={data.page >= data.totalPages}
+            >
+              <Link href={buildPageUrl(data.page + 1)}>
+                Next
+                <ChevronRightIcon className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
