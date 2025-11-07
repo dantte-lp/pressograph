@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 interface ProfileFormProps {
   user: {
@@ -188,14 +189,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Account created:</span>
             <span className="font-medium">
-              {new Date(user.createdAt).toLocaleDateString()}
+              {formatDate(user.createdAt)}
             </span>
           </div>
           {user.lastLoginAt && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Last login:</span>
               <span className="font-medium">
-                {new Date(user.lastLoginAt).toLocaleString()}
+                {formatDateTime(user.lastLoginAt)}
               </span>
             </div>
           )}
