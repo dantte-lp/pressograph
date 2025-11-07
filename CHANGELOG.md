@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Drift Simulation Integration** - Realistic pressure drift simulation now fully integrated into all graph components (Issue #103 - High Priority)
+  - Integrated into `PressureTestPreview` component with `enableDrift` prop
+  - Integrated into `A4PreviewGraph` component with `enableDrift` prop
+  - Integrated into `EChartsExportDialog` with checkbox control and state management
+  - Integrated into `FullscreenPreviewDialog` with prop pass-through support
+  - Uses `generateRealisticTestData()` from drift simulator utility
+  - High-frequency sampling: 1-second intervals (configurable)
+  - Brownian motion drift: ±0.2% typical variation
+  - Gaussian noise: ±0.1% typical sensor measurement variation
+  - Smooth S-curve ramp transitions for natural pressure changes
+  - LTTB downsampling automatically enabled for high-frequency data (performance optimization)
+  - Line style adjusts: smooth curves for drift mode, sharp transitions for idealized mode
+  - Symbol display: hidden for high-frequency data, visible for simplified data
+  - Line width: thinner (1.5px-2px) for drift mode, standard (2px-3px) for idealized mode
+  - Export dialog includes "Enable Realistic Pressure Drift Simulation" checkbox with descriptive help text
+  - Backward compatible: drift is disabled by default, no breaking changes
+  - Performance impact: mitigated by ECharts LTTB sampling algorithm
+  - File locations:
+    - `/src/components/tests/pressure-test-preview.tsx` - Main preview component
+    - `/src/components/tests/a4-preview-graph.tsx` - A4 landscape print component
+    - `/src/components/tests/echarts-export-dialog.tsx` - Export dialog with drift toggle
+    - `/src/components/tests/fullscreen-preview-dialog.tsx` - Fullscreen preview
+  - Benefits:
+    - More realistic visualization of actual pressure sensor behavior
+    - Better training material for operators
+    - Accurate representation of regulatory compliance scenarios
+    - Professional-grade data simulation for presentations
+
 - **Fullscreen Dialog Component** - Custom fullscreen dialog variant for immersive experiences
   - Expands to near-fullscreen: `calc(100vh-2rem) × calc(100vw-2rem)`
   - Flexible header/footer layout with sticky positioning

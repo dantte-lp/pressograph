@@ -39,6 +39,11 @@ import type {
   GridComponentOption,
   LegendComponentOption,
 } from 'echarts/components';
+import {
+  generateRealisticTestData,
+  convertToMinutes,
+  type DriftConfig
+} from '@/lib/utils/pressure-drift-simulator';
 
 // Register ECharts components (tree-shaking optimization)
 echarts.use([
@@ -289,6 +294,7 @@ export function PressureTestPreview({
    * - Intermediate stages with holds
    * - Final depressurization (30 seconds)
    * - Optional padding points for time-based display
+   * - Realistic drift and noise simulation (when enabled)
    *
    * @returns Processed chart data with points and labels
    */
@@ -297,7 +303,7 @@ export function PressureTestPreview({
     const rampUpDuration = 0.5; // 30 seconds to ramp up
     const depressurizeDuration = 0.5; // 30 seconds to depressurize
 
-    const dataPoints: ChartDataPoint[] = [];
+    let dataPoints: ChartDataPoint[] = [];
     const timeLabels: string[] = [];
 
     // Helper: Convert minutes to X-axis value (always use minutes for full control)
@@ -312,62 +318,119 @@ export function PressureTestPreview({
       return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     };
 
-    // Start: 0 pressure at time 0
-    // Note: No padding points added - axis min/max handles the visual padding
-    dataPoints.push([minutesToX(0), 0]);
-    timeLabels.push('0');
+    // Use realistic drift simulation if enabled
+    if (enableDrift) {
+      // Convert test parameters to milliseconds for drift simulator
+      const startTimeMs = 0;
+      const endTimeMs = totalMinutes * 60 * 1000;
+      const rampDuration = 30 * 1000; // 30 seconds in milliseconds
 
-    // Ramp up to working pressure (30 seconds)
-    dataPoints.push([minutesToX(rampUpDuration), workingPressure]);
-    timeLabels.push(formatTime(rampUpDuration));
+      // Convert intermediate stages to absolute time format
+      const stages: Array<{ startTime: number; endTime: number; pressure: number }> = [];
+      let currentTimeMs = rampUpDuration * 60 * 1000; // After initial ramp-up
 
-    let currentTime = rampUpDuration;
+      if (intermediateStages && intermediateStages.length > 0) {
+        intermediateStages.forEach((stage) => {
+          // Add wait time after previous stage
+          currentTimeMs += stage.time * 60 * 1000;
+          const stageStartMs = currentTimeMs;
+          const stageEndMs = stageStartMs + stage.duration * 60 * 1000;
 
-    // Add intermediate stages (stage.time is RELATIVE minutes after previous stage)
-    if (intermediateStages && intermediateStages.length > 0) {
-      intermediateStages.forEach((stage) => {
-        // Calculate cumulative time for this stage
-        currentTime += stage.time; // Add wait time after previous stage
-        const stageStartMinutes = currentTime;
+          stages.push({
+            startTime: stageStartMs,
+            endTime: stageEndMs,
+            pressure: stage.pressure,
+          });
 
-        // Ramp up to stage pressure (30 seconds)
-        dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
-        timeLabels.push(formatTime(stageStartMinutes));
+          currentTimeMs = stageEndMs + rampDuration; // Account for ramp down
+        });
+      }
 
-        // Hold at stage pressure for specified duration
-        const stageEndMinutes = stageStartMinutes + stage.duration;
-        if (stageEndMinutes < totalMinutes - depressurizeDuration) {
-          dataPoints.push([minutesToX(stageEndMinutes), stage.pressure]);
-          timeLabels.push(formatTime(stageEndMinutes));
-
-          // Drop back to working pressure after stage (30 seconds)
-          dataPoints.push([minutesToX(stageEndMinutes + 0.5), workingPressure]);
-          timeLabels.push(formatTime(stageEndMinutes + 0.5));
-
-          currentTime = stageEndMinutes + 0.5;
-        } else {
-          currentTime = stageEndMinutes;
+      // Generate realistic data with drift and noise
+      const realisticData = generateRealisticTestData(
+        {
+          startTime: startTimeMs,
+          endTime: endTimeMs,
+          workingPressure,
+          intermediateStages: stages,
+        },
+        {
+          driftMagnitude: 0.002, // ±0.2% drift
+          noiseMagnitude: 0.001, // ±0.1% noise
+          samplingRate: 1, // 1 second intervals
+          seed: Date.now(),
         }
-      });
+      );
+
+      // Convert milliseconds to minutes for chart display
+      dataPoints = convertToMinutes(realisticData);
+
+      // Generate sparse time labels for major points
+      // (Too many labels would clutter the UI)
+      const labelCount = Math.min(10, dataPoints.length);
+      const labelInterval = Math.floor(dataPoints.length / labelCount);
+      for (let i = 0; i < dataPoints.length; i += labelInterval) {
+        const minutes = dataPoints[i][0];
+        timeLabels.push(formatTime(minutes));
+      }
+    } else {
+      // Original simplified logic (no drift)
+      // Start: 0 pressure at time 0
+      dataPoints.push([minutesToX(0), 0]);
+      timeLabels.push('0');
+
+      // Ramp up to working pressure (30 seconds)
+      dataPoints.push([minutesToX(rampUpDuration), workingPressure]);
+      timeLabels.push(formatTime(rampUpDuration));
+
+      let currentTime = rampUpDuration;
+
+      // Add intermediate stages (stage.time is RELATIVE minutes after previous stage)
+      if (intermediateStages && intermediateStages.length > 0) {
+        intermediateStages.forEach((stage) => {
+          // Calculate cumulative time for this stage
+          currentTime += stage.time; // Add wait time after previous stage
+          const stageStartMinutes = currentTime;
+
+          // Ramp up to stage pressure (30 seconds)
+          dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
+          timeLabels.push(formatTime(stageStartMinutes));
+
+          // Hold at stage pressure for specified duration
+          const stageEndMinutes = stageStartMinutes + stage.duration;
+          if (stageEndMinutes < totalMinutes - depressurizeDuration) {
+            dataPoints.push([minutesToX(stageEndMinutes), stage.pressure]);
+            timeLabels.push(formatTime(stageEndMinutes));
+
+            // Drop back to working pressure after stage (30 seconds)
+            dataPoints.push([minutesToX(stageEndMinutes + 0.5), workingPressure]);
+            timeLabels.push(formatTime(stageEndMinutes + 0.5));
+
+            currentTime = stageEndMinutes + 0.5;
+          } else {
+            currentTime = stageEndMinutes;
+          }
+        });
+      }
+
+      // Hold at working pressure until near end
+      const depressurizeStartTime = totalMinutes - depressurizeDuration;
+      if (currentTime < depressurizeStartTime) {
+        dataPoints.push([minutesToX(depressurizeStartTime), workingPressure]);
+        timeLabels.push(formatTime(depressurizeStartTime));
+      }
+
+      // Depressurize to 0 (30 seconds)
+      dataPoints.push([minutesToX(totalMinutes), 0]);
+      timeLabels.push(formatTime(totalMinutes));
     }
 
-    // Hold at working pressure until near end
-    const depressurizeStartTime = totalMinutes - depressurizeDuration;
-    if (currentTime < depressurizeStartTime) {
-      dataPoints.push([minutesToX(depressurizeStartTime), workingPressure]);
-      timeLabels.push(formatTime(depressurizeStartTime));
-    }
-
-    // Depressurize to 0 (30 seconds)
-    dataPoints.push([minutesToX(totalMinutes), 0]);
-    timeLabels.push(formatTime(totalMinutes));
-
-    // Note: No end padding point - axis max handles the visual padding
     return { dataPoints, timeLabels };
   }, [
     workingPressure,
     sanitizedDuration,
     intermediateStages,
+    enableDrift,
   ]);
 
   /**
@@ -626,12 +689,15 @@ export function PressureTestPreview({
           name: 'Pressure Profile',
           type: 'line',
           data: profileData.dataPoints,
-          smooth: false, // Sharp transitions for pressure stages
+          smooth: enableDrift, // Smooth for realistic drift, sharp for idealized
+          // Enable LTTB (Largest-Triangle-Three-Buckets) downsampling for high-frequency data
+          // This provides excellent visual quality while maintaining performance
+          sampling: enableDrift ? 'lttb' : undefined,
           symbol: 'circle',
           symbolSize: 4,
-          showSymbol: false, // Hide symbols by default
+          showSymbol: false, // Hide symbols by default (too many with drift)
           lineStyle: {
-            width: 2,
+            width: enableDrift ? 1.5 : 2, // Thinner line for high-frequency data
             color: '#3b82f6',
           },
           itemStyle: {
@@ -731,6 +797,10 @@ export function PressureTestPreview({
     sanitizedDuration,
     paddingHours,
     xAxisInterval,
+    enableDrift,
+    showWorkingLine,
+    showMaxLine,
+    endTime,
   ]);
 
   /**

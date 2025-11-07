@@ -151,6 +151,7 @@ export function EChartsExportDialog({
   const [exportQuality, setExportQuality] = useState<ExportQuality>('FHD');
   const [showWorkingLine, setShowWorkingLine] = useState(true);
   const [showMaxLine, setShowMaxLine] = useState(true);
+  const [enableDrift, setEnableDrift] = useState(false);
 
   // Collapsible sections state (all open by default)
   const [qualityOpen, setQualityOpen] = useState(true);
@@ -646,6 +647,27 @@ export function EChartsExportDialog({
                       </div>
                     </div>
                   </div>
+
+                  {/* Drift Simulation Toggle */}
+                  <div className="space-y-2">
+                    <Label>Rendering Quality</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="enable-drift"
+                        checked={enableDrift}
+                        onCheckedChange={(checked) => setEnableDrift(checked as boolean)}
+                      />
+                      <label
+                        htmlFor="enable-drift"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Enable Realistic Pressure Drift Simulation
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Adds high-frequency sampling (1-second intervals) with Brownian motion drift and Gaussian noise for realistic sensor behavior. Increases data points significantly.
+                    </p>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Card>
@@ -667,6 +689,9 @@ export function EChartsExportDialog({
                 pressureUnit={config.pressureUnit || 'MPa'}
                 startDateTime={config.startDateTime}
                 endDateTime={config.endDateTime}
+                showWorkingLine={showWorkingLine}
+                showMaxLine={showMaxLine}
+                enableDrift={enableDrift}
               />
             </CardContent>
           </Card>

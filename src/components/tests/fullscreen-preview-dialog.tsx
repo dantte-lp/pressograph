@@ -51,6 +51,12 @@ interface FullscreenPreviewDialogProps {
   endDateTime?: string;
   /** Custom class name for trigger button */
   triggerClassName?: string;
+  /** Show/hide working pressure reference line */
+  showWorkingLine?: boolean;
+  /** Show/hide max pressure reference line */
+  showMaxLine?: boolean;
+  /** Enable realistic pressure drift simulation */
+  enableDrift?: boolean;
 }
 
 /**
@@ -98,6 +104,9 @@ export function FullscreenPreviewDialog({
   startDateTime,
   endDateTime,
   triggerClassName,
+  showWorkingLine = true,
+  showMaxLine = true,
+  enableDrift = false,
 }: FullscreenPreviewDialogProps) {
   return (
     <Dialog>
@@ -143,8 +152,9 @@ export function FullscreenPreviewDialog({
                   pressureUnit={pressureUnit}
                   startDateTime={startDateTime}
                   endDateTime={endDateTime}
-                  showWorkingLine={true}
-                  showMaxLine={true}
+                  showWorkingLine={showWorkingLine}
+                  showMaxLine={showMaxLine}
+                  enableDrift={enableDrift}
                   className="h-full"
                 />
               </div>

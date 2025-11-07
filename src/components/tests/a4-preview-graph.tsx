@@ -41,6 +41,11 @@ import type {
   GridComponentOption,
   LegendComponentOption,
 } from 'echarts/components';
+import {
+  generateRealisticTestData,
+  convertToMinutes,
+  type DriftConfig
+} from '@/lib/utils/pressure-drift-simulator';
 
 // Register ECharts components
 echarts.use([
@@ -166,60 +171,109 @@ export function A4PreviewGraph({
   const xAxisInterval = calculateOptimalInterval(sanitizedDuration);
 
   /**
-   * Calculate pressure profile data points
+   * Calculate pressure profile data points with optional drift simulation
    */
   const profileData = useMemo(() => {
     const totalMinutes = sanitizedDuration * 60;
     const rampUpDuration = 0.5;
     const depressurizeDuration = 0.5;
 
-    const dataPoints: ChartDataPoint[] = [];
+    let dataPoints: ChartDataPoint[] = [];
 
     // Helper: Convert minutes to X-axis value
     const minutesToX = (minutes: number): number => minutes;
 
-    // Start: 0 pressure at time 0
-    dataPoints.push([minutesToX(0), 0]);
+    // Use realistic drift simulation if enabled
+    if (enableDrift) {
+      // Convert test parameters to milliseconds for drift simulator
+      const startTimeMs = 0;
+      const endTimeMs = totalMinutes * 60 * 1000;
+      const rampDuration = 30 * 1000; // 30 seconds in milliseconds
 
-    // Ramp up to working pressure (30 seconds)
-    dataPoints.push([minutesToX(rampUpDuration), workingPressure]);
+      // Convert intermediate stages to absolute time format
+      const stages: Array<{ startTime: number; endTime: number; pressure: number }> = [];
+      let currentTimeMs = rampUpDuration * 60 * 1000; // After initial ramp-up
 
-    let currentTime = rampUpDuration;
+      if (intermediateStages && intermediateStages.length > 0) {
+        intermediateStages.forEach((stage) => {
+          // Add wait time after previous stage
+          currentTimeMs += stage.time * 60 * 1000;
+          const stageStartMs = currentTimeMs;
+          const stageEndMs = stageStartMs + stage.duration * 60 * 1000;
 
-    // Add intermediate stages
-    if (intermediateStages && intermediateStages.length > 0) {
-      intermediateStages.forEach((stage) => {
-        currentTime += stage.time;
-        const stageStartMinutes = currentTime;
+          stages.push({
+            startTime: stageStartMs,
+            endTime: stageEndMs,
+            pressure: stage.pressure,
+          });
 
-        // Ramp up to stage pressure
-        dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
+          currentTimeMs = stageEndMs + rampDuration; // Account for ramp down
+        });
+      }
 
-        // Hold at stage pressure
-        const stageEndMinutes = stageStartMinutes + stage.duration;
-        if (stageEndMinutes < totalMinutes - depressurizeDuration) {
-          dataPoints.push([minutesToX(stageEndMinutes), stage.pressure]);
-
-          // Drop back to working pressure
-          dataPoints.push([minutesToX(stageEndMinutes + 0.5), workingPressure]);
-          currentTime = stageEndMinutes + 0.5;
-        } else {
-          currentTime = stageEndMinutes;
+      // Generate realistic data with drift and noise
+      const realisticData = generateRealisticTestData(
+        {
+          startTime: startTimeMs,
+          endTime: endTimeMs,
+          workingPressure,
+          intermediateStages: stages,
+        },
+        {
+          driftMagnitude: 0.002, // ±0.2% drift
+          noiseMagnitude: 0.001, // ±0.1% noise
+          samplingRate: 1, // 1 second intervals
+          seed: Date.now(),
         }
-      });
-    }
+      );
 
-    // Hold at working pressure until near end
-    const depressurizeStartTime = totalMinutes - depressurizeDuration;
-    if (currentTime < depressurizeStartTime) {
-      dataPoints.push([minutesToX(depressurizeStartTime), workingPressure]);
-    }
+      // Convert milliseconds to minutes for chart display
+      dataPoints = convertToMinutes(realisticData);
+    } else {
+      // Original simplified logic (no drift)
+      // Start: 0 pressure at time 0
+      dataPoints.push([minutesToX(0), 0]);
 
-    // Depressurize to 0
-    dataPoints.push([minutesToX(totalMinutes), 0]);
+      // Ramp up to working pressure (30 seconds)
+      dataPoints.push([minutesToX(rampUpDuration), workingPressure]);
+
+      let currentTime = rampUpDuration;
+
+      // Add intermediate stages
+      if (intermediateStages && intermediateStages.length > 0) {
+        intermediateStages.forEach((stage) => {
+          currentTime += stage.time;
+          const stageStartMinutes = currentTime;
+
+          // Ramp up to stage pressure
+          dataPoints.push([minutesToX(stageStartMinutes), stage.pressure]);
+
+          // Hold at stage pressure
+          const stageEndMinutes = stageStartMinutes + stage.duration;
+          if (stageEndMinutes < totalMinutes - depressurizeDuration) {
+            dataPoints.push([minutesToX(stageEndMinutes), stage.pressure]);
+
+            // Drop back to working pressure
+            dataPoints.push([minutesToX(stageEndMinutes + 0.5), workingPressure]);
+            currentTime = stageEndMinutes + 0.5;
+          } else {
+            currentTime = stageEndMinutes;
+          }
+        });
+      }
+
+      // Hold at working pressure until near end
+      const depressurizeStartTime = totalMinutes - depressurizeDuration;
+      if (currentTime < depressurizeStartTime) {
+        dataPoints.push([minutesToX(depressurizeStartTime), workingPressure]);
+      }
+
+      // Depressurize to 0
+      dataPoints.push([minutesToX(totalMinutes), 0]);
+    }
 
     return dataPoints;
-  }, [workingPressure, sanitizedDuration, intermediateStages]);
+  }, [workingPressure, sanitizedDuration, intermediateStages, enableDrift]);
 
   /**
    * Generate chart configuration with 30-minute intervals
@@ -486,12 +540,14 @@ export function A4PreviewGraph({
           name: 'Профиль давления',
           type: 'line',
           data: profileData,
-          smooth: false,
+          smooth: enableDrift, // Smooth for realistic drift, sharp for idealized
+          // Enable LTTB downsampling for high-frequency data
+          sampling: enableDrift ? 'lttb' : undefined,
           symbol: 'circle',
           symbolSize: 5,
-          showSymbol: true,
+          showSymbol: !enableDrift, // Hide symbols for high-frequency data
           lineStyle: {
-            width: 3,
+            width: enableDrift ? 2 : 3, // Thinner line for high-frequency data
             color: '#3b82f6',
           },
           itemStyle: {
@@ -577,6 +633,9 @@ export function A4PreviewGraph({
     sanitizedDuration,
     xAxisInterval,
     paddingHours,
+    enableDrift,
+    showWorkingLine,
+    showMaxLine,
   ]);
 
   /**
