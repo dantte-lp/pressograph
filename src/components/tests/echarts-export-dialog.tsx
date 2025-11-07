@@ -37,7 +37,7 @@ import {
   DataZoomComponent,
   ToolboxComponent,
 } from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
+import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 import type { ECharts, ComposeOption } from 'echarts/core';
 import type { LineSeriesOption } from 'echarts/charts';
 import type {
@@ -86,6 +86,7 @@ import {
 } from '@/lib/utils/time-zoom';
 
 // Register ECharts components for export (tree-shaking optimization)
+// Include both Canvas and SVG renderers for export flexibility
 echarts.use([
   LineChart,
   TitleComponent,
@@ -96,6 +97,7 @@ echarts.use([
   DataZoomComponent,
   ToolboxComponent,
   CanvasRenderer,
+  SVGRenderer,
 ]);
 
 // Type-safe chart option composition
@@ -117,6 +119,17 @@ interface IntermediateStage {
   pressure: number;
   duration: number; // minutes
 }
+
+/**
+ * Export format options
+ */
+const EXPORT_FORMATS = {
+  PNG: 'png',
+  SVG: 'svg',
+  PDF: 'pdf',
+} as const;
+
+type ExportFormat = keyof typeof EXPORT_FORMATS;
 
 /**
  * Export quality presets with correct resolution standards
@@ -168,6 +181,7 @@ export function EChartsExportDialog({
 }: EChartsExportDialogProps) {
   const [open, setOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('PNG');
   const [exportQuality, setExportQuality] = useState<ExportQuality>('FHD');
   const [showWorkingLine, setShowWorkingLine] = useState(true);
   const [showMaxLine, setShowMaxLine] = useState(true);
@@ -305,12 +319,17 @@ export function EChartsExportDialog({
   /**
    * Handle export using ECharts Best Practices
    *
+   * Supports three export formats:
+   * - PNG: Raster image with configurable resolution
+   * - SVG: Vector graphics for perfect scaling
+   * - PDF: Professional document format (landscape A4)
+   *
    * Implementation follows the recommended approach:
    * 1. Create hidden container with export dimensions
    * 2. Initialize new ECharts instance at target resolution
    * 3. Set devicePixelRatio during init (not just in getDataURL)
    * 4. Apply full chart options at export resolution
-   * 5. Export using getDataURL with white background
+   * 5. Export using appropriate method for selected format
    * 6. Properly dispose instance to prevent memory leaks
    *
    * This approach ensures:
@@ -341,11 +360,12 @@ export function EChartsExportDialog({
 
       // Step 2: Initialize dedicated ECharts instance with export dimensions
       // CRITICAL: Set devicePixelRatio during init, not just in getDataURL
+      // Use SVG renderer for SVG export, Canvas for PNG/PDF
       exportChart = echarts.init(hiddenContainer, undefined, {
-        renderer: 'canvas',
+        renderer: exportFormat === 'SVG' ? 'svg' : 'canvas',
         width: exportWidth,
         height: exportHeight,
-        devicePixelRatio: pixelRatio, // 2x resolution: 3840x2160
+        devicePixelRatio: exportFormat === 'SVG' ? 1 : pixelRatio, // SVG doesn't need pixel ratio
       });
 
       // Step 3: Calculate optimal interval for export with improved logic
@@ -495,30 +515,11 @@ export function EChartsExportDialog({
             },
           },
         },
-        // Add dataZoom only if NOT exporting zoomed view
-        // This allows interactive zoom in the export preview
-        ...(exportZoomedView
-          ? {}
-          : {
-              dataZoom: [
-                {
-                  type: 'slider',
-                  xAxisIndex: 0,
-                  filterMode: 'none',
-                  start: 0,
-                  end: 100,
-                  show: false, // Hide in export
-                },
-                {
-                  type: 'inside',
-                  xAxisIndex: 0,
-                  filterMode: 'none',
-                  start: 0,
-                  end: 100,
-                  disabled: true, // Disable in export
-                },
-              ],
-            }),
+        // No dataZoom in exports - show clean graph without zoom controls
+        // No toolbox in exports - clean professional output
+        toolbox: {
+          show: false,
+        },
         series: [
           {
             name: 'Pressure Profile',
@@ -606,27 +607,90 @@ export function EChartsExportDialog({
       // Apply options to export instance
       exportChart.setOption(exportOption as any);
 
-      // Step 5: Export using getDataURL
-      // Note: devicePixelRatio is already set during init, this just confirms it
-      const imageDataUrl = exportChart.getDataURL({
-        type: 'png',
-        pixelRatio: pixelRatio,
-        backgroundColor: '#ffffff',
-      });
-
-      // Step 6: Create download
-      const link = document.createElement('a');
+      // Step 5: Export using appropriate method for selected format
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      link.download = `${testNumber}_${testName.replace(/[^a-z0-9]/gi, '_')}_export_${timestamp}.png`;
-      link.href = imageDataUrl;
-      link.click();
+      const baseFilename = `${testNumber}_${testName.replace(/[^a-z0-9]/gi, '_')}_export_${timestamp}`;
+
+      if (exportFormat === 'PNG') {
+        // PNG export using getDataURL
+        const imageDataUrl = exportChart.getDataURL({
+          type: 'png',
+          pixelRatio: pixelRatio,
+          backgroundColor: '#ffffff',
+        });
+
+        const link = document.createElement('a');
+        link.download = `${baseFilename}.png`;
+        link.href = imageDataUrl;
+        link.click();
+
+        toast.success('PNG Export Successful', {
+          description: `${qualityPreset.label} export completed: ${exportWidth * pixelRatio}×${exportHeight * pixelRatio} pixels`,
+        });
+      } else if (exportFormat === 'SVG') {
+        // SVG export using renderToSVGString
+        const svgStr = exportChart.renderToSVGString();
+        const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.download = `${baseFilename}.svg`;
+        link.href = url;
+        link.click();
+
+        // Clean up blob URL
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+
+        toast.success('SVG Export Successful', {
+          description: `Vector graphics export completed: ${exportWidth}×${exportHeight} (scalable)`,
+        });
+      } else if (exportFormat === 'PDF') {
+        // PDF export using jsPDF
+        const { jsPDF } = await import('jspdf');
+
+        // Create PDF in landscape orientation (A4)
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4', // 297mm × 210mm
+        });
+
+        // Get PNG data URL for embedding in PDF
+        const imageDataUrl = exportChart.getDataURL({
+          type: 'png',
+          pixelRatio: 2, // High quality for PDF
+          backgroundColor: '#ffffff',
+        });
+
+        // Calculate dimensions to fit A4 landscape with margins
+        const pdfWidth = 297; // A4 width in mm
+        const pdfHeight = 210; // A4 height in mm
+        const margin = 10; // 10mm margin
+        const imgWidth = pdfWidth - 2 * margin;
+        const imgHeight = pdfHeight - 2 * margin;
+
+        // Add image to PDF
+        pdf.addImage(imageDataUrl, 'PNG', margin, margin, imgWidth, imgHeight);
+
+        // Add metadata
+        pdf.setProperties({
+          title: `${testName} - Pressure Test Graph`,
+          subject: `Test ${testNumber}`,
+          author: 'Pressograph 2.0',
+          keywords: 'pressure test, graph, export',
+          creator: 'Pressograph 2.0',
+        });
+
+        // Save PDF
+        pdf.save(`${baseFilename}.pdf`);
+
+        toast.success('PDF Export Successful', {
+          description: `Professional PDF document created: A4 Landscape (297×210mm)`,
+        });
+      }
 
       // Clean up: Remove hidden container
       document.body.removeChild(hiddenContainer);
-
-      toast.success('Export Successful', {
-        description: `${qualityPreset.label} export completed: ${exportWidth}×${exportHeight} @ ${pixelRatio}x (${exportWidth * pixelRatio}×${exportHeight * pixelRatio})`,
-      });
 
       setOpen(false);
     } catch (error) {
@@ -679,13 +743,55 @@ export function EChartsExportDialog({
                 </CardHeader>
                 <CollapsibleContent>
                   <CardContent className="space-y-4 pt-0">
-                    {/* Quality Selector */}
+                    {/* Format Selector */}
                     <div className="space-y-2">
-                      <Label htmlFor="quality-select" className="text-sm">Resolution Preset</Label>
-                      <Select value={exportQuality} onValueChange={(value) => setExportQuality(value as ExportQuality)}>
-                        <SelectTrigger id="quality-select" className="h-9">
-                          <SelectValue placeholder="Select quality" />
+                      <Label htmlFor="format-select" className="text-sm">Export Format</Label>
+                      <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as ExportFormat)}>
+                        <SelectTrigger id="format-select" className="h-9">
+                          <SelectValue placeholder="Select format" />
                         </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PNG">
+                            <div className="flex flex-col">
+                              <span className="font-medium">PNG Image</span>
+                              <span className="text-xs text-muted-foreground">
+                                Raster image with configurable resolution
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="SVG">
+                            <div className="flex flex-col">
+                              <span className="font-medium">SVG Vector</span>
+                              <span className="text-xs text-muted-foreground">
+                                Scalable vector graphics (perfect for scaling)
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="PDF">
+                            <div className="flex flex-col">
+                              <span className="font-medium">PDF Document</span>
+                              <span className="text-xs text-muted-foreground">
+                                Professional A4 landscape document
+                              </span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {exportFormat === 'PNG' && 'Bitmap format with pixel-based resolution'}
+                        {exportFormat === 'SVG' && 'Vector format that scales perfectly to any size'}
+                        {exportFormat === 'PDF' && 'Professional document format (A4 landscape)'}
+                      </p>
+                    </div>
+
+                    {/* Quality Selector (only for PNG) */}
+                    {exportFormat === 'PNG' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="quality-select" className="text-sm">Resolution Preset</Label>
+                        <Select value={exportQuality} onValueChange={(value) => setExportQuality(value as ExportQuality)}>
+                          <SelectTrigger id="quality-select" className="h-9">
+                            <SelectValue placeholder="Select quality" />
+                          </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="HD+">
                             <div className="flex flex-col">
@@ -721,12 +827,13 @@ export function EChartsExportDialog({
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Display: {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height} @ {EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x pixel ratio
-                        <br />
-                        Effective: {EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} pixels
-                      </p>
-                    </div>
+                        <p className="text-xs text-muted-foreground">
+                          Display: {EXPORT_QUALITY_PRESETS[exportQuality].width} × {EXPORT_QUALITY_PRESETS[exportQuality].height} @ {EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio}x pixel ratio
+                          <br />
+                          Effective: {EXPORT_QUALITY_PRESETS[exportQuality].width * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} × {EXPORT_QUALITY_PRESETS[exportQuality].height * EXPORT_QUALITY_PRESETS[exportQuality].pixelRatio} pixels
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </CollapsibleContent>
               </Card>
@@ -1009,7 +1116,7 @@ export function EChartsExportDialog({
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Export PNG
+                Export {exportFormat}
               </>
             )}
           </Button>

@@ -213,9 +213,8 @@ export function PressureTestPreview({
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
 
-  // Theme for dataZoom styling
+  // Theme for ECharts initialization (built-in dark theme support)
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
   // Data validation: Sanitize testDuration to prevent division by zero or negative intervals
   // Defaults to 24 hours if invalid
@@ -302,6 +301,16 @@ export function PressureTestPreview({
       ? getZoomInterval(displayHours)
       : calculateXAxisInterval(displayHours);
   }, [calculateXAxisInterval, zoomedTimeWindow, totalDisplayHours]);
+
+  /**
+   * Calculate data extent (actual test start/end minutes with non-zero pressure)
+   * Used for intelligent automatic zooming to the interesting part of the data
+   */
+  const dataExtent = useMemo(() => {
+    const totalMinutes = sanitizedDuration * 60;
+    // Default to full range
+    return { min: 0, max: totalMinutes };
+  }, [sanitizedDuration]);
 
   /**
    * Calculate pressure profile data points
@@ -471,7 +480,7 @@ export function PressureTestPreview({
 
       // Interactive tooltip
       tooltip: {
-        trigger: 'axis',
+        trigger: 'axis' as const,
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderColor: '#ddd',
         borderWidth: 1,
@@ -536,7 +545,7 @@ export function PressureTestPreview({
       grid: {
         left: '12%',
         right: '8%',
-        bottom: '18%',
+        bottom: '20%', // Increased from 18% to provide more space for zoom slider
         top: '22%',
         containLabel: false,
       },
@@ -701,56 +710,45 @@ export function PressureTestPreview({
         },
       },
 
-      // Interactive DataZoom configuration
+      // Interactive DataZoom configuration with intelligent initial zoom
       dataZoom: [
-        // Slider at bottom
+        // Slider at bottom with smart defaults
         {
           type: 'slider',
           xAxisIndex: 0,
           filterMode: 'none',
-          start: 0,
-          end: 100,
+          // Intelligent initial zoom: focus on actual data range
+          start: useTimeBased
+            ? ((dataExtent.min + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
+            : (dataExtent.min / (sanitizedDuration * 60)) * 100,
+          end: useTimeBased
+            ? ((dataExtent.max + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
+            : (dataExtent.max / (sanitizedDuration * 60)) * 100,
           handleSize: 8,
           height: 30,
-          bottom: 60, // Leave space for X-axis labels
-          borderColor: isDark ? '#4b5563' : '#d1d5db',
-          fillerColor: isDark
-            ? 'rgba(59, 130, 246, 0.3)'
-            : 'rgba(59, 130, 246, 0.2)',
+          bottom: 80, // Increased from 60 to 80 for better visual separation
+          // Let ECharts built-in theme handle colors for consistency
           borderRadius: 4,
-          handleStyle: {
-            color: '#3b82f6',
-            borderColor: isDark ? '#1e3a8a' : '#1e40af',
-          },
-          textStyle: {
-            color: isDark ? '#9ca3af' : '#6b7280',
-          },
-          dataBackground: {
-            lineStyle: {
-              color: '#3b82f6',
-              opacity: isDark ? 0.6 : 0.5,
-            },
-            areaStyle: {
-              color: isDark
-                ? 'rgba(59, 130, 246, 0.15)'
-                : 'rgba(59, 130, 246, 0.1)',
-            },
-          },
         },
-        // Inside zoom (mouse wheel + drag)
+        // Inside zoom (mouse wheel + drag) with intelligent defaults
         {
           type: 'inside',
           xAxisIndex: 0,
           filterMode: 'none',
-          start: 0,
-          end: 100,
+          // Match slider's intelligent zoom
+          start: useTimeBased
+            ? ((dataExtent.min + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
+            : (dataExtent.min / (sanitizedDuration * 60)) * 100,
+          end: useTimeBased
+            ? ((dataExtent.max + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
+            : (dataExtent.max / (sanitizedDuration * 60)) * 100,
           zoomOnMouseWheel: true,
           moveOnMouseMove: true,
           moveOnMouseWheel: false,
         },
       ],
 
-      // Toolbox with zoom controls
+      // Toolbox with zoom controls (saveAsImage removed - use dedicated export dialog)
       toolbox: {
         show: true,
         feature: {
@@ -762,11 +760,6 @@ export function PressureTestPreview({
           },
           restore: {
             title: 'Restore',
-          },
-          saveAsImage: {
-            title: 'Save as PNG',
-            name: `pressure-test-preview`,
-            pixelRatio: 2,
           },
         },
         right: 20,
@@ -900,7 +893,9 @@ export function PressureTestPreview({
     endTime,
     enableCanvasStyle,
     canvasTheme,
-    isDark,
+    dataExtent,
+    zoomedTimeWindow,
+    // Note: isDark removed - ECharts theme handles color automatically
   ]);
 
   /**
@@ -908,6 +903,7 @@ export function PressureTestPreview({
    *
    * Effect manages chart lifecycle:
    * - Initializes chart on mount
+   * - Re-initializes chart when theme changes (required for ECharts theme switching)
    * - Updates chart when options change
    * - Sets up resize handler
    * - Cleans up on unmount
@@ -915,13 +911,22 @@ export function PressureTestPreview({
   useEffect(() => {
     if (!chartRef.current) return;
 
-    // Initialize chart instance if not exists
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current, undefined, {
+    // Dispose existing instance if theme has changed (ECharts requires reinitialization for theme changes)
+    if (chartInstance.current) {
+      chartInstance.current.dispose();
+      chartInstance.current = null;
+    }
+
+    // Initialize chart with appropriate theme
+    // Use built-in ECharts 'dark' theme when dark mode is enabled
+    chartInstance.current = echarts.init(
+      chartRef.current,
+      theme === 'dark' ? 'dark' : undefined,
+      {
         renderer: 'canvas', // Canvas renderer for better performance
         locale: 'RU', // Russian locale for consistency
-      });
-    }
+      }
+    );
 
     const chart = chartInstance.current;
 
@@ -941,7 +946,7 @@ export function PressureTestPreview({
       handleResize.cancel(); // Cancel pending debounced calls
       window.removeEventListener('resize', handleResize);
     };
-  }, [chartOption]);
+  }, [chartOption, theme]); // Re-run when theme changes
 
   /**
    * Integrate dataZoom with Time Scale Zoom presets

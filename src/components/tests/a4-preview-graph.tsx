@@ -145,9 +145,8 @@ export function A4PreviewGraph({
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
 
-  // Theme for dataZoom styling
+  // Theme for ECharts initialization (built-in dark theme support)
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
   // Sanitize duration
   const sanitizedDuration = useMemo(() => {
@@ -381,7 +380,7 @@ export function A4PreviewGraph({
       grid: {
         left: '15%',
         right: '10%',
-        bottom: '20%',
+        bottom: '22%', // Increased from 20% to provide more space for zoom slider
         top: '25%',
         containLabel: false,
       },
@@ -572,30 +571,9 @@ export function A4PreviewGraph({
           end: 100,
           handleSize: 8,
           height: 30,
-          bottom: 60,
-          borderColor: isDark ? '#4b5563' : '#d1d5db',
-          fillerColor: isDark
-            ? 'rgba(59, 130, 246, 0.3)'
-            : 'rgba(59, 130, 246, 0.2)',
+          bottom: 80, // Increased from 60 to 80 for better visual separation
+          // Let ECharts built-in theme handle colors for consistency
           borderRadius: 4,
-          handleStyle: {
-            color: '#3b82f6',
-            borderColor: isDark ? '#1e3a8a' : '#1e40af',
-          },
-          textStyle: {
-            color: isDark ? '#9ca3af' : '#6b7280',
-          },
-          dataBackground: {
-            lineStyle: {
-              color: '#3b82f6',
-              opacity: isDark ? 0.6 : 0.5,
-            },
-            areaStyle: {
-              color: isDark
-                ? 'rgba(59, 130, 246, 0.15)'
-                : 'rgba(59, 130, 246, 0.1)',
-            },
-          },
         },
         // Inside zoom (mouse wheel + drag)
         {
@@ -610,7 +588,7 @@ export function A4PreviewGraph({
         },
       ],
 
-      // Toolbox with zoom controls
+      // Toolbox with zoom controls (saveAsImage removed - use dedicated export dialog)
       toolbox: {
         show: true,
         feature: {
@@ -622,11 +600,6 @@ export function A4PreviewGraph({
           },
           restore: {
             title: 'Restore',
-          },
-          saveAsImage: {
-            title: 'Save as PNG',
-            name: `a4-preview-graph`,
-            pixelRatio: 2,
           },
         },
         right: 20,
@@ -743,21 +716,31 @@ export function A4PreviewGraph({
     showMaxLine,
     enableCanvasStyle,
     canvasTheme,
-    isDark,
+    // Note: isDark removed - ECharts theme handles color automatically
   ]);
 
   /**
-   * Initialize and update chart
+   * Initialize and update chart with theme support
+   * Re-initializes when theme changes (required for ECharts theme switching)
    */
   useEffect(() => {
     if (!chartRef.current) return;
 
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current, undefined, {
+    // Dispose existing instance if it exists (for theme switching)
+    if (chartInstance.current) {
+      chartInstance.current.dispose();
+      chartInstance.current = null;
+    }
+
+    // Initialize with ECharts built-in theme
+    chartInstance.current = echarts.init(
+      chartRef.current,
+      theme === 'dark' ? 'dark' : undefined,
+      {
         renderer: 'canvas',
         locale: 'RU',
-      });
-    }
+      }
+    );
 
     const chart = chartInstance.current;
     chart.setOption(chartOption, { notMerge: true });
@@ -769,7 +752,7 @@ export function A4PreviewGraph({
         chartInstance.current = null;
       }
     };
-  }, [chartOption]);
+  }, [chartOption, theme]); // Re-run when theme changes
 
   return (
     <div className="w-full h-full p-8 print:p-6" style={{ minHeight: '210mm' }}>
