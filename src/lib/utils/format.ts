@@ -2,6 +2,8 @@
  * Formatting utilities for the application
  */
 
+import { format, formatDistanceToNow } from 'date-fns';
+
 /**
  * Format bytes to human-readable string
  *
@@ -114,4 +116,61 @@ export function formatDuration(ms: number): string {
  */
 export function formatPressure(pressure: number, unit: string = 'bar'): string {
   return `${formatNumber(pressure)} ${unit}`;
+}
+
+/**
+ * Format date to short format (e.g., "Jan 15, 2025")
+ *
+ * This function prevents hydration mismatches by using consistent
+ * formatting on both server and client sides via date-fns.
+ *
+ * @param date - Date to format (Date object or string)
+ * @returns Formatted date string
+ *
+ * @example
+ * ```ts
+ * formatDate(new Date('2025-01-15')) // "Jan 15, 2025"
+ * formatDate('2025-01-15T10:30:00Z') // "Jan 15, 2025"
+ * ```
+ */
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return format(d, 'MMM dd, yyyy');
+}
+
+/**
+ * Format date and time to readable format (e.g., "Jan 15, 2025 at 10:30 AM")
+ *
+ * This function prevents hydration mismatches by using consistent
+ * formatting on both server and client sides via date-fns.
+ *
+ * @param date - Date to format (Date object or string)
+ * @returns Formatted date and time string
+ *
+ * @example
+ * ```ts
+ * formatDateTime(new Date('2025-01-15T10:30:00')) // "Jan 15, 2025 at 10:30 AM"
+ * formatDateTime('2025-01-15T14:45:00Z') // "Jan 15, 2025 at 2:45 PM"
+ * ```
+ */
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return format(d, 'MMM dd, yyyy \'at\' h:mm a');
+}
+
+/**
+ * Format date to relative time (e.g., "2 hours ago")
+ *
+ * @param date - Date to format (Date object or string)
+ * @returns Relative time string
+ *
+ * @example
+ * ```ts
+ * formatRelativeTime(new Date(Date.now() - 3600000)) // "about 1 hour ago"
+ * formatRelativeTime('2025-01-15T10:30:00Z') // "2 days ago"
+ * ```
+ */
+export function formatRelativeTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return formatDistanceToNow(d, { addSuffix: true });
 }
