@@ -67,6 +67,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Bundle Size**: Reduced runtime overhead by removing debug logging (estimated 3-5KB reduction)
 
 ### Fixed
+- **Tooltip Time Display Bug** - Fixed incorrect tooltip display for time-based axis
+  - **Problem**: Tooltip showed negative minutes ("-35m") in padding region before test start
+  - **Root Cause**: Tooltip formatter incorrectly treated data[0] as timestamp instead of minutes
+  - **Solution**:
+    - Correctly interpret `point.data[0]` as minutes (value-based axis)
+    - Convert minutes offset to timestamp: `startTime + minutes * 60 * 1000`
+    - Display full date and time in tooltip for time-based mode
+    - Handle negative minutes correctly for padding areas
+  - **Result**: Tooltip now shows proper date/time (e.g., "03.11.2025 22:35") instead of "-35m"
+
 - **X-Axis Time-Based Interval FINAL FIX (ATTEMPT 3)** - Complete architecture change to use value-based axis for both cases
   - **Problem with splitNumber Approach**: `splitNumber` is only a **suggestion** for time-based axes
     - ECharts ignores `splitNumber` and chooses "nice" time boundaries (00:00, 01:00, 02:00...)

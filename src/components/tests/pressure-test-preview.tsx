@@ -401,20 +401,34 @@ export function PressureTestPreview({
         },
         formatter: (params: any) => {
           const point = params[0];
-          let minutes: number;
-
-          // Handle both time-based and value-based axes
-          if (useTimeBased) {
-            const timestamp = point.data[0];
-            minutes = (timestamp - startTime) / (60 * 1000);
-          } else {
-            minutes = point.data[0];
-          }
-
+          const minutes = point.data[0]; // Always in minutes (value-based axis)
           const pressure = point.data[1];
-          const hours = Math.floor(minutes / 60);
-          const mins = Math.round(minutes % 60);
-          const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+          // Format time display based on mode
+          let timeStr: string;
+
+          if (useTimeBased) {
+            // Convert minutes offset to actual date/time
+            const timestamp = startTime + minutes * 60 * 1000;
+            const date = new Date(timestamp);
+            const dateStr = date.toLocaleDateString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+            });
+            const timeOnlyStr = date.toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            timeStr = `${dateStr} ${timeOnlyStr}`;
+          } else {
+            // Format as duration (handle negative values for padding)
+            const absMinutes = Math.abs(minutes);
+            const hours = Math.floor(absMinutes / 60);
+            const mins = Math.round(absMinutes % 60);
+            const sign = minutes < 0 ? '-' : '';
+            timeStr = hours > 0 ? `${sign}${hours}h ${mins}m` : `${sign}${mins}m`;
+          }
 
           return `
             <div style="min-width: 180px;">
