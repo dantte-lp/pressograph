@@ -349,7 +349,9 @@ export function PressureTestPreview({
         min: 0,
         max: sanitizedDuration * 60, // Explicit max based on test duration in minutes
         interval: calculateXAxisInterval(totalDisplayHours), // Dynamic interval based on total display range
-        minInterval: 30, // Minimum 30 minutes
+        // Ensure interval is strictly enforced (disable auto-adjustment) - same as time-based axis
+        minInterval: calculateXAxisInterval(totalDisplayHours),
+        maxInterval: calculateXAxisInterval(totalDisplayHours),
         axisLabel: {
           formatter: (value: number) => {
             if (value === 0) return '0';

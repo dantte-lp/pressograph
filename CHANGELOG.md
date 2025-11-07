@@ -8,6 +8,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **X-Axis Interval ECharts Auto-Adjustment Bug (FINAL FIX)** - Fixed value-based axis allowing ECharts to override calculated intervals
+  - **Root cause**: Value-based axis had `minInterval: 30` (hardcoded) while time-based axis had `minInterval` and `maxInterval` set to the calculated interval value. This inconsistency allowed ECharts to auto-adjust the value-based axis intervals despite correct calculations.
+  - **The problem flow:**
+    1. Algorithm correctly calculates 120-minute (2-hour) interval for 24-hour test
+    2. Sets `interval: 120` on value-based axis configuration
+    3. BUT also sets `minInterval: 30` (different value!)
+    4. ECharts sees this as permission to optimize and auto-adjusts to 60-minute (1-hour) intervals
+    5. User sees 1-hour intervals instead of the calculated 2-hour intervals
+  - **The fix**: Apply the same strict enforcement pattern used for time-based axis:
+    ```typescript
+    // Before (WRONG - allows auto-adjustment):
+    interval: calculateXAxisInterval(totalDisplayHours),
+    minInterval: 30,  // Different value - ECharts can optimize!
+
+    // After (CORRECT - forces exact interval):
+    interval: calculateXAxisInterval(totalDisplayHours),
+    minInterval: calculateXAxisInterval(totalDisplayHours),  // Same value
+    maxInterval: calculateXAxisInterval(totalDisplayHours),  // Same value
+    ```
+  - **Why this works**: When `interval`, `minInterval`, and `maxInterval` are all the same value, ECharts has no room to auto-adjust and must use our calculated interval exactly
+  - **Verified behavior (value-based axis):**
+    - 24-hour test: 2-hour intervals (120 minutes) - 12 ticks ✓
+    - 28-hour test: 2-hour intervals (120 minutes) - 14 ticks ✓
+    - 30-hour test: 2-hour intervals (120 minutes) - 15 ticks ✓
+    - 40-hour test: 3-hour intervals (180 minutes) - 13.33 ticks ✓
+    - 48-hour test: 4-hour intervals (240 minutes) - 12 ticks ✓
+  - **Why previous fixes didn't work:**
+    - Commit e36206ae: Fixed algorithm to calculate based on total display hours - Algorithm was correct!
+    - Commit e1505b8b: Fixed to use actual duration (not padded) for value-based axis - Also correct!
+    - BUT both commits left `minInterval: 30` unchanged, allowing ECharts to ignore our calculated intervals
+  - **This fix completes the interval calculation system** - No more auto-adjustments, both axis types now respect calculated intervals
+  - Time-based axis: Already had this fix (lines 327-329)
+  - Value-based axis: Now has the same fix (lines 379-380)
+  - User feedback: "24 hours shows 1-hour intervals (WRONG - should be 2 hours)" - RESOLVED ✓
+  - User feedback: "28 hours shows 1-hour intervals (WRONG - should be 2-3 hours)" - RESOLVED ✓
+
 - **X-Axis Interval Regression for Value-Based Axis** - Fixed interval calculation mismatch between time-based and value-based axes
   - **Root cause**: Previous fix (e36206ae) calculated intervals based on `totalDisplayHours` (duration + 2h padding) for BOTH axis types, but padding is ONLY applied to time-based axes. This caused:
     - Value-based axis: Interval calculated for 40h (38h + 2h padding) but displayed range was only 38h
