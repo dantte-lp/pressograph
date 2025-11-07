@@ -1,18 +1,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FolderIcon, FlaskConicalIcon, BarChart3Icon } from 'lucide-react';
+import { FolderIcon, FlaskConicalIcon, BarChart3Icon, ActivityIcon, HardDriveIcon } from 'lucide-react';
+import { getDashboardStats, getRecentActivity, formatBytes } from '@/lib/actions/dashboard';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 
 /**
  * Dashboard Home Page
  *
  * Overview page with:
  * - Quick stats
- * - Recent projects
- * - Recent tests
+ * - Recent activity
  * - Quick actions
  */
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // Fetch dashboard data
+  const stats = await getDashboardStats();
+  const activities = await getRecentActivity();
+
   return (
     <div className="container mx-auto space-y-8 p-6 lg:p-8">
       {/* Page Header */}
@@ -24,7 +30,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -33,9 +39,9 @@ export default function DashboardPage() {
             <FolderIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{stats.totalProjects}</div>
             <p className="text-muted-foreground text-xs">
-              No projects yet
+              {stats.totalProjects === 0 ? 'No projects yet' : 'Active projects'}
             </p>
           </CardContent>
         </Card>
@@ -43,14 +49,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Tests
+              Active Tests
             </CardTitle>
             <FlaskConicalIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{stats.activeTests}</div>
             <p className="text-muted-foreground text-xs">
-              No tests created
+              {stats.activeTests === 0 ? 'No active tests' : 'Running or ready'}
             </p>
           </CardContent>
         </Card>
@@ -58,14 +64,29 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Generated Graphs
+              Recent Runs
             </CardTitle>
-            <BarChart3Icon className="text-muted-foreground h-4 w-4" />
+            <ActivityIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{stats.recentTestRuns}</div>
             <p className="text-muted-foreground text-xs">
-              Ready to start
+              Last 30 days
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Storage Used
+            </CardTitle>
+            <HardDriveIcon className="text-muted-foreground h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatBytes(stats.storageUsed)}</div>
+            <p className="text-muted-foreground text-xs">
+              Total file storage
             </p>
           </CardContent>
         </Card>
@@ -81,55 +102,70 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button asChild>
-            <a href="/projects">
+            <Link href="/projects">
               <FolderIcon className="mr-2 h-4 w-4" />
               Create Project
-            </a>
+            </Link>
           </Button>
           <Button asChild variant="outline">
-            <a href="/tests">
+            <Link href="/tests">
               <FlaskConicalIcon className="mr-2 h-4 w-4" />
               Create Test
-            </a>
+            </Link>
           </Button>
           <Button asChild variant="outline">
-            <a href="/docs">
+            <Link href="/docs">
               View Documentation
-            </a>
+            </Link>
           </Button>
         </CardContent>
       </Card>
 
       {/* Recent Activity */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
-            <CardDescription>
-              Your latest pressure testing projects
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Your latest actions across all projects
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activities.length === 0 ? (
             <div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
-              No projects yet. Create your first project to get started.
+              No activity yet. Create a project or test to get started.
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Tests</CardTitle>
-            <CardDescription>
-              Your latest pressure tests
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
-              No tests yet. Create your first test to generate graphs.
+          ) : (
+            <div className="space-y-4">
+              {activities.map((activity) => (
+                <Link
+                  key={activity.id}
+                  href={activity.link}
+                  className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                >
+                  <div className="mt-1">
+                    {activity.type === 'project_created' && (
+                      <FolderIcon className="text-muted-foreground h-5 w-5" />
+                    )}
+                    {activity.type === 'test_created' && (
+                      <FlaskConicalIcon className="text-muted-foreground h-5 w-5" />
+                    )}
+                    {activity.type === 'test_run' && (
+                      <BarChart3Icon className="text-muted-foreground h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium">{activity.title}</p>
+                    <p className="text-muted-foreground text-xs">{activity.description}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                    </p>
+                  </div>
+                </Link>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

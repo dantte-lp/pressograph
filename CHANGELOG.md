@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Enhanced Dashboard with Real Statistics (2025-11-07 - Part 5)
+- **Feature:** Implemented fully functional dashboard with real-time statistics
+  - **Dashboard Statistics**:
+    - Total Projects count
+    - Active Tests count (running or ready status)
+    - Recent Test Runs count (last 30 days)
+    - Storage Used with human-readable formatting
+  - **Recent Activity Feed**:
+    - Combined feed showing test runs, test creations, and project creations
+    - Time-stamped activity with "X minutes ago" format
+    - Clickable links to relevant resources
+    - Icon indicators for different activity types
+  - **Quick Actions Section**:
+    - Create Project button
+    - Create Test button
+    - View Documentation button
+  - **Implementation Details**:
+    - **File:** `/opt/projects/repositories/pressograph/src/lib/actions/dashboard.ts`
+      - Server actions for `getDashboardStats()` and `getRecentActivity()`
+      - Database queries using Drizzle ORM with proper joins
+      - Storage formatting utility (`formatBytes()`)
+    - **File:** `/opt/projects/repositories/pressograph/src/app/(dashboard)/dashboard/page.tsx`
+      - Converted to async Server Component
+      - Real data fetching from database
+      - 4-column statistics cards with dynamic content
+      - Recent activity list with proper types and icons
+  - **Database Integration**:
+    - Queries projects, pressure_tests, test_runs, and file_uploads tables
+    - Aggregates data per user using auth session
+    - Efficient SQL with counts and sums
+  - **UX Improvements**:
+    - Empty states for zero data
+    - Conditional messaging based on counts
+    - Hover effects on activity items
+    - Responsive grid layout (1 column mobile, 4 columns desktop)
+  - **Technical Stack**:
+    - Next.js 16 async Server Components
+    - Drizzle ORM for database queries
+    - date-fns for time formatting
+    - lucide-react for icons
+    - shadcn/ui Card components
+
 ### Fixed
 
 #### Critical Route Protection and Localhost Redirect Fix (2025-11-07 - Part 4)
