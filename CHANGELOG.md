@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- LocaleSwitcher component to dashboard header for language switching
+- DateTimeSettings integration in profile page for timezone and format preferences
+- Custom title and description props to PressureTestPreviewEnhanced component
+- Temperature display option in graph description section
 - Graph Preview tab to test detail page for in-page visualization
 - Comprehensive RUN test functionality specification document (docs/development/RUN_TEST_FUNCTIONALITY.md)
 - Responsive tab layout for test detail page (2 columns on mobile, 5 on desktop)
@@ -39,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date formatting utilities for SSR/CSR consistency (fad1b911)
 
 ### Changed
+- Test table now shows clickable Test Number and plain text Name (improved UX)
+- Enhanced graph preview component with return to working pressure after intermediate stages
 - Migrated from middleware.ts to proxy.ts for Next.js 16 compatibility (182c7a92)
 - Migrated from Recharts to ECharts 6.0.0 for graph visualization (b2b65084)
 - Updated authentication to use Credentials Provider with username (798e8e58)
@@ -47,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduced stage card height in test form for improved UX (e60bde44)
 
 ### Fixed
+- /tests/history route conflict with dynamic [id] route - added redirect to /tests
+- Graph intermediate stages not returning to working pressure between stages
+- LocaleSwitcher server-side import error causing build failure (duplicated locale types in client component)
 - Messages directory permission denied error blocking Turbopack build (chmod 755, chown developer:developer)
 
 ### Closed Issues
