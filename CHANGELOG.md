@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Edit Form Test Duration Unit Mismatch** - Fixed 1-hour intervals showing instead of 2-hour for 24-hour tests in edit form
+  - Root cause: Edit form uses MINUTES internally but was loading hours from database without conversion
+  - Database stores testDuration in hours (set by create form)
+  - Edit form schema expects minutes (`min(1, 'Duration must be at least 1 minute')`)
+  - When loading: 24 hours was loaded as "24 minutes" internally
+  - When passing to preview: `(24 minutes) / 60 = 0.4 hours` → triggered ≤6h condition → 1-hour intervals
+  - **Fix applied:**
+    - Load: Convert hours to minutes: `testDuration: test.config.testDuration * 60`
+    - Save: Convert minutes to hours: `testDuration: data.testDuration / 60`
+  - Now correctly displays 2-hour intervals for 24-hour tests in edit form
+  - Added input validation fallback in PressureTestPreview to default to 24 hours if invalid
 - **X-Axis Interval Auto-Adjustment Issue** - Fixed 24-hour tests showing 4-hour intervals instead of 2-hour intervals
   - Added `minInterval` and `maxInterval` constraints to strictly enforce calculated interval
   - ECharts was auto-adjusting intervals when padding (±1 hour) made the display range 26 hours

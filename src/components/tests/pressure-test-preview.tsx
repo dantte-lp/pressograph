@@ -75,15 +75,19 @@ export function PressureTestPreview({
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
 
+  // Sanitize testDuration - ensure it's a valid positive number
+  // Defaults to 24 hours if invalid (prevents division by zero or negative intervals)
+  const sanitizedDuration = typeof testDuration === 'number' && testDuration > 0 ? testDuration : 24;
+
   // Determine if we're using time-based axis
   const useTimeBased = Boolean(startDateTime && endDateTime);
   const startTime = useTimeBased ? new Date(startDateTime!).getTime() : 0;
-  const endTime = useTimeBased ? new Date(endDateTime!).getTime() : testDuration * 60;
+  const endTime = useTimeBased ? new Date(endDateTime!).getTime() : sanitizedDuration * 60;
 
   // Add 1 hour padding (±1 hour) for time-based axis
   const paddingMs = 60 * 60 * 1000; // 1 hour in milliseconds
   const xAxisMin = useTimeBased ? startTime - paddingMs : 0;
-  const xAxisMax = useTimeBased ? endTime + paddingMs : testDuration * 60;
+  const xAxisMax = useTimeBased ? endTime + paddingMs : sanitizedDuration * 60;
 
   // Calculate optimal X-axis interval based on test duration
   const calculateXAxisInterval = (durationHours: number): number => {
@@ -100,7 +104,7 @@ export function PressureTestPreview({
 
   // Calculate pressure profile data points
   const profileData = useMemo(() => {
-    const totalMinutes = testDuration * 60;
+    const totalMinutes = sanitizedDuration * 60;
     const rampUpDuration = 0.5; // 30 seconds to ramp up (matching v1)
     const depressurizeDuration = 0.5; // 30 seconds to depressurize (matching v1)
 
@@ -175,7 +179,7 @@ export function PressureTestPreview({
     timeLabels.push(formatTime(totalMinutes));
 
     return { dataPoints, timeLabels };
-  }, [workingPressure, testDuration, intermediateStages, useTimeBased, startTime]);
+  }, [workingPressure, sanitizedDuration, intermediateStages, useTimeBased, startTime]);
 
   // Initialize and update chart
   useEffect(() => {
@@ -268,10 +272,10 @@ export function PressureTestPreview({
         },
         // Dynamic interval based on ACTUAL test duration (not padded range)
         // For 24h test: 2h intervals = 120 min * 60 * 1000 = 7,200,000 ms
-        interval: calculateXAxisInterval(testDuration) * 60 * 1000,
+        interval: calculateXAxisInterval(sanitizedDuration) * 60 * 1000,
         // Ensure interval is strictly enforced (disable auto-adjustment)
-        minInterval: calculateXAxisInterval(testDuration) * 60 * 1000,
-        maxInterval: calculateXAxisInterval(testDuration) * 60 * 1000,
+        minInterval: calculateXAxisInterval(sanitizedDuration) * 60 * 1000,
+        maxInterval: calculateXAxisInterval(sanitizedDuration) * 60 * 1000,
         minorTick: {
           show: true,
           splitNumber: 4, // Creates minor ticks subdividing the main interval
@@ -292,8 +296,8 @@ export function PressureTestPreview({
           fontSize: 11,
         },
         min: 0,
-        max: testDuration * 60, // Explicit max based on test duration in minutes
-        interval: calculateXAxisInterval(testDuration), // Dynamic interval based on duration
+        max: sanitizedDuration * 60, // Explicit max based on test duration in minutes
+        interval: calculateXAxisInterval(sanitizedDuration), // Dynamic interval based on duration
         minInterval: 30, // Minimum 30 minutes
         axisLabel: {
           formatter: (value: number) => {
@@ -417,7 +421,7 @@ export function PressureTestPreview({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [workingPressure, maxPressure, testDuration, intermediateStages, pressureUnit, profileData, useTimeBased, startTime, endTime, xAxisMin, xAxisMax]);
+  }, [workingPressure, maxPressure, sanitizedDuration, intermediateStages, pressureUnit, profileData, useTimeBased, startTime, endTime, xAxisMin, xAxisMax]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -446,7 +450,7 @@ export function PressureTestPreview({
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Test Duration:</span>
-          <span className="font-medium">{testDuration} hours</span>
+          <span className="font-medium">{sanitizedDuration} hours</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Intermediate Stages:</span>

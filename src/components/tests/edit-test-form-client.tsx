@@ -73,7 +73,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
       templateType: test.templateType || 'custom',
       workingPressure: test.config.workingPressure,
       maxPressure: test.config.maxPressure,
-      testDuration: test.config.testDuration,
+      testDuration: test.config.testDuration * 60, // Convert hours to minutes for edit form
       temperature: test.config.temperature,
       allowablePressureDrop: test.config.allowablePressureDrop,
       pressureUnit: test.config.pressureUnit || 'MPa',
@@ -107,7 +107,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           config: {
             workingPressure: data.workingPressure,
             maxPressure: data.maxPressure,
-            testDuration: data.testDuration,
+            testDuration: data.testDuration / 60, // Convert minutes back to hours for database
             temperature: data.temperature,
             allowablePressureDrop: data.allowablePressureDrop,
             pressureUnit: data.pressureUnit,
