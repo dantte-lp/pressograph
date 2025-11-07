@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Batch Operations on Tests (#98 - bac2044b)** - Multi-select and batch actions for test management
+  - Checkbox selection for individual tests and select-all functionality
+  - Batch delete with ownership verification and confirmation
+  - CSV export for selected tests with all metadata
+  - Batch action toolbar with loading states
+  - Server action batchDeleteTests() with proper authorization
+- **Share Links Database Schema (#99 - 332aaf87)** - Foundation for public test sharing
+  - Created share_links table with token-based authentication
+  - Expiration dates and download permission controls
+  - View count analytics and last viewed tracking
+  - Foreign key relationships with cascade delete
+  - Drizzle ORM schema and relations configuration
 - **Edit Test Form (#95 - 1c762240)** - Full test configuration editing with 3-tab interface (Basic Info, Parameters, Preview)
   - updateTest server action with ownership and status validation
   - Live graph preview during editing
@@ -25,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Server actions: startTestRun(), recordMeasurement(), completeTestRun()
 
 ### Fixed
+- Permission denied error on /tests/[id]/edit and /tests/[id]/run directories blocking Turbopack compilation
 - DateTimeSettings component useTranslations error by removing next-intl dependency and using hardcoded English text
 - LocaleSwitcher emoji flags not rendering in Chrome by replacing with text-based country codes (EN | English, RU | Русский)
 - LocaleSwitcher intl context error by passing locale as prop from Server Component instead of using useLocale() hook
@@ -83,6 +96,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Messages directory permission denied error blocking Turbopack build (chmod 755, chown developer:developer)
 
 ### Closed Issues
+- Sprint 3 completed: Edit Test Form (#95), Run Test Interface (#96), Batch Operations (#98), Share Links Schema (#99)
+- Infrastructure issues closed as not planned: Uptrace (#58), VictoriaMetrics (#57), Stack Verification (#55)
+- Completed infrastructure: Drizzle ORM Configuration (#56)
+- Performance optimization issues consolidated: GraphCanvas (#7), ExportButtons (#8)
 - Sprint 2 issues completed: Dashboard (#84), Navigation Sidebar (#85), Additional shadcn/ui Components (#86), Dashboard Statistics Backend (#87), Recent Activity Feed (#88), Dashboard Charts (#89)
 - Critical build failure resolved (#90)
 - Sprint 1 issues completed: Real API authentication (#60), i18n setup (#33)
