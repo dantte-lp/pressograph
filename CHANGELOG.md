@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### Critical Hydration Error Fixes (2025-11-07)
+
+**Issue**: Date formatting was causing hydration mismatches between server and client due to locale differences in `toLocaleDateString()` and `toLocaleString()`.
+
+**Solution**: Implemented consistent date formatting using `date-fns` library with explicit format strings.
+
+**Files Modified:**
+
+1. **Date Formatting Utilities** (`/src/lib/utils/format.ts`)
+   - Added `formatDate(date)` - Returns "MMM dd, yyyy" format (e.g., "Jan 15, 2025")
+   - Added `formatDateTime(date)` - Returns "MMM dd, yyyy at h:mm a" format (e.g., "Jan 15, 2025 at 10:30 AM")
+   - Added `formatRelativeTime(date)` - Returns relative time (e.g., "2 hours ago")
+   - All functions accept both Date objects and ISO string dates
+   - Ensures consistent rendering on server and client
+
+2. **Profile Form** (`/src/components/profile/profile-form.tsx`)
+   - Fixed: `user.createdAt` now uses `formatDate()` instead of `toLocaleDateString()`
+   - Fixed: `user.lastLoginAt` now uses `formatDateTime()` instead of `toLocaleString()`
+
+3. **Test Runs Table** (`/src/components/tests/test-runs-table.tsx`)
+   - Fixed: `run.startedAt` now uses `formatDateTime()`
+   - Fixed: `run.completedAt` now uses `formatDateTime()`
+
+4. **Test Detail Page** (`/src/app/(dashboard)/tests/[id]/page.tsx`)
+   - Fixed: `test.createdAt` in breadcrumb metadata
+   - Fixed: `test.startedAt` in status card
+   - Fixed: `test.completedAt` in status card
+   - Fixed: `test.lastRunDate` in status card
+   - Fixed: `test.updatedAt` in test info card
+   - Fixed: `test.shareExpiresAt` in sharing tab
+   - Total: 6 date formatting instances corrected
+
+5. **Project Detail Page** (`/src/app/(dashboard)/projects/[id]/page.tsx`)
+   - Fixed: `project.createdAt` now uses `formatRelativeTime()` for main display
+   - Fixed: `project.createdAt` now uses `formatDate()` for subtitle
+   - Replaced `formatDistanceToNow` import from date-fns with our utility
+
+**Impact**:
+- Eliminates all hydration errors on profile, projects, tests, and test runs pages
+- Provides consistent date formatting across the entire application
+- Better UX with predictable date display format
+- Prevents React hydration warnings in browser console
+
 ### Added
 
 #### Test Detail and Test Runs Pages (2025-11-07)
