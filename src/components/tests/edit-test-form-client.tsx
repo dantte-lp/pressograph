@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { PlusIcon, TrashIcon, SaveIcon } from 'lucide-react';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -120,6 +121,14 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
   // Watch form values for live preview
   const formValues = watch();
+
+  // Debounce graph preview values to match create form behavior (300ms delay)
+  // This ensures smooth, consistent rendering between create and edit pages
+  const debouncedWorkingPressure = useDebounce(formValues.workingPressure ?? 10, 300);
+  const debouncedMaxPressure = useDebounce(formValues.maxPressure ?? 15, 300);
+  const debouncedTestDuration = useDebounce(formValues.testDuration ?? 24, 300);
+  const debouncedIntermediateStages = useDebounce(formValues.intermediateStages ?? [], 300);
+  const debouncedPressureUnit = useDebounce(formValues.pressureUnit ?? 'MPa', 300);
 
   const onSubmit = (data: TestFormData) => {
     startTransition(async () => {
@@ -450,11 +459,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                     </CardDescription>
                   </div>
                   <PreviewDialog
-                    workingPressure={formValues.workingPressure ?? 10}
-                    maxPressure={formValues.maxPressure ?? 15}
-                    testDuration={formValues.testDuration ?? 24}
-                    intermediateStages={formValues.intermediateStages ?? []}
-                    pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                    workingPressure={debouncedWorkingPressure}
+                    maxPressure={debouncedMaxPressure}
+                    testDuration={debouncedTestDuration}
+                    intermediateStages={debouncedIntermediateStages}
+                    pressureUnit={debouncedPressureUnit}
                     startDateTime={formValues.startDateTime}
                     endDateTime={formValues.endDateTime}
                   />
@@ -462,11 +471,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               </CardHeader>
               <CardContent>
                 <PressureTestPreview
-                  workingPressure={formValues.workingPressure ?? 10}
-                  maxPressure={formValues.maxPressure ?? 15}
-                  testDuration={formValues.testDuration ?? 24}
-                  intermediateStages={formValues.intermediateStages ?? []}
-                  pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                  workingPressure={debouncedWorkingPressure}
+                  maxPressure={debouncedMaxPressure}
+                  testDuration={debouncedTestDuration}
+                  intermediateStages={debouncedIntermediateStages}
+                  pressureUnit={debouncedPressureUnit}
                   startDateTime={formValues.startDateTime || undefined}
                   endDateTime={formValues.endDateTime || undefined}
                 />
@@ -599,11 +608,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                   </CardDescription>
                 </div>
                 <PreviewDialog
-                  workingPressure={formValues.workingPressure ?? 10}
-                  maxPressure={formValues.maxPressure ?? 15}
-                  testDuration={formValues.testDuration ?? 24}
-                  intermediateStages={formValues.intermediateStages ?? []}
-                  pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                  workingPressure={debouncedWorkingPressure}
+                  maxPressure={debouncedMaxPressure}
+                  testDuration={debouncedTestDuration}
+                  intermediateStages={debouncedIntermediateStages}
+                  pressureUnit={debouncedPressureUnit}
                   startDateTime={formValues.startDateTime}
                   endDateTime={formValues.endDateTime}
                 />
@@ -611,11 +620,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             </CardHeader>
             <CardContent>
               <PressureTestPreview
-                workingPressure={formValues.workingPressure ?? 10}
-                maxPressure={formValues.maxPressure ?? 15}
-                testDuration={formValues.testDuration ?? 24}
-                intermediateStages={formValues.intermediateStages ?? []}
-                pressureUnit={formValues.pressureUnit ?? 'MPa'}
+                workingPressure={debouncedWorkingPressure}
+                maxPressure={debouncedMaxPressure}
+                testDuration={debouncedTestDuration}
+                intermediateStages={debouncedIntermediateStages}
+                pressureUnit={debouncedPressureUnit}
                 startDateTime={formValues.startDateTime || undefined}
                 endDateTime={formValues.endDateTime || undefined}
               />

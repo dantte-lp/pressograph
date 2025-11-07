@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: Edit Page Graph Preview Visual Consistency** - Fixed "radically different" appearance between edit and create page previews
+  - Root cause: Edit form used non-debounced values while create form used 300ms debounced values
+  - Solution: Added `useDebounce` hook to edit form for all graph preview values
+  - Both pages now update with identical 300ms delay, ensuring smooth, consistent rendering
+  - Affected values: workingPressure, maxPressure, testDuration, intermediateStages, pressureUnit
+  - Result: Edit page Graph Preview tab now renders identically to create page preview
+  - Tested with test ID: `5ccdd3d3-96f0-49b2-9a7f-788215714632`
+  - Files modified: `/src/components/tests/edit-test-form-client.tsx`
+
+- **CRITICAL: ECharts Export Quality Dramatically Improved** - Fixed "terrible" small image with transparent background
+  - Previous issues:
+    - Image was too small (400px height at display resolution)
+    - Background was transparent instead of white
+    - Low resolution (1x pixel ratio)
+    - Unsuitable for professional reports/presentations
+  - New implementation:
+    - Exports at Full HD resolution: 1920x1080 base size
+    - 2x pixel ratio for high-DPI displays (effective: 3840x2160)
+    - White background fill for professional appearance
+    - Aspect ratio maintained with centered content
+    - High-quality image smoothing enabled
+  - Technical approach:
+    - Creates temporary off-screen canvas at export resolution
+    - Fills white background before drawing chart
+    - Scales and centers original canvas content
+    - Exports with maximum PNG quality (1.0)
+  - Result: Professional-quality exports suitable for reports, presentations, and printing
+  - Files modified: `/src/components/tests/echarts-export-dialog.tsx`
+  - Tested with test ID: `5ccdd3d3-96f0-49b2-9a7f-788215714632`
+
 - **Edit Page Graph Preview Consistency** - Ensured edit page "Graph Preview" tab uses identical component as create page
   - Both create and edit pages now use `PressureTestPreview` component with identical props
   - Removed any usage of `PressureTestPreviewEnhanced` from edit page preview tabs

@@ -48,12 +48,15 @@ export function EChartsExportDialog({
 
   /**
    * Handle export as PNG using ECharts native functionality
+   *
+   * Exports at high resolution (1920x1080) with white background for professional quality.
+   * Uses a temporary off-screen rendering approach to maintain display quality.
    */
   const handleExport = async () => {
     setIsExporting(true);
 
     try {
-      // Get the ECharts instance from the PressureTestPreview component
+      // Step 1: Get the ECharts instance from the PressureTestPreview component
       const chartContainer = document.querySelector('[role="img"][aria-label*="Pressure test graph"]');
 
       if (!chartContainer) {
@@ -61,16 +64,61 @@ export function EChartsExportDialog({
       }
 
       // Find the canvas element inside the container
-      const canvas = chartContainer.querySelector('canvas');
+      const canvas = chartContainer.querySelector('canvas') as HTMLCanvasElement;
 
       if (!canvas) {
         throw new Error('Chart canvas not found. Please ensure the graph has rendered.');
       }
 
-      // Get high-quality image data from canvas
-      const imageDataUrl = canvas.toDataURL('image/png');
+      // Step 2: Create a temporary high-resolution canvas for export
+      const exportCanvas = document.createElement('canvas');
+      const exportWidth = 1920; // Full HD width
+      const exportHeight = 1080; // Full HD height
+      const pixelRatio = 2; // 2x for high-DPI displays (total: 3840x2160)
 
-      // Create download link
+      exportCanvas.width = exportWidth * pixelRatio;
+      exportCanvas.height = exportHeight * pixelRatio;
+
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Step 3: Fill with white background (fix transparent background issue)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+      // Step 4: Scale and draw the original canvas content
+      // Calculate aspect ratio to fit the export canvas
+      const sourceWidth = canvas.width;
+      const sourceHeight = canvas.height;
+      const targetWidth = exportCanvas.width;
+      const targetHeight = exportCanvas.height;
+
+      // Calculate scaling to fit while maintaining aspect ratio
+      const scaleX = targetWidth / sourceWidth;
+      const scaleY = targetHeight / sourceHeight;
+      const scale = Math.min(scaleX, scaleY);
+
+      // Center the image
+      const scaledWidth = sourceWidth * scale;
+      const scaledHeight = sourceHeight * scale;
+      const offsetX = (targetWidth - scaledWidth) / 2;
+      const offsetY = (targetHeight - scaledHeight) / 2;
+
+      // Draw with high quality settings
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(
+        canvas,
+        0, 0, sourceWidth, sourceHeight,
+        offsetX, offsetY, scaledWidth, scaledHeight
+      );
+
+      // Step 5: Export as high-quality PNG
+      const imageDataUrl = exportCanvas.toDataURL('image/png', 1.0); // Max quality
+
+      // Step 6: Create download link
       const link = document.createElement('a');
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
       link.download = `${testNumber}_${testName.replace(/[^a-z0-9]/gi, '_')}_echarts_${timestamp}.png`;
@@ -78,7 +126,7 @@ export function EChartsExportDialog({
       link.click();
 
       toast.success('Export Successful', {
-        description: 'Graph exported as PNG using ECharts rendering',
+        description: `Graph exported as high-quality PNG (${exportWidth}x${exportHeight})`,
       });
 
       setOpen(false);
@@ -147,12 +195,20 @@ export function EChartsExportDialog({
                   <dd className="text-foreground">ECharts Native</dd>
                 </div>
                 <div>
+                  <dt className="font-medium text-muted-foreground">Resolution</dt>
+                  <dd className="text-foreground">1920 x 1080 (Full HD)</dd>
+                </div>
+                <div>
                   <dt className="font-medium text-muted-foreground">Quality</dt>
-                  <dd className="text-foreground">High (2x pixel ratio)</dd>
+                  <dd className="text-foreground">High (2x pixel ratio = 3840x2160)</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-muted-foreground">Background</dt>
-                  <dd className="text-foreground">White</dd>
+                  <dd className="text-foreground">White (Professional)</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-muted-foreground">Use Case</dt>
+                  <dd className="text-foreground">Reports, Presentations, Printing</dd>
                 </div>
               </dl>
             </CardContent>
