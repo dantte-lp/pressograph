@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- New GitHub issues for Sprint 3 features: Edit Test Form (#95), Run Test Interface (#96), Test Results Display (#97), Batch Operations (#98), Share Links Management (#99), Advanced Filtering (#100), Real-time Updates (#101)
+- Test Results Display page for viewing completed test run data (#97) - 99835d5e
+- Server action getTestRunById() for fetching test run details with measurements and files
+- New GitHub issues for Sprint 3 features: Edit Test Form (#95), Run Test Interface (#96), Batch Operations (#98), Share Links Management (#99), Advanced Filtering (#100), Real-time Updates (#101)
 - Comprehensive graph functionality comparison V1 vs V2 analysis document (docs/development/GRAPH_COMPARISON_V1_V2.md)
 - GitHub issues for missing graph features: PNG export (#91), PDF export (#92), JSON import/export (#93), pressure drift simulation (#94)
 - Comprehensive i18n and date-fns research documentation (docs/development/I18N_DATEFNS_RESEARCH.md)
