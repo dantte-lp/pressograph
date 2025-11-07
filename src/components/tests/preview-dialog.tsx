@@ -115,7 +115,7 @@ export function PreviewDialog({
     ].join(',');
 
     // Open new window with proper landscape dimensions
-    const newWindow = window.open(`/tests/preview?config=${encodedConfig}`, '_blank', features);
+    const newWindow = window.open(`/preview?config=${encodedConfig}`, '_blank', features);
 
     // Fallback: If browser ignores features, resize window immediately
     if (newWindow) {

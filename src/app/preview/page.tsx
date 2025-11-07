@@ -19,7 +19,7 @@
  * - Print-optimized styling
  *
  * URL Format:
- * /tests/preview?config=<base64-encoded-json>
+ * /preview?config=<base64-encoded-json>
  *
  * Configuration Schema:
  * {
@@ -33,7 +33,7 @@
  *   endDateTime?: string
  * }
  *
- * @module app/(dashboard)/tests/preview/page
+ * @module app/preview/page
  */
 
 import { useSearchParams } from 'next/navigation';
