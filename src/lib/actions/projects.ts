@@ -8,7 +8,6 @@
  */
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { eq, and, desc, ilike, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
@@ -481,9 +480,11 @@ export async function deleteProject(projectId: string) {
     // Delete project (cascade will delete related tests)
     await db.delete(projects).where(eq(projects.id, projectId));
 
-    // Revalidate and redirect
+    // Revalidate the projects page
     revalidatePath('/projects');
-    redirect('/projects');
+
+    // Return success instead of redirecting (let the client handle redirect and toast)
+    return { success: true, error: null };
   } catch (error) {
     console.error('[deleteProject] Error:', error);
     return { success: false, error: 'Failed to delete project' };
