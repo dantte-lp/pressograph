@@ -71,7 +71,7 @@ export function PreviewDialog({
           Full Screen Preview
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-screen-2xl h-[90vh] flex flex-col p-6">
+      <DialogContent className="max-w-[95vw] w-[95vw] h-[85vh] flex flex-col p-6">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold">
             Pressure Test Preview
