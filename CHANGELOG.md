@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **X-Axis Time Padding** - Added 1 hour buffer before and after test duration for time-based graphs
+  - When using startDateTime/endDateTime, graph displays ±1 hour padding
+  - Example: Test from 20:00 to 20:00 (next day) shows graph from 19:00 to 21:00
+  - Improves visualization by showing context before/after test boundaries
+  - Only applies to time-based axis (when start/end dates are provided)
+  - Duration-based axis (minutes) remains unchanged
+- **Finer Time Granularity for Intermediate Stages** - Changed step from 0.5h to 0.1h (6 minutes)
+  - Time (h) input now accepts 0.1 hour increments
+  - Allows more precise stage timing (e.g., 2.1h = 2h 6m)
+  - Updated placeholder example in tooltip from "2.5" to "2.1"
+  - Better control for short-duration pressure tests
+
+### Fixed
+- **Intermediate Stage Pressure Validation** - Pressure in stages cannot go below working pressure
+  - Added Zod schema refinement to validate all stages against working pressure
+  - Real-time visual feedback: red border on invalid pressure inputs
+  - Tooltip shows minimum required pressure on hover
+  - Form-level error message displayed below stages table
+  - Prevents creation of invalid test configurations
+  - Ensures stage pressures are always >= working pressure
+
 ### Fixed
 - **Graph Ramp Duration Calculation** - Fixed graph starting at 2h 24m instead of 0
   - Changed ramp up duration from 10% of total time to fixed 30 seconds (matching v1)
