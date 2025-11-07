@@ -8,6 +8,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **ECharts Legend Errors** - Resolved series name mismatch warnings in console
+  - Disabled legend display in both PressureTestPreview and PressureTestPreviewEnhanced
+  - Eliminates "series not exists" warnings for Working Pressure and Max Pressure
+  - Legend data was referencing series names that didn't exist (markLine items are not series)
+  - Cleaner graph display without redundant legend
+
+### Added
+- **Dynamic X-Axis Intervals** - Smart time axis scaling based on test duration
+  - 0-6 hours: 1-hour intervals (60 minutes)
+  - 6-24 hours: 2-hour intervals (120 minutes)
+  - 24-72 hours: 4-hour intervals (240 minutes)
+  - 72+ hours: 6-hour intervals (360 minutes)
+  - Minimum interval: 30 minutes to prevent overcrowding
+  - Applies to both standard and enhanced preview components
+  - Improves readability for tests of any duration
+- **Three-Tier Form Caching** - Automatic draft saving for test creation form
+  - Tier 1: React state via react-hook-form (in-memory)
+  - Tier 2: LocalStorage with 30-second auto-save (browser)
+  - Tier 3: Database on form submission (persistent)
+  - Restores drafts automatically on page reload
+  - 7-day cache expiration
+  - Toast notification on draft restore
+  - Silent autosave to prevent notification spam
+  - Implements ADR-003 caching strategy
+  - Prevents data loss from browser crashes or accidental navigation
+- **Enhanced Date-Time Picker** - Professional date/time selection component
+  - Built with shadcn/ui primitives (Popover, Button, Input, Label)
+  - Calendar-based date selection
+  - Separate time input with HH:mm format
+  - "Now" button for quick current time
+  - "Clear" button to reset selection
+  - Formatted display: "Apr 29, 2023, 9:30 AM"
+  - Full keyboard navigation support
+  - ARIA labels for accessibility
+  - Compatible with react-hook-form
+  - Can replace native datetime-local inputs
+- **Full-Screen Preview Dialog** - Maximized graph viewing modal
+  - 90vh modal height for maximum visibility
+  - Full-screen button on all preview cards (Steps 2, 3, 4)
+  - Close button and ESC key support
+  - Scrollable content for long graphs
+  - Responsive layout for mobile devices
+  - Better for presentations and detailed inspections
+  - Built with shadcn/ui Dialog component
+- **Form Cache Hook** - Reusable caching utility for any form
+  - `useFormCache` hook with auto-save capability
+  - Configurable autosave interval (default 30s)
+  - Manual save with toast notification
+  - Before-unload save to catch browser close
+  - Cache versioning with timestamps
+  - Automatic expiration (7 days)
+  - Can be disabled per form (e.g., for duplicating tests)
+  - Location: `/src/lib/hooks/use-form-cache.ts`
+- **Preview Dialog Component** - Reusable full-screen graph viewer
+  - Accepts all PressureTestPreview props
+  - Maximize2 icon trigger button
+  - Clean header with title
+  - Scrollable content area
+  - Close button in footer
+  - Location: `/src/components/tests/preview-dialog.tsx`
+
+### Changed
+- **SHADCN Integration Documentation** - Comprehensive component audit
+  - Documented all 30 installed shadcn/ui components
+  - Categorized by function (Core UI, Layout, Feedback, Navigation, Forms, Display, Utilities)
+  - Added custom components section (DateTimePicker, PreviewDialog, Form Cache Hook)
+  - Updated component count from 14 to 30
+  - Added feature descriptions and usage examples
+  - Status: EXCELLENT - fully React 19 compatible
+
+### Fixed (Previous)
 - **Graph Real-Time Updates** - Fixed graph not updating when changing intermediate stage parameters
   - Changed from react-hook-form register to controlled inputs with explicit setValue
   - Implemented immutable update pattern for intermediate stages array

@@ -130,23 +130,54 @@ const config: Config = {
 - Proper @theme inline for Tailwind v4
 - Typography and spacing scales
 
-#### 4. Installed Components (14 total)
-- button.tsx ✅
-- card.tsx ✅
-- dropdown-menu.tsx ✅
-- form-error.tsx ✅
-- input.tsx ✅
-- label.tsx ✅
-- loading-skeletons.tsx ✅
-- select.tsx ✅
-- skeleton.tsx ✅
-- sonner.tsx ✅ (Toast replacement)
-- spinner.tsx ✅
-- tabs.tsx ✅
-- textarea.tsx ✅
-- theme-toggle.tsx ✅
+#### 4. Installed Components (30 total)
+**Core UI Components:**
+- button.tsx ✅ - Primary action component
+- input.tsx ✅ - Text input fields
+- label.tsx ✅ - Form labels
+- textarea.tsx ✅ - Multi-line text input
+- select.tsx ✅ - Dropdown selection
+- checkbox.tsx ✅ - Boolean selection
+- radio-group.tsx ✅ - Single choice from multiple options
+- switch.tsx ✅ - Toggle component
 
-**Assessment:** ✅ **GOOD** - Core components in place, React 19 compatible
+**Layout & Organization:**
+- card.tsx ✅ - Content containers
+- separator.tsx ✅ - Visual dividers
+- tabs.tsx ✅ - Tabbed interfaces
+- collapsible.tsx ✅ - Expandable sections
+- scroll-area.tsx ✅ - Custom scrollbars
+- table.tsx ✅ - Data tables
+
+**Feedback & Notifications:**
+- sonner.tsx ✅ - Toast notifications
+- alert.tsx ✅ - Inline alerts
+- alert-dialog.tsx ✅ - Confirmation dialogs
+- skeleton.tsx ✅ - Loading placeholders
+- spinner.tsx ✅ - Loading indicators
+- loading-skeletons.tsx ✅ - Custom loading states
+
+**Navigation & Overlays:**
+- dialog.tsx ✅ - Modal dialogs
+- dropdown-menu.tsx ✅ - Context menus
+- popover.tsx ✅ - Floating content
+
+**Forms:**
+- form.tsx ✅ - Form wrapper component
+- form-error.tsx ✅ - Error display
+
+**Display:**
+- badge.tsx ✅ - Status indicators
+- avatar.tsx ✅ - User profile images
+
+**Utilities:**
+- theme-toggle.tsx ✅ - Dark mode switcher
+- language-switcher.tsx ✅ - i18n support
+
+**Custom Components (Pressograph-specific):**
+- date-time-picker.tsx ✅ - Enhanced date/time selection
+
+**Assessment:** ✅ **EXCELLENT** - Comprehensive component library, all React 19 compatible
 
 #### 5. Theme Provider Setup
 ```typescript
@@ -1176,6 +1207,104 @@ chown -R developer:developer /workspace/src/
 - shadcn/ui React 19 Update (October 2024) - forwardRef removal
 - shadcn/ui Tailwind v4 Preview (February 2025) - @theme directive
 - shadcn/ui October 2025 - Field, Spinner, Kbd components
+
+---
+
+## Custom Components & Enhancements
+
+### Date-Time Picker
+**Location:** `/src/components/ui/date-time-picker.tsx`
+
+Enhanced date and time selection component built with shadcn/ui primitives:
+
+```typescript
+import { DateTimePicker } from '@/components/ui/date-time-picker';
+
+<DateTimePicker
+  value={startDateTime}
+  onChange={(date) => setStartDateTime(date)}
+  placeholder="Select start date and time"
+/>
+```
+
+**Features:**
+- Calendar-based date selection
+- Separate time input (HH:mm format)
+- "Now" and "Clear" quick actions
+- Formatted display (e.g., "Apr 29, 2023, 9:30 AM")
+- Full keyboard navigation
+- Accessible ARIA labels
+- Compatible with react-hook-form
+
+**Implementation Details:**
+- Uses Popover for overlay
+- Combines date input with time input
+- Hidden datetime-local input for form compatibility
+- Auto-formats display value
+- Validates time input
+
+### Preview Dialog
+**Location:** `/src/components/tests/preview-dialog.tsx`
+
+Full-screen modal for viewing pressure test graphs:
+
+```typescript
+import { PreviewDialog } from '@/components/tests/preview-dialog';
+
+<PreviewDialog
+  workingPressure={10}
+  maxPressure={15}
+  testDuration={24}
+  intermediateStages={stages}
+  pressureUnit="MPa"
+/>
+```
+
+**Features:**
+- Full-screen (90vh) modal
+- Close button and ESC key support
+- Responsive layout
+- Maintains graph aspect ratio
+- Scrollable content
+- Clean header with title
+
+**Use Cases:**
+- Detailed graph inspection
+- Presentation mode
+- Mobile-friendly viewing
+- Print-optimized display
+
+### Form Caching Hook
+**Location:** `/src/lib/hooks/use-form-cache.ts`
+
+Three-tier caching strategy for form state persistence:
+
+```typescript
+import { useFormCache } from '@/lib/hooks/use-form-cache';
+
+const { saveDraft, clearCache } = useFormCache({
+  key: 'my-form-draft',
+  form: reactHookFormInstance,
+  autosaveInterval: 30000, // 30 seconds
+});
+```
+
+**Features:**
+- Tier 1: React state (react-hook-form)
+- Tier 2: LocalStorage (automatic)
+- Tier 3: Database (on submit)
+- Auto-save every 30 seconds
+- Save before page unload
+- 7-day cache expiration
+- Silent autosave (no toast spam)
+- Manual save with toast notification
+
+**Benefits:**
+- Prevents data loss
+- Restores drafts on page reload
+- Works offline
+- Minimal user interruption
+- Automatic cleanup
 
 ---
 
