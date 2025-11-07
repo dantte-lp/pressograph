@@ -396,7 +396,7 @@ export function PressureTestPreview({
       );
 
       // Convert milliseconds to minutes for chart display
-      dataPoints = convertToMinutes(realisticData);
+      dataPoints = convertToMinutes(realisticData, startTimeMs);
 
       // Generate sparse time labels for major points
       // (Too many labels would clutter the UI)
