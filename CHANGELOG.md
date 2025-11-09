@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Timezone and Date/Time Format Support** - ✅ COMPLETED - User preferences for international date/time display
+  - **Database Schema Changes**:
+    - Added `timezone` field (varchar 50, default UTC) - IANA timezone identifier
+    - Added `dateFormat` field (varchar 20, default YYYY-MM-DD) - Date format preference
+    - Added `timeFormat` field (varchar 10, default 24h) - Time format preference (12h/24h)
+    - All fields have NOT NULL constraints with sensible defaults
+  - **Server Actions**:
+    - Created `src/lib/actions/user-preferences.ts` with comprehensive preference management
+    - `getUserPreferences()` - Fetch user preferences from database
+    - `updateTimezone()`, `updateDateFormat()`, `updateTimeFormat()` - Individual update functions
+    - Full TypeScript type safety and error handling
+    - Automatic preference creation for new users
+  - **UI Components**:
+    - Updated `DateTimeSettings` component to use server actions instead of localStorage
+    - Added Date & Time tab to settings page
+    - Timezone selector with common timezones (11 options: UTC, Moscow, London, Berlin, NYC, Chicago, LA, Tokyo, Shanghai, Dubai, Sydney)
+    - Date format selector (US: MM/DD/YYYY, EU/RU: DD.MM.YYYY, ISO: YYYY-MM-DD)
+    - Time format toggle (12-hour with AM/PM, 24-hour)
+    - Loading states and optimistic UI updates
+    - Error recovery with user-friendly toast notifications
+  - **Utilities**:
+    - Deprecated localStorage-based `getUserDateTimeConfig()` and `setUserDateTimeConfig()`
+    - Maintained backward compatibility for existing code
+    - Migration path to database-backed preferences
+  - **Benefits**:
+    - International user support with proper timezone handling
+    - Preferences persist across sessions and devices
+    - SSR-compatible with database backing
+    - Improved UX with real-time updates
+  - Date: 2025-11-09
+  - Issue: #115 (Sprint 2, 1 SP, P1) - ✅ COMPLETED
+  - Commits: 9d109cda, f02835e7, 77f03e67, f6168f52
+  - Files Added: 2 files (user-preferences.ts action, migration script)
+  - Files Modified: 4 files (user-preferences schema, date-time-settings.tsx, settings page, date-time.ts)
+
 ### Changed
 
 - **ECharts Component Migration** - Migrated all components from echarts-for-react to direct ECharts usage
