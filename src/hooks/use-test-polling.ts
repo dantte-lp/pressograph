@@ -202,7 +202,7 @@ export function useSingleTestPolling({
   onFail?: (test: Test) => void;
 }) {
   const queryClient = useQueryClient();
-  const previousStatusRef = useRef<TestStatus>();
+  const previousStatusRef = useRef<TestStatus | undefined>(undefined);
 
   const query = useQuery({
     queryKey: ['test', testId],

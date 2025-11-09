@@ -45,17 +45,17 @@ const testSchema = z.object({
   temperature: z.number(),
   allowablePressureDrop: z.number().min(0, 'Allowable drop must be non-negative'),
   pressureUnit: z.enum(['MPa', 'Bar', 'PSI']),
-  temperatureUnit: z.enum(['C', 'F']).default('C'),
+  temperatureUnit: z.enum(['C', 'F']),
   equipmentId: z.string().optional(),
   operatorName: z.string().optional(),
   notes: z.string().optional(),
   startDateTime: z.string().optional(),
   endDateTime: z.string().optional(),
-  intermediateStages: z.array(intermediateStageSchema).default([]),
+  intermediateStages: z.array(intermediateStageSchema).optional(),
   tags: z.string().optional(),
 }).refine(
   (data) => {
-    return data.intermediateStages.every(
+    return !data.intermediateStages || data.intermediateStages.every(
       (stage) => stage.pressure >= data.workingPressure
     );
   },
@@ -97,7 +97,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
       temperature: test.config.temperature || 20,
       allowablePressureDrop: test.config.allowablePressureDrop,
       pressureUnit: test.config.pressureUnit || 'MPa',
-      temperatureUnit: test.config.temperatureUnit || 'C',
+      temperatureUnit: (test.config.temperatureUnit as 'C' | 'F') || 'C',
       equipmentId: test.config.equipmentId || '',
       operatorName: test.config.operatorName || '',
       notes: test.config.notes || '',
@@ -110,7 +110,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
         time: stage.time || 0,
         pressure: stage.pressure || 0,
         duration: stage.duration || 0,
-      })),
+      })) as { time: number; pressure: number; duration: number }[],
       tags: test.tags?.join(', ') || '',
     },
   });
@@ -122,13 +122,14 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
   // Watch form values for live preview
   const formValues = watch();
+  const intermediateStages = formValues.intermediateStages || [];
 
   // Debounce graph preview values to match create form behavior (300ms delay)
   // This ensures smooth, consistent rendering between create and edit pages
   const debouncedWorkingPressure = useDebounce(formValues.workingPressure ?? 10, 300);
   const debouncedMaxPressure = useDebounce(formValues.maxPressure ?? 15, 300);
   const debouncedTestDuration = useDebounce(formValues.testDuration ?? 24, 300);
-  const debouncedIntermediateStages = useDebounce(formValues.intermediateStages ?? [], 300);
+  const debouncedIntermediateStages = useDebounce(intermediateStages, 300);
   const debouncedPressureUnit = useDebounce(formValues.pressureUnit ?? 'MPa', 300);
 
   const onSubmit = (data: TestFormData) => {

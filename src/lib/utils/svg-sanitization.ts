@@ -92,13 +92,13 @@ function cleanFontFamilyAttributes(svg: string): string {
   return svg
     // Fix font-family in style attributes: style="font-family: "Inter", "Segoe UI""
     // This regex finds style attributes and cleans the font-family value inside them
-    .replace(/style="([^"]*)font-family:\s*([^";]+)([^"]*)"/g, (match, before, fontFamily, after) => {
+    .replace(/style="([^"]*)font-family:\s*([^";]+)([^"]*)"/g, (_match, before, fontFamily, after) => {
       // Replace any inner double quotes in font-family with single quotes
       const cleanedFontFamily = fontFamily.replace(/"/g, "'");
       return `style="${before}font-family: ${cleanedFontFamily}${after}"`;
     })
     // Also fix standalone font-family attributes if they exist
-    .replace(/font-family="([^"]*)"/g, (match, fontList) => {
+    .replace(/font-family="([^"]*)"/g, (_match, fontList) => {
       // Replace any inner double quotes with single quotes
       const cleaned = fontList.replace(/"/g, "'");
       return `font-family="${cleaned}"`;
@@ -128,7 +128,7 @@ function cleanSVGHeader(svg: string): string {
       // Remove empty attributes
       .replace(/\s+([a-z-]+)=""\s*/gi, ' ')
       // Fix malformed style attributes with unescaped quotes
-      .replace(/style="([^"]*)"/g, (match, content) => {
+      .replace(/style="([^"]*)"/g, (_match, content) => {
         const cleaned = content
           // Convert inner double quotes to single quotes
           .replace(/"/g, "'")

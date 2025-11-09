@@ -104,7 +104,7 @@ export function FullscreenPreviewDialog({
   testDuration,
   intermediateStages = [],
   pressureUnit = 'MPa',
-  temperatureUnit = 'C',
+  temperatureUnit: _temperatureUnit = 'C',
   startDateTime,
   endDateTime,
   triggerClassName,

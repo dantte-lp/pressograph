@@ -286,7 +286,7 @@ export function applyCanvasStyle<T extends Record<string, any>>(
       },
     },
     series: Array.isArray(option.series)
-      ? option.series.map((s: any, i: number) => {
+      ? option.series.map((s: any) => {
           if (s.type === 'line') {
             const canvasLine = getCanvasLineStyle(theme);
             return {

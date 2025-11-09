@@ -487,9 +487,9 @@ export function PressureTestPreview({
 
       // X-axis configuration with tick marks
       xAxis: {
-        type: 'value', // Value-based for full interval control
+        type: 'value' as const, // Value-based for full interval control
         name: useTimeBased ? 'Дата и время' : 'Время',
-        nameLocation: 'middle',
+        nameLocation: 'middle' as const,
         nameGap: 25,
         nameTextStyle: {
           fontSize: 11,
@@ -565,7 +565,7 @@ export function PressureTestPreview({
         splitLine: {
           show: true,
           lineStyle: {
-            type: 'solid',
+            type: 'solid' as const,
             color: '#f0f0f0',
             width: 1,
           },
@@ -574,7 +574,7 @@ export function PressureTestPreview({
         minorSplitLine: {
           show: true,
           lineStyle: {
-            type: 'dashed',
+            type: 'dashed' as const,
             color: '#f9fafb',
             width: 0.5,
           },
@@ -583,9 +583,9 @@ export function PressureTestPreview({
 
       // Y-axis configuration with tick marks
       yAxis: {
-        type: 'value',
+        type: 'value' as const,
         name: `Давление, ${pressureUnit}`,
-        nameLocation: 'middle',
+        nameLocation: 'middle' as const,
         nameGap: 35,
         nameTextStyle: {
           fontSize: 11,
@@ -593,7 +593,7 @@ export function PressureTestPreview({
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           fontWeight: 500,
         },
-        position: 'left', // Explicitly position at left edge
+        position: 'left' as const, // Explicitly position at left edge
         min: 0,
         max: Math.ceil((maxPressure * 1.1) / 5) * 5, // Round up to nearest 5
         interval: 5, // Show grid lines every 5 units
@@ -635,7 +635,7 @@ export function PressureTestPreview({
         splitLine: {
           show: true,
           lineStyle: {
-            type: 'solid',
+            type: 'solid' as const,
             color: '#f0f0f0',
             width: 1,
           },
@@ -644,7 +644,7 @@ export function PressureTestPreview({
         minorSplitLine: {
           show: true,
           lineStyle: {
-            type: 'dashed',
+            type: 'dashed' as const,
             color: '#f9fafb',
             width: 0.5,
           },
@@ -655,9 +655,9 @@ export function PressureTestPreview({
       dataZoom: [
         // Slider at bottom with smart defaults
         {
-          type: 'slider',
+          type: 'slider' as const,
           xAxisIndex: 0,
-          filterMode: 'none',
+          filterMode: 'none' as const,
           // Intelligent initial zoom: focus on actual data range
           start: useTimeBased
             ? ((dataExtent.min + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
@@ -673,9 +673,9 @@ export function PressureTestPreview({
         },
         // Inside zoom (mouse wheel + drag) with intelligent defaults
         {
-          type: 'inside',
+          type: 'inside' as const,
           xAxisIndex: 0,
-          filterMode: 'none',
+          filterMode: 'none' as const,
           // Match slider's intelligent zoom
           start: useTimeBased
             ? ((dataExtent.min + paddingHours * 60) / ((endTime - startTime) / (60 * 1000) + paddingHours * 120)) * 100
@@ -711,13 +711,13 @@ export function PressureTestPreview({
       series: [
         {
           name: 'Pressure Profile',
-          type: 'line',
+          type: 'line' as const,
           data: profileData.dataPoints,
           smooth: enableDrift, // Smooth for realistic drift, sharp for idealized
           // Enable LTTB (Largest-Triangle-Three-Buckets) downsampling for high-frequency data
           // This provides excellent visual quality while maintaining performance
-          sampling: enableDrift ? 'lttb' : undefined,
-          symbol: 'circle',
+          sampling: enableDrift ? ('lttb' as const) : undefined,
+          symbol: 'circle' as const,
           symbolSize: 4,
           showSymbol: false, // Hide symbols by default (too many with drift)
           lineStyle: {
@@ -733,7 +733,7 @@ export function PressureTestPreview({
           },
           // Emphasis (hover) state
           emphasis: {
-            focus: 'series',
+            focus: 'series' as const,
             itemStyle: {
               borderColor: '#3b82f6',
               borderWidth: 2,
@@ -745,13 +745,13 @@ export function PressureTestPreview({
           // Reference lines for working and max pressure
           markLine: {
             silent: true,
-            symbol: 'none',
+            symbol: 'none' as const,
             lineStyle: {
-              type: 'solid',
+              type: 'solid' as const,
               width: 1,
             },
             label: {
-              position: 'end',
+              position: 'end' as const,
               fontSize: 10,
             },
             data: [
@@ -762,7 +762,7 @@ export function PressureTestPreview({
                       yAxis: workingPressure,
                       lineStyle: {
                         color: '#10b981',
-                        type: 'dashed',
+                        type: 'dashed' as const,
                         width: 1.5,
                       },
                       label: {
@@ -780,7 +780,7 @@ export function PressureTestPreview({
                       yAxis: maxPressure,
                       lineStyle: {
                         color: '#ef4444',
-                        type: 'dashed',
+                        type: 'dashed' as const,
                         width: 1.5,
                       },
                       label: {

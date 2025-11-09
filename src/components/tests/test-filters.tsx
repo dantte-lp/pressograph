@@ -28,7 +28,6 @@ import {
   CalendarIcon,
   TagIcon,
   FolderIcon,
-  CheckIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,7 +76,7 @@ interface TestFiltersProps {
 export function TestFilters({
   projects = [],
   tags = [],
-  compact = false,
+  compact: _compact = false,
   className,
 }: TestFiltersProps) {
   const router = useRouter();
@@ -101,7 +100,7 @@ export function TestFilters({
 
   // Open states for popovers
   const [statusOpen, setStatusOpen] = useState(false);
-  const [projectOpen, setProjectOpen] = useState(false);
+  const [_projectOpen, _setProjectOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
 
   /**

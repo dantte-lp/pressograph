@@ -67,8 +67,9 @@ export async function generateSequentialTestNumber(
     const currentYear = new Date().getFullYear();
 
     // Count existing tests in the organization for this year
-    const yearStart = new Date(currentYear, 0, 1);
-    const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+    // TODO: Future enhancement - filter by year using date range
+    // const yearStart = new Date(currentYear, 0, 1);
+    // const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
 
     const existingTests = await db
       .select({ testNumber: pressureTests.testNumber })
