@@ -15,7 +15,6 @@ import { organizations } from "./organizations";
 import { projects } from "./projects";
 import { pressureTests } from "./pressure-tests";
 import { testTemplates } from "./test-templates";
-import { testRuns } from "./test-runs";
 import { fileUploads } from "./file-uploads";
 import { shareLinks } from "./share-links";
 import { auditLogs } from "./audit-logs";
@@ -46,7 +45,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   ownedProjects: many(projects, { relationName: "project_owner" }),
   createdTests: many(pressureTests, { relationName: "test_creator" }),
   createdTemplates: many(testTemplates, { relationName: "template_creator" }),
-  operatedTestRuns: many(testRuns, { relationName: "test_run_operator" }),
   uploadedFiles: many(fileUploads, { relationName: "file_uploader" }),
   createdShareLinks: many(shareLinks),
   performedAudits: many(auditLogs, { relationName: "audit_performer" }),
@@ -91,7 +89,6 @@ export const pressureTestsRelations = relations(pressureTests, ({ one, many }) =
     references: [users.id],
     relationName: "test_creator",
   }),
-  testRuns: many(testRuns),
   shareLinks: many(shareLinks),
 }));
 
@@ -181,17 +178,3 @@ export const testTemplatesRelations = relations(testTemplates, ({ one }) => ({
   }),
 }));
 
-/**
- * Test Run Relations
- */
-export const testRunsRelations = relations(testRuns, ({ one }) => ({
-  pressureTest: one(pressureTests, {
-    fields: [testRuns.testId],
-    references: [pressureTests.id],
-  }),
-  operator: one(users, {
-    fields: [testRuns.operatorId],
-    references: [users.id],
-    relationName: "test_run_operator",
-  }),
-}));

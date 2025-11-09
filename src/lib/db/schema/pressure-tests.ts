@@ -86,13 +86,9 @@ export const pressureTests = pgTable(
     // Test Configuration (from "Set Parameters" step)
     config: jsonb("config").$type<PressureTestConfig>().notNull(),
 
-    // Status
+    // Configuration Status
     status: varchar("status", { length: 50 }).default("draft").notNull(),
-    // 'draft' | 'ready'
-
-    // Tracking (optional for future use)
-    startedAt: timestamp("started_at", { mode: "date" }),
-    completedAt: timestamp("completed_at", { mode: "date" }),
+    // 'draft' | 'ready' - Indicates if test configuration is complete and ready for graph generation
 
     // Sharing (for shareable reports via /share/[token])
     isPublic: boolean("is_public").default(false).notNull(),
