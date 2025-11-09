@@ -67,7 +67,6 @@
     "date-fns-tz": "^3.2.0",
     "drizzle-orm": "^0.44.7",
     "echarts": "6.0.0",
-    "echarts-for-react": "3.0.5",
     "immer": "^10.2.0",
     "import-in-the-middle": "^2.0.0",
     "ioredis": "^5.8.2",

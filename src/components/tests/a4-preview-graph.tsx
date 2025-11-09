@@ -24,56 +24,16 @@
 
 import { useEffect, useRef, useMemo } from 'react';
 import { useTheme } from 'next-themes';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  DataZoomComponent,
-  ToolboxComponent,
-} from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
-import type { ECharts, ComposeOption } from 'echarts/core';
-import type { LineSeriesOption } from 'echarts/charts';
-import type {
-  TitleComponentOption,
-  TooltipComponentOption,
-  GridComponentOption,
-  LegendComponentOption,
-  DataZoomComponentOption,
-  ToolboxComponentOption,
-} from 'echarts/components';
+import { echarts, type PressureChartOption } from '@/lib/echarts-config';
+import type { ECharts } from 'echarts/core';
 import {
   generateRealisticTestData,
   convertToMinutes,
 } from '@/lib/utils/pressure-drift-simulator';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
 
-// Register ECharts components
-echarts.use([
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  DataZoomComponent,
-  ToolboxComponent,
-  CanvasRenderer,
-]);
-
-type ECOption = ComposeOption<
-  | LineSeriesOption
-  | TitleComponentOption
-  | TooltipComponentOption
-  | GridComponentOption
-  | LegendComponentOption
-  | DataZoomComponentOption
-  | ToolboxComponentOption
->;
+// Use centralized ECharts configuration
+type ECOption = PressureChartOption;
 
 interface IntermediateStage {
   time: number;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import EChartsReact from 'echarts-for-react';
-import type { EChartsOption } from 'echarts';
+import { EChartsWrapper } from '@/components/charts';
+import type { PressureChartOption } from '@/lib/echarts-config';
 
 interface Measurement {
   timestamp: Date;
@@ -23,7 +23,7 @@ export function PressureTestGraph({
   maxPressure,
   pressureUnit,
 }: PressureTestGraphProps) {
-  const option = useMemo<EChartsOption>(() => {
+  const option = useMemo<PressureChartOption>(() => {
     // Prepare data for chart
     const timestamps = measurements.map(m => m.timestamp.toLocaleTimeString());
     const pressureData = measurements.map(m => m.pressure);
@@ -175,7 +175,7 @@ export function PressureTestGraph({
 
   return (
     <div className="w-full">
-      <EChartsReact
+      <EChartsWrapper
         option={option}
         style={{ height: '400px' }}
         notMerge={true}

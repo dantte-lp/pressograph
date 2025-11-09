@@ -1,24 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useMemo, useState } from 'react';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-} from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
-import type { ECharts, ComposeOption } from 'echarts/core';
-import type { LineSeriesOption } from 'echarts/charts';
-import type {
-  TitleComponentOption,
-  TooltipComponentOption,
-  GridComponentOption,
-  LegendComponentOption,
-} from 'echarts/components';
+import { echarts, type PressureChartOption } from '@/lib/echarts-config';
+import type { ECharts } from 'echarts/core';
 import { RefreshCw, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,24 +14,8 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-// Register ECharts components
-echarts.use([
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  CanvasRenderer,
-]);
-
-type ECOption = ComposeOption<
-  | LineSeriesOption
-  | TitleComponentOption
-  | TooltipComponentOption
-  | GridComponentOption
-  | LegendComponentOption
->;
+// Use centralized ECharts configuration
+type ECOption = PressureChartOption;
 
 interface IntermediateStage {
   time: number; // minutes

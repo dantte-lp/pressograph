@@ -26,29 +26,8 @@
 
 import { useState } from 'react';
 import { Download, FileImage, Settings2, ChevronDown } from 'lucide-react';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  DataZoomComponent,
-  ToolboxComponent,
-  GraphicComponent,
-} from 'echarts/components';
-import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
-import type { ECharts, ComposeOption } from 'echarts/core';
-import type { LineSeriesOption } from 'echarts/charts';
-import type {
-  TitleComponentOption,
-  TooltipComponentOption,
-  GridComponentOption,
-  LegendComponentOption,
-  DataZoomComponentOption,
-  ToolboxComponentOption,
-} from 'echarts/components';
+import { echarts, type PressureChartOption } from '@/lib/echarts-config';
+import type { ECharts } from 'echarts/core';
 import {
   Dialog,
   DialogContentFullscreen,
@@ -80,32 +59,8 @@ import {
 } from '@/lib/utils/pressure-drift-simulator';
 import { sanitizeForSVG, cleanSVGForExport } from '@/lib/utils/svg-sanitization';
 
-// Register ECharts components for export (tree-shaking optimization)
-// Include both Canvas and SVG renderers for export flexibility
-echarts.use([
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  DataZoomComponent,
-  ToolboxComponent,
-  GraphicComponent,
-  CanvasRenderer,
-  SVGRenderer,
-]);
-
-// Type-safe chart option composition
-type ECOption = ComposeOption<
-  | LineSeriesOption
-  | TitleComponentOption
-  | TooltipComponentOption
-  | GridComponentOption
-  | LegendComponentOption
-  | DataZoomComponentOption
-  | ToolboxComponentOption
->;
+// Type-safe chart option composition (using centralized config)
+type ECOption = PressureChartOption;
 
 /**
  * Intermediate pressure stage structure

@@ -12,20 +12,8 @@
  */
 
 import { jsPDF } from 'jspdf';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  GridComponent,
-  MarkLineComponent,
-} from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
-import type { ECharts, ComposeOption } from 'echarts/core';
-import type { LineSeriesOption } from 'echarts/charts';
-import type {
-  TitleComponentOption,
-  GridComponentOption,
-} from 'echarts/components';
+import { echarts, type PressureChartOption } from '@/lib/echarts-config';
+import type { ECharts } from 'echarts/core';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 import {
   generateEmulatedTestData,
@@ -33,20 +21,8 @@ import {
   emulatedDataToJSON,
 } from './pressure-data-generator';
 
-// Register ECharts components
-echarts.use([
-  LineChart,
-  TitleComponent,
-  GridComponent,
-  MarkLineComponent,
-  CanvasRenderer,
-]);
-
-type ECOption = ComposeOption<
-  | LineSeriesOption
-  | TitleComponentOption
-  | GridComponentOption
->;
+// Use centralized ECharts configuration
+type ECOption = PressureChartOption;
 
 /**
  * Export options for graph exports

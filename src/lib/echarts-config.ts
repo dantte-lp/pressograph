@@ -115,5 +115,8 @@ export { echarts };
 /**
  * Re-export commonly used ECharts types for convenience
  */
-export type { ECharts, EChartsOption, SetOptionOpts } from 'echarts/core';
+export type { ECharts, EChartsCoreOption, SetOptionOpts } from 'echarts/core';
 export type { LineSeriesOption } from 'echarts/charts';
+
+// For backward compatibility - map EChartsOption to EChartsCoreOption
+export type { EChartsCoreOption as EChartsOption } from 'echarts/core';

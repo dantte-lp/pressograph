@@ -9,7 +9,7 @@
 
 import { useTheme } from 'next-themes';
 import { EChartsWrapper, type EChartsWrapperProps } from './echarts-wrapper';
-import type { EChartsOption } from 'echarts';
+import type { PressureChartOption } from '@/lib/echarts-config';
 
 export interface ThemedChartProps extends Omit<EChartsWrapperProps, 'theme'> {
   /** Override automatic theme detection */
@@ -34,7 +34,7 @@ export function ThemedChart({
   const isDark = currentTheme === 'dark';
 
   // Apply theme-specific styles to the chart option
-  const themedOption: EChartsOption = {
+  const themedOption: PressureChartOption = {
     ...option,
     backgroundColor: 'transparent', // Let parent control background
     textStyle: {
