@@ -81,20 +81,18 @@ export function validateSVG(svgString: string): { valid: boolean; error?: string
 /**
  * Post-process SVG string to fix common XML attribute issues
  *
- * Applies aggressive cleaning to fix ECharts-generated SVG issues:
- * 1. Removes duplicate/broken attributes
- * 2. Escapes unescaped characters in text nodes
- * 3. Removes empty attributes
+ * Applies minimal cleaning to fix ECharts-generated SVG issues:
+ * 1. Escapes unescaped ampersands in text nodes
+ * 2. Escapes stray < and > in text content
+ *
+ * SIMPLIFIED: Removed aggressive regex that might break valid SVG
  *
  * @param svg - Raw SVG string from ECharts
  * @returns Cleaned SVG string
  */
 function postProcessSVGString(svg: string): string {
+  // Only apply minimal cleaning - aggressive regex can break valid SVG
   return svg
-    // Fix common attribute issues - remove duplicate quotes
-    .replace(/="([^"]*)"([^>\s]*)"([^"]*)"/g, '="$1$2$3"')
-    // Remove empty attributes that can cause parsing issues
-    .replace(/\s+([a-z-]+)=""\s+/gi, ' ')
     // Escape any remaining unescaped ampersands in text nodes
     // This is critical - ECharts may generate text with & that breaks XML
     .replace(/>([^<>]*)</g, (match, text) => {
@@ -104,7 +102,7 @@ function postProcessSVGString(svg: string): string {
       const cleaned = text
         // Fix unescaped ampersands (but preserve already-escaped entities)
         .replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g, '&amp;')
-        // Escape any stray < or > in text nodes
+        // Escape any stray < or > in text nodes (but these are rare in ECharts output)
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 

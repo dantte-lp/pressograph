@@ -746,7 +746,7 @@ export function A4PreviewGraph({
     // Setup automatic time scale adaptation based on zoom level
     // Listen to dataZoom changes and adjust axis formatting dynamically
     if (useTimeBased) {
-      chart.on('dataZoom', (params: any) => {
+      chart.on('dataZoom', (_params: any) => {
         // Get current zoom range from dataZoom state
         const option = chart.getOption() as any;
         const dataZoom = option.dataZoom?.[0];

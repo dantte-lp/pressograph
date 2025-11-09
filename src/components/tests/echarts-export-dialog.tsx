@@ -78,7 +78,7 @@ import {
   generateRealisticTestData,
   convertToMinutes,
 } from '@/lib/utils/pressure-drift-simulator';
-import { sanitizeForSVG, createSVGBlob } from '@/lib/utils/svg-sanitization';
+import { sanitizeForSVG, cleanSVGForExport } from '@/lib/utils/svg-sanitization';
 
 // Register ECharts components for export (tree-shaking optimization)
 // Include both Canvas and SVG renderers for export flexibility
@@ -597,7 +597,6 @@ export function EChartsExportDialog({
           },
           axisTick: {
             show: true,
-            alignWithLabel: true,
             length: 6,
             lineStyle: {
               color: '#9ca3af',
@@ -759,31 +758,70 @@ export function EChartsExportDialog({
           description: `${qualityPreset.label} export completed: ${exportWidth * pixelRatio}×${exportHeight * pixelRatio} pixels`,
         });
       } else if (exportFormat === 'SVG') {
-        // SVG export using renderToSVGString with validation
+        // SVG export using renderToSVGString with comprehensive error handling
         try {
-          const svgStr = exportChart.renderToSVGString();
+          console.log('[SVG Export] Starting SVG generation...');
 
-          // Validate and create blob with error handling
-          const { url } = createSVGBlob(svgStr, baseFilename);
+          // Step 1: Attempt to generate SVG string from ECharts
+          let svgStr: string;
+          try {
+            svgStr = exportChart.renderToSVGString();
+            console.log('[SVG Export] SVG string generated successfully, length:', svgStr.length);
+          } catch (renderError) {
+            console.error('[SVG Export] ECharts renderToSVGString() failed:', renderError);
+            throw new Error('ECharts failed to generate SVG. This may be due to complex graphic elements. Try PNG format instead.');
+          }
 
-          const link = document.createElement('a');
-          link.download = `${baseFilename}.svg`;
-          link.href = url;
-          link.click();
+          // Step 2: Clean and validate SVG
+          let cleanedSvg: string;
+          try {
+            cleanedSvg = cleanSVGForExport(svgStr);
+            console.log('[SVG Export] SVG cleaned successfully');
+          } catch (cleanError) {
+            console.error('[SVG Export] SVG cleaning failed:', cleanError);
+            // Try to use the raw SVG anyway
+            cleanedSvg = svgStr;
+            console.warn('[SVG Export] Using raw SVG without cleaning');
+          }
 
-          // Clean up blob URL
-          setTimeout(() => URL.revokeObjectURL(url), 100);
+          // Step 3: Create blob and download
+          try {
+            const blob = new Blob([cleanedSvg], {
+              type: 'image/svg+xml;charset=utf-8',
+            });
+            const url = URL.createObjectURL(blob);
 
-          toast.success('SVG Export Successful', {
-            description: `Vector graphics export completed: ${exportWidth}×${exportHeight} (scalable)`,
-          });
+            const link = document.createElement('a');
+            link.download = `${baseFilename}.svg`;
+            link.href = url;
+            link.click();
+
+            // Clean up blob URL
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+
+            console.log('[SVG Export] SVG downloaded successfully');
+            toast.success('SVG Export Successful', {
+              description: `Vector graphics export completed: ${exportWidth}×${exportHeight} (scalable)`,
+            });
+          } catch (blobError) {
+            console.error('[SVG Export] Blob creation or download failed:', blobError);
+            throw new Error('Failed to create SVG file. Please try PNG format instead.');
+          }
         } catch (svgError) {
-          console.error('SVG export failed:', svgError);
+          console.error('[SVG Export] Overall SVG export failed:', svgError);
+
+          // Provide specific error message
+          const errorMessage = svgError instanceof Error
+            ? svgError.message
+            : 'The SVG export failed. Please try PNG or PDF format instead.';
+
           toast.error('SVG Export Failed', {
-            description: 'The SVG contains invalid XML. Please try PNG or PDF format instead.',
-            duration: 5000,
+            description: errorMessage,
+            duration: 7000,
           });
-          throw svgError; // Re-throw to trigger outer catch block
+
+          // Don't re-throw - allow user to try again with different format
+          return; // Exit early, don't close dialog
         }
       } else if (exportFormat === 'PDF') {
         // PDF export using jsPDF

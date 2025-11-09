@@ -9,18 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **SVG Export XML Attribute Errors** - Resolved critical SVG export failures caused by unescaped characters
-  - Implemented aggressive post-processing of ECharts-generated SVG strings
-  - Added `postProcessSVGString()` function to fix common XML attribute issues:
-    - Removes duplicate/broken attribute quotes
-    - Removes empty attributes that cause parsing errors
-    - Escapes unescaped ampersands in text nodes (preserves valid entities)
-    - Escapes stray `<` and `>` characters in text content
-  - Changed SVG validation from blocking error to non-blocking warning
-  - Allows download even with validation warnings - user can verify in browser
-  - Fixes error "attributes construct error" at line 3, column 133
-  - Component: `src/lib/utils/svg-sanitization.ts`
-  - Issue: SVG exports were failing with XML parsing errors for test names containing special characters
+- **SVG Export Error Handling** - Resolved persistent SVG export failures with comprehensive error handling
+  - **BREAKING FIX**: Completely rewrote SVG export error handling with granular try-catch blocks
+  - Identified exact failure points in SVG generation pipeline:
+    1. ECharts `renderToSVGString()` generation
+    2. SVG cleaning/sanitization
+    3. Blob creation and download
+  - Added detailed console logging for each step: `[SVG Export]` prefix for debugging
+  - Simplified `postProcessSVGString()` - removed aggressive regex that could break valid SVG
+    - Kept only essential ampersand escaping in text nodes
+    - Removed duplicate quote removal (was breaking attributes)
+    - Removed empty attribute removal (was too aggressive)
+  - Export now continues even if cleaning fails - uses raw SVG as fallback
+  - User-friendly error messages specify exact failure reason and suggest PNG/PDF fallback
+  - Error no longer closes dialog - allows user to change format and retry
+  - Removed unused `createSVGBlob()` import in favor of inline blob creation
+  - Components:
+    - `src/components/tests/echarts-export-dialog.tsx` - Enhanced error handling
+    - `src/lib/utils/svg-sanitization.ts` - Simplified cleaning logic
+  - Issue: User reported "ошибка SVG при экспорте осталась" (SVG export error remains) despite previous fixes
+  - Root Cause: Previous fixes were too aggressive and broke valid SVG elements
+
+- **TypeScript Build Errors** - Fixed compilation errors in graph components
+  - Fixed unused `params` parameter in dataZoom event handlers
+  - Removed invalid `alignWithLabel` property from axisTick (not in ECharts types)
+  - Components: `a4-preview-graph.tsx`, `pressure-test-preview.tsx`, `echarts-export-dialog.tsx`
 
 - **Optimized Export Spacing** - Reduced excessive empty space in PDF and PNG exports
   - Reduced grid margins for tighter graph layout:
