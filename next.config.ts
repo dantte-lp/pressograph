@@ -8,11 +8,15 @@ const nextConfig: NextConfig = {
 
   typedRoutes: true,
 
+  // Transpile ESM modules for Next.js compatibility
+  // Required for ECharts 6 tree-shaking optimization
+  transpilePackages: ["echarts", "zrender"],
+
   // Allow dev server to be accessed from dev-pressograph.infra4.dev
   allowedDevOrigins: [
-    'dev-pressograph.infra4.dev',
-    'http://dev-pressograph.infra4.dev',
-    'https://dev-pressograph.infra4.dev',
+    "dev-pressograph.infra4.dev",
+    "http://dev-pressograph.infra4.dev",
+    "https://dev-pressograph.infra4.dev",
   ],
 
   images: {
@@ -25,8 +29,8 @@ const nextConfig: NextConfig = {
     // Rules for externals that were in webpack config
     resolveAlias: {
       // Externalize native Node.js modules
-      '@node-rs/argon2': 'external @node-rs/argon2',
-      '@node-rs/bcrypt': 'external @node-rs/bcrypt',
+      "@node-rs/argon2": "external @node-rs/argon2",
+      "@node-rs/bcrypt": "external @node-rs/bcrypt",
     },
   },
 
