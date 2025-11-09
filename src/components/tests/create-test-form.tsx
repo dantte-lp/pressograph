@@ -150,7 +150,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     watch,
     setValue,
   } = form;
@@ -276,6 +276,26 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
       const calculatedEnd = calculateEndDateTime(startDateTime, value);
       setValue('endDateTime', calculatedEnd);
     }
+  };
+
+  // Handle Cancel button click
+  const handleCancel = () => {
+    // Check if there are unsaved changes
+    if (isDirty) {
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to cancel? Your draft will be deleted.'
+      );
+
+      if (!confirmed) {
+        return; // User chose to stay
+      }
+    }
+
+    // Clear the cache
+    clearCache();
+
+    // Navigate back to tests list
+    router.push('/tests');
   };
 
   // Submit form - single save button
@@ -804,8 +824,8 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             <Card>
               <CardFooter className="flex justify-between pt-6">
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" asChild disabled={isPending}>
-                    <a href="/tests">Cancel</a>
+                  <Button type="button" variant="outline" onClick={handleCancel} disabled={isPending}>
+                    Cancel
                   </Button>
                   <SaveAsTemplateButton
                     config={{

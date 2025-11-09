@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Test Creation Cache Not Clearing on Cancel** - Critical bug fix for cache management
+  - **Problem**: When user clicked "Cancel" from `/tests/new`, the localStorage cache persisted instead of being cleared
+  - **Root Cause**: Cancel button was a simple `<a>` link that navigated away without calling `clearCache()`
+  - **Solution Implemented**:
+    - Converted Cancel button from `<a>` link to proper `onClick` handler
+    - Added `handleCancel()` function that clears cache before navigation
+    - Integrated `isDirty` state from react-hook-form to detect unsaved changes
+    - Added confirmation dialog when user has unsaved changes: "You have unsaved changes. Are you sure you want to cancel? Your draft will be deleted."
+    - User can choose to stay on page or proceed with cache clearing
+  - **Expected Behavior Now**:
+    - Click "Cancel" → Cache cleared immediately (after confirmation if dirty)
+    - Page refresh/browser close → Cache persists (auto-save continues working)
+    - Network disconnect → Cache persists (offline support maintained)
+  - **Impact**:
+    - Prevents stale draft data from persisting after cancellation
+    - Improves user experience with explicit confirmation
+    - Maintains auto-save functionality for legitimate draft scenarios
+  - Date: 2025-11-09
+  - Priority: P0 - Critical (User-facing bug)
+  - Component: `/components/tests/create-test-form.tsx`
+  - Files Modified: 1 file (create-test-form.tsx)
+  - Lines Changed: +18/-2 (added handleCancel function, updated Cancel button, destructured isDirty)
+
 ### Added
 
 - **Performance Monitoring Tools** - Bundle size analysis and performance tracking infrastructure
