@@ -23,7 +23,7 @@ interface TestRunDetailProps {
     results: TestRunResults | null;
     notes: string | null;
     operatorObservations: string | null;
-    operatorName: string;
+    operatorName: string | null;
     testNumber: string;
     testName: string;
     testConfig: PressureTestConfig;
@@ -32,20 +32,14 @@ interface TestRunDetailProps {
 
 export function TestRunDetail({ run }: TestRunDetailProps) {
   // Convert measurements to format for graph
-  const graphData = useMemo(() => {
-    if (!run.measurements?.dataPoints) return null;
+  const measurements = useMemo(() => {
+    if (!run.measurements?.dataPoints) return [];
 
-    const points = run.measurements.dataPoints.map(point => ({
-      timestamp: new Date(point.timestamp).toISOString(),
+    return run.measurements.dataPoints.map(point => ({
+      timestamp: new Date(point.timestamp),
       pressure: point.pressure,
       temperature: point.temperature,
     }));
-
-    return {
-      timestamps: points.map(p => p.timestamp),
-      pressure: points.map(p => p.pressure),
-      temperature: points.map(p => p.temperature),
-    };
   }, [run.measurements]);
 
   const formatDuration = (seconds: number | null) => {
@@ -100,7 +94,7 @@ export function TestRunDetail({ run }: TestRunDetailProps) {
               <UserIcon className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Operator</p>
-                <p className="text-sm text-muted-foreground">{run.operatorName}</p>
+                <p className="text-sm text-muted-foreground">{run.operatorName || "Unknown"}</p>
               </div>
             </div>
 
@@ -266,7 +260,7 @@ export function TestRunDetail({ run }: TestRunDetailProps) {
       )}
 
       {/* Measurements Graph */}
-      {graphData && (
+      {measurements.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Measurements</CardTitle>
@@ -277,12 +271,10 @@ export function TestRunDetail({ run }: TestRunDetailProps) {
           </CardHeader>
           <CardContent>
             <PressureTestGraph
-              config={run.testConfig}
-              mode="drift"
-              actualData={{
-                timestamps: graphData.timestamps,
-                pressure: graphData.pressure,
-              }}
+              measurements={measurements}
+              targetPressure={run.testConfig.workingPressure}
+              maxPressure={run.testConfig.maxPressure}
+              pressureUnit={run.testConfig.pressureUnit || "MPa"}
               enableDownsampling={true}
             />
           </CardContent>

@@ -24,7 +24,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
@@ -249,7 +248,7 @@ export function TestRunsList({ runs, testId, isLoading, onDelete }: TestRunsList
                 <TableCell>
                   <TestRunStatusBadge status={run.status} />
                 </TableCell>
-                <TableCell>{run.operatorName}</TableCell>
+                <TableCell>{run.operatorName || "Unknown"}</TableCell>
                 <TableCell>
                   {run.startedAt ? (
                     <span title={new Date(run.startedAt).toLocaleString()}>

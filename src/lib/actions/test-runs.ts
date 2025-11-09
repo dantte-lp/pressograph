@@ -19,7 +19,7 @@ export interface TestRunListItem {
   startedAt: Date | null;
   completedAt: Date | null;
   durationSeconds: number | null;
-  operatorName: string;
+  operatorName: string | null;
   operatorId: string;
   testNumber: string;
   testName: string;
@@ -202,7 +202,6 @@ export async function updateTestRun(
   }
 ) {
   const session = await requireAuth();
-  const userId = session.user.id as string;
   const organizationId = session.user.organizationId as string;
 
   // Verify run exists and belongs to organization
