@@ -473,7 +473,7 @@ export function EChartsExportDialog({
         grid: {
           left: 60, // REDUCED from '10%' for tighter left margin (matches v1: 80px base, but adjusted for export)
           right: 40, // REDUCED from '8%' for tighter right margin (matches v1: 50px)
-          bottom: dataPlacement === 'below' && dataText ? 100 : 80, // REDUCED from '20%'/'15%' for tighter bottom margin
+          bottom: dataPlacement === 'below' && dataText ? 110 : 80, // INCREASED to provide more space for centered text below X-axis label
           top: 60, // REDUCED from '20%' to minimize space between title and graph
           // containLabel removed - using explicit margins instead per ECharts v6 best practices
         },
@@ -483,8 +483,8 @@ export function EChartsExportDialog({
               graphic: [
                 {
                   type: 'text',
-                  left: 'center',
-                  bottom: '8%', // REDUCED from '12%' to bring data text closer to graph
+                  left: 'center', // Horizontally centered under graph
+                  bottom: 20, // Pixel-based positioning for precise placement below X-axis label
                   style: {
                     text: sanitizedDataText,
                     fontSize: 11,
@@ -492,6 +492,7 @@ export function EChartsExportDialog({
                     fill: '#6b7280',
                     textAlign: 'center',
                   },
+                  z: 100, // Ensure text appears above other elements
                 },
               ],
             }
