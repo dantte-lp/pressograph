@@ -1,0 +1,44 @@
+# Trivy configuration for Pressograph security scanning
+
+# Vulnerability scanning
+vulnerability:
+  type:
+    - os
+    - library
+
+# Severity levels to report
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+# Ignore unfixed vulnerabilities
+ignore-unfixed: false
+
+# Skip directories
+skip-dirs:
+  - node_modules
+  - .next
+  - coverage
+  - dist
+  - build
+
+# Skip files
+skip-files:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+
+# Timeout
+timeout: 10m
+
+# Exit code when vulnerabilities are found
+exit-code: 0
+
+# Output format
+format: table
+
+# Enable secret scanning
+secret:
+  config: .trivysecret.yaml
