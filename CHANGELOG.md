@@ -7,7 +7,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Admin Dashboard and Management Pages** - Complete admin panel for system administration
+  - **Admin Dashboard** (`/admin`):
+    - System-wide statistics (users, organizations, projects, tests, storage)
+    - Recent user registrations with role badges
+    - Recent project creations across all organizations
+    - Organizations overview with user and project counts
+    - Quick access links to admin sub-sections
+    - Real-time activity tracking
+  - **User Management** (`/admin/users`):
+    - Paginated user list with search and filtering
+    - User details: name, email, username, role, creation date
+    - Project and test counts per user
+    - Last login tracking
+    - Role management (admin/user)
+  - **Organization Management** (`/admin/organizations`):
+    - List all organizations in the system
+    - Organization stats (user count, project count)
+    - Organization slug and creation date display
+  - **System Health** (`/admin/system`):
+    - Database connection monitoring
+    - Application status checks
+    - Environment information display
+    - Runtime details (Node.js version, platform, architecture)
+  - **Server Actions** (`/lib/actions/admin.ts`):
+    - `getAdminStats()` - Fetch system-wide statistics
+    - `getUsers()` - Paginated user management with filters
+    - `getOrganizations()` - Organization list with counts
+    - `getSystemHealth()` - System health monitoring
+    - `getRecentAdminActivity()` - Recent activity across system
+    - `updateUserRole()` - User role management
+  - **Access Control**:
+    - Admin-only routes using `requireAdmin()` middleware
+    - Automatic redirect to `/unauthorized` for non-admin users
+    - Integration with existing auth system
+  - Date: 2025-11-10
+  - Sprint: Feature Development
+  - Priority: P1 - High (Admin functionality)
+  - Files Added: 5 files (admin pages + actions)
+  - Lines Added: ~600+ lines
+  - Build Status: TypeScript 0 errors
+
+- **Documentation and API Reference Pages** - Enhanced user guide and API documentation
+  - **Documentation Page** (`/docs`):
+    - Quick Start Guide with step-by-step instructions
+    - Documentation sections: Getting Started, Projects, Tests, Sharing, Settings
+    - Interactive links to relevant pages
+    - Help resources and GitHub repository link
+  - **API Documentation Page** (`/api-docs`):
+    - Complete REST API endpoint reference
+    - HTTP method badges (GET, POST, PUT, DELETE)
+    - Authentication guide with examples
+    - Code examples in JavaScript/TypeScript, Python, and cURL
+    - Rate limits and best practices
+    - Response format documentation
+  - **Layout Migration**:
+    - Moved `/docs` and `/api-docs` from root to dashboard layout
+    - Now requires authentication and uses sidebar navigation
+    - Better integration with application structure
+  - Date: 2025-11-10
+  - Priority: P2 - Medium (Documentation)
+  - Files Added: 2 files (docs pages)
+  - Files Removed: 2 files (old root pages)
+
+- **Project Route Shortcuts** - Convenient navigation routes for project filtering
+  - **Active Projects Route** (`/projects/active`):
+    - Redirects to `/projects` (shows active projects by default)
+    - Cleaner URL for navigation menu
+  - **Archived Projects Route** (`/projects/archived`):
+    - Redirects to `/projects?archived=true`
+    - Dedicated route for archived projects view
+  - **Benefits**:
+    - Simpler navigation structure
+    - Better SEO with semantic URLs
+    - Maintains single source of truth (main `/projects` page)
+  - Date: 2025-11-10
+  - Files Added: 2 files (redirect pages)
+
 ### Changed
+
+- **Navigation Menu Optimization** - Streamlined navigation structure and added admin access
+  - **Updates**:
+    - Added Admin menu item in bottom navigation (admin users only)
+    - Removed redundant "History" submenu item (already redirects to /tests)
+    - Renamed "List Projects" to "Active" in Projects submenu
+    - Renamed "New Test" to "Create Test" in Tests submenu
+    - Updated "List Tests" to "All Tests" in dashboard quick actions
+    - Updated "Active Tests" to "Create Test" in dashboard quick actions
+  - **Menu Structure**:
+    - Main: Dashboard, Projects (Active/Archived), Tests (Create Test), Documentation, API Docs
+    - Bottom: Profile, Settings, Admin
+  - **Benefits**:
+    - Cleaner, more organized navigation
+    - Admin functionality easily accessible
+    - Consistent naming conventions
+    - Reduced menu clutter
+  - Date: 2025-11-10
+  - Files Modified: 2 files (sidebar.tsx, dashboard/page.tsx)
+  - Lines Changed: ~30 lines
+
+- **Profile Page Cleanup** - Removed unnecessary date and time preferences
+  - **Removed**:
+    - Date & Time Preferences card and section
+    - DateTimeSettings component import
+    - ClockIcon import
+  - **Reasoning**:
+    - Date/time formatting should be system-wide, not per-user
+    - Reduces user configuration overhead
+    - Simplifies profile page UI
+    - Locale-based formatting is sufficient
+  - Date: 2025-11-10
+  - Files Modified: 1 file (profile/page.tsx)
+  - Lines Removed: ~30 lines
+
+- **Dashboard Layout Improvements** - Better organization of quick action sections
+  - **Changes**:
+    - Projects and Tests sections now in 2-column grid layout
+    - Renamed "List Projects" button to "All Projects"
+    - Renamed "List Tests" button to "All Tests"
+    - Changed "Active Tests" link to "Create Test" (more intuitive)
+    - Updated link from `/tests?status=active` to `/tests/new`
+  - **Benefits**:
+    - More compact and organized layout
+    - Better visual hierarchy
+    - More actionable quick actions
+    - Consistent button labeling
+  - Date: 2025-11-10
+  - Files Modified: 1 file (dashboard/page.tsx)
+  - Lines Changed: ~40 lines
 
 - **Navigation and Menu UX Improvements** - Enhanced navigation components with modern design and improved user experience
   - **User Menu Refactor**:
