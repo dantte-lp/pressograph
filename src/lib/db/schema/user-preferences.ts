@@ -45,6 +45,17 @@ export const userPreferences = pgTable(
     emailNotifications: boolean("email_notifications").default(true).notNull(),
     inAppNotifications: boolean("in_app_notifications").default(true).notNull(),
 
+    // Date & Time preferences
+    timezone: varchar("timezone", { length: 50 })
+      .default("UTC")
+      .notNull(), // IANA timezone (e.g., "America/New_York", "Europe/Moscow")
+    dateFormat: varchar("date_format", { length: 20 })
+      .default("YYYY-MM-DD")
+      .notNull(), // "MM/DD/YYYY" | "DD.MM.YYYY" | "YYYY-MM-DD"
+    timeFormat: varchar("time_format", { length: 10 })
+      .default("24h")
+      .notNull(), // "12h" | "24h"
+
     // Timestamps
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
