@@ -9,6 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **SVG Export Column 133 Error** - Fixed persistent "attributes construct error" at column 133 in SVG exports
+  - **Root Cause**: Unescaped double quotes in font-family declarations: `"Segoe UI"` broke XML parsing
+  - **Column 133 Consistency**: Error always occurred at column 133 regardless of Data Display setting
+  - **Symptoms**:
+    - Data Display OFF: `error on line 47 at column 133: attributes construct error`
+    - Data Display ON: `error on line 3 at column 133: attributes construct error`
+    - SVG files failed to open in browsers showing XML parsing errors
+  - **Solution**:
+    1. Removed quotes from "Segoe UI" in all fontFamily declarations
+    2. Changed: `'Inter, ..., "Segoe UI", ...'` → `'Inter, ..., Segoe UI, ...'`
+    3. Added `cleanFontFamilyAttributes()` to sanitize any remaining font-family issues
+    4. Font-family cleaning now runs first in cleanSVGForExport() pipeline
+  - **Technical Details**:
+    - ECharts rendered: `style="font-family: Inter, ..., "Segoe UI", ..."`
+    - Inner double quotes prematurely closed the style attribute at column 133
+    - Resulted in malformed XML: `style="font-family: Inter, ..."Segoe UI"..."`
+  - **Files Modified**:
+    - `src/components/tests/echarts-export-dialog.tsx` - Fixed all fontFamily declarations (7 instances)
+    - `src/components/tests/pressure-test-preview.tsx` - Fixed all fontFamily declarations (6 instances)
+    - `src/components/tests/a4-preview-graph.tsx` - Fixed all fontFamily declarations (7 instances)
+    - `src/components/charts/themed-chart.tsx` - Fixed fontFamily declaration (1 instance)
+    - `src/lib/utils/svg-sanitization.ts` - Added cleanFontFamilyAttributes() function
+  - **Verification**: SVG exports now work correctly with both Data Display ON and OFF settings
+  - Date: 2025-11-09
+  - Issue: User reported "ошибки SVG продолжаются" (SVG errors continue)
+  - Related commits: 65205492, 510f02e3, 41d40ef8, 7debab17 (previous failed attempts)
+
+- **Internal Server Error - Corrupted Build Cache** - Fixed application showing "Internal Server Error" due to corrupted Next.js Turbopack build cache
+  - **Root Cause**: Corrupted `.next` directory with missing Turbopack runtime files and build manifests
+  - **Symptoms**:
+    - HTTP 500 errors on all routes
+    - `Error: Cannot find module '../chunks/ssr/[turbopack]_runtime.js'`
+    - `ENOENT: no such file or directory, open '.next/dev/server/app/page/build-manifest.json'`
+    - `ENOENT: no such file or directory, open '.next/dev/routes-manifest.json'`
+  - **Solution**:
+    1. Stopped Next.js dev server with PM2
+    2. Removed corrupted `.next` cache directory (required root permissions due to mixed ownership)
+    3. Restarted Next.js with clean build
+    4. Application now returns HTTP 200 and renders correctly
+  - **Prevention**: Avoid interrupting builds, ensure proper file permissions, monitor disk space
+  - **Documentation**: Added comprehensive troubleshooting section to `docs/development/deployment/DEPLOYMENT.md`
+  - **Container**: `pressograph-dev-workspace` running Next.js 16.0.1 with Turbopack
+  - **Verified**: Application accessible at http://localhost:3000, database connection working
+  - Date: 2025-11-09
+  - Issue: Deployment runtime error
+
 - **SVG Line 3 Attribute Error** - Fixed "attributes construct error" at line 3, column 133 in SVG exports
   - **Root Cause**: ECharts deprecated `grid.containLabel` option was generating malformed SVG attributes
   - Removed `grid.containLabel: true` from grid configuration (deprecated in ECharts v6)

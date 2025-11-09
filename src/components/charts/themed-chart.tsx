@@ -39,7 +39,7 @@ export function ThemedChart({
     backgroundColor: 'transparent', // Let parent control background
     textStyle: {
       color: isDark ? '#F3F4F6' : '#1F2937', // Gray-100 : Gray-800
-      fontFamily: 'var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: 'var(--font-inter), -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
     },
   };
 

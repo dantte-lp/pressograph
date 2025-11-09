@@ -79,6 +79,33 @@ export function validateSVG(svgString: string): { valid: boolean; error?: string
 }
 
 /**
+ * Clean font-family attributes to fix quote issues
+ *
+ * Fixes "attributes construct error" caused by unescaped quotes in font-family values.
+ * The issue: font-family: "Inter", "Segoe UI" → breaks XML at column 133
+ * The fix: Replace inner double quotes with single quotes or remove them
+ *
+ * @param svg - Raw SVG string
+ * @returns SVG string with cleaned font-family attributes
+ */
+function cleanFontFamilyAttributes(svg: string): string {
+  return svg
+    // Fix font-family in style attributes: style="font-family: "Inter", "Segoe UI""
+    // This regex finds style attributes and cleans the font-family value inside them
+    .replace(/style="([^"]*)font-family:\s*([^";]+)([^"]*)"/g, (match, before, fontFamily, after) => {
+      // Replace any inner double quotes in font-family with single quotes
+      const cleanedFontFamily = fontFamily.replace(/"/g, "'");
+      return `style="${before}font-family: ${cleanedFontFamily}${after}"`;
+    })
+    // Also fix standalone font-family attributes if they exist
+    .replace(/font-family="([^"]*)"/g, (match, fontList) => {
+      // Replace any inner double quotes with single quotes
+      const cleaned = fontList.replace(/"/g, "'");
+      return `font-family="${cleaned}"`;
+    });
+}
+
+/**
  * Clean SVG header (first 3 lines) to fix attribute errors
  *
  * Fixes common issues in SVG root element that cause "attributes construct error":
@@ -183,13 +210,17 @@ export function cleanSVGForExport(svgString: string): string {
     console.log('[SVG Debug] Line 3 substring around column 133:', lines[2]?.substring(125, 145));
   }
 
-  // Step 1: Clean the SVG header specifically (fixes line 3 attribute errors)
-  let cleaned = cleanSVGHeader(svgString);
+  // Step 1: CRITICAL - Clean font-family attributes first (fixes column 133 error)
+  // This must be done before other cleaning to prevent double-escaping
+  let cleaned = cleanFontFamilyAttributes(svgString);
 
-  // Step 2: Post-process the rest of the SVG to fix common issues
+  // Step 2: Clean the SVG header specifically (fixes line 3 attribute errors)
+  cleaned = cleanSVGHeader(cleaned);
+
+  // Step 3: Post-process the rest of the SVG to fix common issues
   cleaned = postProcessSVGString(cleaned);
 
-  // Step 3: Validate SVG (warning only, not blocking)
+  // Step 4: Validate SVG (warning only, not blocking)
   const validation = validateSVG(cleaned);
   if (!validation.valid) {
     console.warn('SVG validation warning:', validation.error);
@@ -198,7 +229,7 @@ export function cleanSVGForExport(svgString: string): string {
     // The post-processing above should fix most issues
   }
 
-  // Step 4: Return cleaned SVG
+  // Step 5: Return cleaned SVG
   return cleaned;
 }
 

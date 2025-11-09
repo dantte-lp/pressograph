@@ -314,12 +314,12 @@ export function A4PreviewGraph({
           fontSize: 18,
           fontWeight: 700,
           color: '#1f2937',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         subtextStyle: {
           fontSize: 12,
           color: '#6b7280',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
       },
 
@@ -332,7 +332,7 @@ export function A4PreviewGraph({
         textStyle: {
           color: '#1f2937',
           fontSize: 14,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         formatter: (params: any) => {
           const point = params[0];
@@ -406,7 +406,7 @@ export function A4PreviewGraph({
           fontSize: 13,
           fontWeight: 600,
           color: '#374151',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         // Axis range: From padded start to padded end
         // This creates empty space before/after the actual test data
@@ -449,7 +449,7 @@ export function A4PreviewGraph({
           color: '#4b5563',
           rotate: 0,
           margin: 12,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         axisLine: {
           show: true,
@@ -506,7 +506,7 @@ export function A4PreviewGraph({
           fontSize: 13,
           fontWeight: 600,
           color: '#374151',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         position: 'left', // Explicitly position at left edge
         min: 0,
@@ -518,7 +518,7 @@ export function A4PreviewGraph({
           fontWeight: 500,
           color: '#4b5563',
           margin: 8,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         axisLine: {
           show: true,

@@ -456,7 +456,7 @@ export function EChartsExportDialog({
             fontSize: 18,
             fontWeight: 600,
             color: '#1f2937',
-            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           },
           // Add subtitle if placement is 'title'
           ...(dataPlacement === 'title' && sanitizedDataText
@@ -465,7 +465,7 @@ export function EChartsExportDialog({
                 subtextStyle: {
                   fontSize: 11,
                   color: '#6b7280',
-                  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                 },
               }
             : {}),
@@ -488,7 +488,7 @@ export function EChartsExportDialog({
                   style: {
                     text: sanitizedDataText,
                     fontSize: 11,
-                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                     fill: '#6b7280',
                     textAlign: 'center',
                   },
@@ -528,7 +528,7 @@ export function EChartsExportDialog({
                         style: {
                           text: sanitizeForSVG(generateCompactDataText('\n')),
                           fontSize: 11,
-                          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                           fill: '#374151',
                           textAlign: 'left',
                         },
@@ -547,7 +547,7 @@ export function EChartsExportDialog({
             fontSize: 14,
             color: '#1f2937',
             fontWeight: 500,
-            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           },
           min: useTimeBased ? -paddingHours * 60 : 0,
           max: useTimeBased
@@ -586,7 +586,7 @@ export function EChartsExportDialog({
             fontSize: useTimeBased ? 10 : 12,
             color: '#4b5563',
             rotate: 0,
-            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           },
           axisLine: {
             show: true,
@@ -629,7 +629,7 @@ export function EChartsExportDialog({
             fontSize: 14,
             color: '#1f2937',
             fontWeight: 500,
-            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           },
           min: 0,
           max: Math.ceil((config.maxPressure * 1.1) / 5) * 5,
@@ -638,7 +638,7 @@ export function EChartsExportDialog({
             formatter: '{value}',
             fontSize: 12,
             color: '#4b5563',
-            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           },
           axisLine: {
             lineStyle: {

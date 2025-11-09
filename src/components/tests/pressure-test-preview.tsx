@@ -451,7 +451,7 @@ export function PressureTestPreview({
         textStyle: {
           fontSize: 14,
           fontWeight: 600,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
       },
 
@@ -465,7 +465,7 @@ export function PressureTestPreview({
         textStyle: {
           color: '#333',
           fontSize: 13,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         formatter: (params: any) => {
           const point = params[0];
@@ -537,7 +537,7 @@ export function PressureTestPreview({
         nameTextStyle: {
           fontSize: 11,
           color: '#4b5563',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           fontWeight: 500,
         },
         min: useTimeBased ? -paddingHours * 60 : 0,
@@ -575,7 +575,7 @@ export function PressureTestPreview({
           fontSize: useTimeBased ? 9 : 10,
           rotate: 0,
           color: '#6b7280',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         axisLine: {
           show: true,
@@ -633,7 +633,7 @@ export function PressureTestPreview({
         nameTextStyle: {
           fontSize: 11,
           color: '#4b5563',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
           fontWeight: 500,
         },
         position: 'left', // Explicitly position at left edge
@@ -644,7 +644,7 @@ export function PressureTestPreview({
           formatter: '{value}',
           fontSize: 10,
           color: '#6b7280',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         },
         axisLine: {
           show: true,

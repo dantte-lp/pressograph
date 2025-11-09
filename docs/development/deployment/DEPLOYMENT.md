@@ -437,6 +437,53 @@ podman volume rm pressograph-postgres-data
 podman volume create pressograph-postgres-data
 ```
 
+### Internal Server Error - Corrupted Build Cache
+
+**Symptoms:**
+- Application shows "Internal Server Error" in browser
+- Next.js logs show: `Error: Cannot find module '../chunks/ssr/[turbopack]_runtime.js'`
+- Missing build manifest files: `ENOENT: no such file or directory, open '.next/dev/server/app/page/build-manifest.json'`
+- Missing routes manifest: `ENOENT: no such file or directory, open '.next/dev/routes-manifest.json'`
+- HTTP 500 errors on all routes
+
+**Root Cause:**
+Corrupted Next.js 16.0.1 + Turbopack build cache in `.next` directory, often caused by:
+- Interrupted builds
+- Permission issues (mixed root/developer ownership)
+- Container restarts during compilation
+- File system inconsistencies
+
+**Solution:**
+
+```bash
+# 1. Stop the Next.js development server
+podman exec -u developer -w /workspace pressograph-dev-workspace bash -c 'pm2 stop nextjs-dev'
+
+# 2. Remove corrupted .next cache (as root if permission denied)
+podman exec -u root -w /workspace pressograph-dev-workspace bash -c 'rm -rf .next'
+
+# 3. Restart Next.js with clean build
+podman exec -u developer -w /workspace pressograph-dev-workspace bash -c 'pm2 restart nextjs-dev'
+
+# 4. Wait for build to complete (check logs)
+podman logs --tail 20 pressograph-dev-workspace
+
+# 5. Verify application is accessible
+curl -I http://localhost:3000/
+```
+
+**Prevention:**
+- Avoid interrupting builds with Ctrl+C
+- Ensure proper file permissions (developer user should own workspace)
+- Let builds complete before restarting containers
+- Monitor disk space to prevent incomplete writes
+
+**Expected Output:**
+```
+✓ Ready in 3.8s
+GET / 200 in 3.7s (compile: 3.1s, proxy.ts: 131ms, render: 401ms)
+```
+
 ---
 
 ## Backup and Restore
