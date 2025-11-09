@@ -27,6 +27,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   UserIcon,
+  ShieldCheckIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ const navItems: NavItem[] = [
     label: 'Projects',
     icon: FolderIcon,
     children: [
-      { href: '/projects/active', label: 'Active Projects', icon: FolderIcon },
+      { href: '/projects/active', label: 'Active', icon: FolderIcon },
       { href: '/projects/archived', label: 'Archived', icon: FolderIcon },
     ],
   },
@@ -59,8 +60,7 @@ const navItems: NavItem[] = [
     label: 'Tests',
     icon: FlaskConicalIcon,
     children: [
-      { href: '/tests/new', label: 'New Test', icon: FlaskConicalIcon },
-      { href: '/tests/history', label: 'History', icon: FlaskConicalIcon },
+      { href: '/tests/new', label: 'Create Test', icon: FlaskConicalIcon },
     ],
   },
   {
@@ -85,6 +85,11 @@ const bottomNavItems: NavItem[] = [
     href: '/settings',
     label: 'Settings',
     icon: SettingsIcon,
+  },
+  {
+    href: '/admin',
+    label: 'Admin',
+    icon: ShieldCheckIcon,
   },
 ];
 
