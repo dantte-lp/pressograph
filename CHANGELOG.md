@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Test Templates System** - ✅ COMPLETED - Reusable test configuration templates for quick test creation
+  - **Database Schema**:
+    - Created `test_templates` table with 13 columns
+    - Supports user-created custom templates
+    - Organization-wide shared templates
+    - System templates (daily, extended, regulatory)
+    - JSONB config for flexible partial configurations
+    - 5 indexes for performance (org_id, category, is_public, is_system, created_by)
+    - Foreign keys to organizations and users
+  - **Server Actions**:
+    - `getTestTemplates()` - List all accessible templates with filtering
+    - `getTestTemplateById()` - Fetch single template by ID
+    - `createTestTemplate()` - Create new custom template
+    - `updateTestTemplate()` - Update existing template (own templates only)
+    - `deleteTestTemplate()` - Delete user's own template
+    - `incrementTemplateUsage()` - Track usage statistics
+    - `getTemplateStats()` - Get aggregate template statistics
+  - **Features**:
+    - Partial PressureTestConfig support (users fill remaining values)
+    - Public/private template sharing within organization
+    - Usage tracking (count and last used timestamp)
+    - Category-based filtering
+    - System template protection (cannot edit/delete)
+    - Multi-tenancy support with organization-scoped data
+  - **Security**:
+    - Proper authorization checks
+    - Only allows updating own templates
+    - Prevents editing/deleting system templates
+    - Organization-level data isolation
+  - Date: 2025-11-09
+  - Issue: #116 (Sprint 3, 3 SP, P2) - ✅ COMPLETED
+  - Commits: 44ac316c, 31c5d8d8
+  - Files Added: 2 files (test-templates.ts schema, test-templates.ts actions)
+  - Files Modified: 2 files (schema index, relations)
+
 - **LTTB (Largest-Triangle-Three-Buckets) Downsampling** - ✅ COMPLETED - Massive performance improvement for large datasets (10K+ points)
   - **Core Algorithm**:
     - Implemented production-ready LTTB algorithm in `src/lib/utils/lttb-downsampling.ts` (480 lines)
