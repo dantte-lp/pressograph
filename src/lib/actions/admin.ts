@@ -18,6 +18,7 @@ import { pressureTests } from '@/lib/db/schema/pressure-tests';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
 import { requireAdmin } from '@/lib/auth/server-auth';
 import { revalidatePath } from 'next/cache';
+import bcrypt from 'bcryptjs';
 
 /**
  * Get system-wide statistics for admin dashboard
@@ -135,6 +136,7 @@ export async function getUsers(options: {
       email: users.email,
       username: users.username,
       role: users.role,
+      organizationId: users.organizationId,
       createdAt: users.createdAt,
       lastLoginAt: users.lastLoginAt,
     })
@@ -197,6 +199,8 @@ export async function getOrganizations() {
       id: organizations.id,
       name: organizations.name,
       slug: organizations.slug,
+      logoUrl: organizations.logoUrl,
+      primaryColor: organizations.primaryColor,
       createdAt: organizations.createdAt,
     })
     .from(organizations)
@@ -345,4 +349,352 @@ export async function getRecentAdminActivity(limit = 20) {
     })),
     users: recentUsers,
   };
+}
+
+/**
+ * User Management Actions
+ */
+
+/**
+ * Create a new user
+ */
+export async function createUser(data: {
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+  role?: 'admin' | 'user';
+  organizationId?: string;
+}) {
+  await requireAdmin();
+
+  try {
+    // Check if email or username already exists
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(or(eq(users.email, data.email), eq(users.username, data.username)))
+      .limit(1);
+
+    if (existingUser.length > 0) {
+      return {
+        success: false,
+        error: 'User with this email or username already exists',
+      };
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Create user
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        name: data.name,
+        email: data.email,
+        username: data.username,
+        password: hashedPassword,
+        role: data.role ?? 'user',
+        organizationId: data.organizationId || null,
+      })
+      .returning({ id: users.id });
+
+    revalidatePath('/admin/users');
+    revalidatePath('/admin');
+
+    return {
+      success: true,
+      userId: newUser.id,
+    };
+  } catch (error) {
+    console.error('[createUser] Error creating user:', error);
+    return {
+      success: false,
+      error: 'Failed to create user',
+    };
+  }
+}
+
+/**
+ * Update user details
+ */
+export async function updateUser(
+  userId: string,
+  data: {
+    name?: string;
+    email?: string;
+    username?: string;
+    role?: 'admin' | 'user';
+    organizationId?: string | null;
+    isActive?: boolean;
+  }
+) {
+  await requireAdmin();
+
+  try {
+    // Check if email or username is being changed and already exists
+    if (data.email || data.username) {
+      const conditions = [];
+      if (data.email) conditions.push(eq(users.email, data.email));
+      if (data.username) conditions.push(eq(users.username, data.username));
+
+      const existingUser = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(or(...conditions), sql`${users.id} != ${userId}`))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return {
+          success: false,
+          error: 'Email or username already in use by another user',
+        };
+      }
+    }
+
+    await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+
+    revalidatePath('/admin/users');
+    revalidatePath('/admin');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[updateUser] Error updating user:', error);
+    return {
+      success: false,
+      error: 'Failed to update user',
+    };
+  }
+}
+
+/**
+ * Delete a user
+ */
+export async function deleteUser(userId: string) {
+  await requireAdmin();
+
+  try {
+    // Check if user exists
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found',
+      };
+    }
+
+    // Delete user (cascading deletes handled by database)
+    await db.delete(users).where(eq(users.id, userId));
+
+    revalidatePath('/admin/users');
+    revalidatePath('/admin');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[deleteUser] Error deleting user:', error);
+    return {
+      success: false,
+      error: 'Failed to delete user',
+    };
+  }
+}
+
+/**
+ * Reset user password (admin action)
+ */
+export async function resetUserPassword(userId: string, newPassword: string) {
+  await requireAdmin();
+
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+
+    return { success: true };
+  } catch (error) {
+    console.error('[resetUserPassword] Error resetting password:', error);
+    return {
+      success: false,
+      error: 'Failed to reset password',
+    };
+  }
+}
+
+/**
+ * Organization Management Actions
+ */
+
+/**
+ * Create a new organization
+ */
+export async function createOrganization(data: {
+  name: string;
+  slug: string;
+  logoUrl?: string;
+  primaryColor?: string;
+}) {
+  await requireAdmin();
+
+  try {
+    // Check if slug already exists
+    const existingOrg = await db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.slug, data.slug))
+      .limit(1);
+
+    if (existingOrg.length > 0) {
+      return {
+        success: false,
+        error: 'Organization with this slug already exists',
+      };
+    }
+
+    const [newOrg] = await db
+      .insert(organizations)
+      .values({
+        name: data.name,
+        slug: data.slug,
+        logoUrl: data.logoUrl || null,
+        primaryColor: data.primaryColor || '#2563EB',
+      })
+      .returning({ id: organizations.id });
+
+    revalidatePath('/admin/organizations');
+    revalidatePath('/admin');
+
+    return {
+      success: true,
+      organizationId: newOrg.id,
+    };
+  } catch (error) {
+    console.error('[createOrganization] Error creating organization:', error);
+    return {
+      success: false,
+      error: 'Failed to create organization',
+    };
+  }
+}
+
+/**
+ * Update organization details
+ */
+export async function updateOrganization(
+  organizationId: string,
+  data: {
+    name?: string;
+    slug?: string;
+    logoUrl?: string | null;
+    primaryColor?: string;
+  }
+) {
+  await requireAdmin();
+
+  try {
+    // Check if slug is being changed and already exists
+    if (data.slug) {
+      const existingOrg = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(
+          and(
+            eq(organizations.slug, data.slug),
+            sql`${organizations.id} != ${organizationId}`
+          )
+        )
+        .limit(1);
+
+      if (existingOrg.length > 0) {
+        return {
+          success: false,
+          error: 'Slug already in use by another organization',
+        };
+      }
+    }
+
+    await db
+      .update(organizations)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(organizations.id, organizationId));
+
+    revalidatePath('/admin/organizations');
+    revalidatePath('/admin');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[updateOrganization] Error updating organization:', error);
+    return {
+      success: false,
+      error: 'Failed to update organization',
+    };
+  }
+}
+
+/**
+ * Delete an organization
+ */
+export async function deleteOrganization(organizationId: string) {
+  await requireAdmin();
+
+  try {
+    // Check if organization has users
+    const usersInOrg = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.organizationId, organizationId));
+
+    if ((usersInOrg[0]?.count ?? 0) > 0) {
+      return {
+        success: false,
+        error: 'Cannot delete organization with existing users. Please reassign or delete users first.',
+      };
+    }
+
+    // Check if organization has projects
+    const projectsInOrg = await db
+      .select({ count: count() })
+      .from(projects)
+      .where(eq(projects.organizationId, organizationId));
+
+    if ((projectsInOrg[0]?.count ?? 0) > 0) {
+      return {
+        success: false,
+        error: 'Cannot delete organization with existing projects. Please delete projects first.',
+      };
+    }
+
+    // Delete organization
+    await db.delete(organizations).where(eq(organizations.id, organizationId));
+
+    revalidatePath('/admin/organizations');
+    revalidatePath('/admin');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[deleteOrganization] Error deleting organization:', error);
+    return {
+      success: false,
+      error: 'Failed to delete organization',
+    };
+  }
 }
