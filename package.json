@@ -23,7 +23,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "analyze": "bash scripts/analyze-bundle.sh",
+    "analyze:build": "pnpm build && pnpm analyze"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
