@@ -21,6 +21,7 @@ import { AppearanceSettings } from '@/components/settings/appearance-settings';
 import { NotificationSettings } from '@/components/settings/notification-settings';
 import { DisplaySettings } from '@/components/settings/display-settings';
 import { DateTimeSettings } from '@/components/settings/date-time-settings';
+import { TemplateSettings } from '@/components/settings/template-settings';
 import { SettingsIcon } from 'lucide-react';
 
 export const metadata = {
@@ -62,6 +63,9 @@ export default async function SettingsPage() {
           <TabsTrigger value="datetime" className="px-6">
             Date & Time
           </TabsTrigger>
+          <TabsTrigger value="templates" className="px-6">
+            Templates
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="appearance">
@@ -78,6 +82,10 @@ export default async function SettingsPage() {
 
         <TabsContent value="datetime">
           <DateTimeSettings />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <TemplateSettings />
         </TabsContent>
       </Tabs>
     </div>

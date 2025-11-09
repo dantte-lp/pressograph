@@ -27,6 +27,8 @@ import { Badge } from '@/components/ui/badge';
 import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
 import { PreviewDialog } from '@/components/tests/preview-dialog';
 import { ImportConfigButton } from '@/components/tests/import-config-button';
+import { TemplateSelector } from '@/components/tests/template-selector';
+import { SaveAsTemplateButton } from '@/components/tests/save-as-template-button';
 import { createTest } from '@/lib/actions/tests';
 import type { TestDetail } from '@/lib/actions/tests';
 import type { Project } from '@/lib/db/schema/projects';
@@ -336,7 +338,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     Provide test name, project, and optional details
                   </CardDescription>
                 </div>
-                <ImportConfigButton onImport={handleImportConfig} size="sm" />
+                <div className="flex gap-2">
+                  <TemplateSelector onSelect={handleImportConfig} variant="button" />
+                  <ImportConfigButton onImport={handleImportConfig} size="sm" />
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <FormField
@@ -798,9 +803,28 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             {/* Single Save Button */}
             <Card>
               <CardFooter className="flex justify-between pt-6">
-                <Button type="button" variant="outline" asChild disabled={isPending}>
-                  <a href="/tests">Cancel</a>
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" asChild disabled={isPending}>
+                    <a href="/tests">Cancel</a>
+                  </Button>
+                  <SaveAsTemplateButton
+                    config={{
+                      workingPressure: watch('workingPressure'),
+                      maxPressure: watch('maxPressure'),
+                      testDuration: watch('testDuration'),
+                      temperature: watch('temperature'),
+                      allowablePressureDrop: watch('allowablePressureDrop'),
+                      pressureUnit: watch('pressureUnit'),
+                      temperatureUnit: watch('temperatureUnit'),
+                      intermediateStages: watch('intermediateStages'),
+                      equipmentId: watch('equipmentId'),
+                      operatorName: watch('operatorName'),
+                      notes: watch('notes'),
+                    }}
+                    variant="outline"
+                    size="default"
+                  />
+                </div>
                 <Button type="submit" disabled={isPending}>
                   <SaveIcon className="mr-2 h-4 w-4" />
                   {isPending ? 'Creating Test...' : 'Create Test'}

@@ -26,6 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `deleteTestTemplate()` - Delete user's own template
     - `incrementTemplateUsage()` - Track usage statistics
     - `getTemplateStats()` - Get aggregate template statistics
+  - **UI Components** (NEW):
+    - `TemplateSettings` component - Full template management interface in Settings → Templates tab
+    - `TemplateSelector` component - Select and apply templates when creating tests
+    - `SaveAsTemplateButton` component - Save current test config as reusable template
+    - Integrated into test creation form with "Use Template" and "Save as Template" buttons
+    - Category filtering (daily, extended, regulatory, custom)
+    - Search functionality for templates
+    - Visual badges for system/public/private templates
+    - Usage statistics display
+  - **System Templates Seed Data** (NEW):
+    - 6 pre-configured system templates covering common use cases
+    - Daily Pressure Test (24h, 10 MPa, 2 intermediate stages)
+    - Extended Pressure Test (48h, 12 MPa, 3 stages)
+    - Regulatory Compliance Test (ASME B31.3, 15 MPa)
+    - Quick Leak Test (2h, 8 MPa, no stages)
+    - High-Pressure Pipeline Test (36h, 20 MPa, 3 stages)
+    - Low-Pressure System Test (12h, 0.5 MPa, 2 stages)
+    - Seed script: `src/lib/db/seed-templates.ts`
   - **Features**:
     - Partial PressureTestConfig support (users fill remaining values)
     - Public/private template sharing within organization
@@ -33,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Category-based filtering
     - System template protection (cannot edit/delete)
     - Multi-tenancy support with organization-scoped data
+    - Full CRUD operations from UI
+    - Optimistic UI updates with error recovery
   - **Security**:
     - Proper authorization checks
     - Only allows updating own templates
@@ -40,9 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Organization-level data isolation
   - Date: 2025-11-09
   - Issue: #116 (Sprint 3, 3 SP, P2) - ✅ COMPLETED
-  - Commits: 44ac316c, 31c5d8d8
-  - Files Added: 2 files (test-templates.ts schema, test-templates.ts actions)
-  - Files Modified: 2 files (schema index, relations)
+  - Commits: 44ac316c, 31c5d8d8, 78844c8d (backend), TBD (UI)
+  - Files Added: 5 files (schema, actions, UI components, seed script)
+  - Files Modified: 3 files (schema index, relations, settings page, create-test-form)
 
 - **LTTB (Largest-Triangle-Three-Buckets) Downsampling** - ✅ COMPLETED - Massive performance improvement for large datasets (10K+ points)
   - **Core Algorithm**:
