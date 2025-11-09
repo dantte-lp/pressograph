@@ -16,7 +16,7 @@
 
 import { useMemo } from 'react';
 import { ThemedChart, useChartColors } from '@/components/charts';
-import type { EChartsOption } from 'echarts';
+import type { PressureChartOption } from '@/lib/echarts-config';
 import { type PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 
 /**
@@ -139,7 +139,7 @@ export function PressureGraph({
   }, [config]);
 
   // Build ECharts option
-  const option: EChartsOption = useMemo(() => {
+  const option: PressureChartOption = useMemo(() => {
     const series: any[] = [];
     const yAxis: any[] = [];
     const markLines: any[] = [];
