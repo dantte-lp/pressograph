@@ -8,6 +8,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+### Added
+
+- **ECharts 6 Tree-Shaking Optimization** - Implemented bundle size optimization for ECharts library
+  - **Configuration Changes**:
+    - Added `transpilePackages: ["echarts", "zrender"]` to next.config.ts
+    - Enables proper ESM module transpilation for Next.js 16 compatibility
+    - Critical for tree-shaking to work correctly
+  - **Centralized ECharts Configuration**:
+    - Created `src/lib/echarts-config.ts` as single source of truth
+    - Registers components globally: LineChart, 8 components (Title, Tooltip, Grid, Legend, MarkLine, DataZoom, Toolbox, Graphic), 2 renderers (Canvas, SVG)
+    - Exports type-safe `PressureChartOption` using `ComposeOption`
+    - Eliminates duplicate component registration across files
+  - **Current Status**:
+    - Most components (5 files) already use tree-shaken imports from `echarts/core`
+    - 2 components still use `echarts-for-react` (full library ~900KB)
+    - Expected bundle size reduction: ~400-450KB when full migration complete
+  - **Benefits**:
+    - Reduced bundle size (target: 900KB → 450KB uncompressed)
+    - Single source of truth for ECharts configuration
+    - Type-safe chart options
+    - Better developer experience
+    - Improved performance with smaller bundle
+  - **Next Steps**:
+    - Migrate remaining components from echarts-for-react to direct ECharts
+    - Verify bundle size reduction with build analysis
+    - Refactor components to use centralized config
+  - Date: 2025-11-09
+  - Issue: #106 (Sprint 2, 3 SP, P1)
+  - Commit: 7c2b3de9
+  - Files Added:
+    - `src/lib/echarts-config.ts` - Centralized ECharts configuration
+    - `docs/development/ECHARTS_TREE_SHAKING_STATUS.md` - Implementation status and migration guide
+  - Files Modified:
+    - `next.config.ts` - Added transpilePackages configuration
+
+- **Database Schema Analysis** - Comprehensive analysis of current schema with enhancement proposals
+  - **Analysis Summary**:
+    - Current schema: 13 tables, 95% complete, production-ready
+    - Excellent coverage of core features (users, projects, tests, files, sharing)
+    - Well-designed indexes, constraints, and relationships
+    - Proper use of JSONB for flexible configuration
+  - **Identified Enhancements** (11 SP total):
+    1. **Timezone and Date Format Support** (1 SP, P1, Sprint 2)
+       - Add timezone, dateFormat, timeFormat to user_preferences table
+       - Support international users across timezones
+       - Enable localized timestamp display throughout application
+       - Proposed Issue #115
+    2. **Test Templates System** (3 SP, P2, Sprint 3)
+       - New test_templates table for reusable test configurations
+       - Support custom user templates and organization-wide sharing
+       - System templates (daily, extended, regulatory)
+       - "Save as Template" feature in UI
+       - Proposed Issue #116
+    3. **Test Runs Tracking** (5 SP, P1, Sprint 3-4)
+       - New test_runs table for proper execution tracking
+       - Separate test definitions from executions
+       - Track success/failure rates and performance analytics
+       - Store time-series measurement data
+       - Proposed Issue #117
+    4. **Enhanced Organization Settings** (2 SP, P2, Sprint 4)
+       - Expand settings JSONB with enhanced branding, notifications
+       - Data retention policies (GDPR compliance)
+       - Feature flags per organization
+       - Security settings (MFA, IP restrictions)
+       - Proposed Issue #118
+  - **Schema Strengths**:
+    - ✅ Comprehensive audit logging with JSON metadata
+    - ✅ Robust API key management with scoped permissions
+    - ✅ Feature-complete notifications system
+    - ✅ Advanced share links with expiration and access control
+    - ✅ Multi-tenancy via organizations
+    - ✅ RBAC with role-based access control
+  - **Recommendations**:
+    - Phase 1 (Sprint 2): Timezone support (1 SP)
+    - Phase 2 (Sprint 3): Test templates (3 SP)
+    - Phase 3 (Sprint 3-4): Test runs table (5 SP) - Requires careful planning
+    - Phase 4 (Sprint 4): Organization settings enhancements (2 SP)
+  - Date: 2025-11-09
+  - Commit: 1b3d9588
+  - Files Added:
+    - `docs/development/DATABASE_SCHEMA_ANALYSIS_2025-11-09.md` - Comprehensive analysis and proposals
 
 - **Below Graph Data Placement** - Improved positioning of data display text when "Below Graph" option is selected
   - Changed bottom position from percentage (8%) to pixel-based positioning (20px) for precise control
