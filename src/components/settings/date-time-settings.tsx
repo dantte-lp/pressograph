@@ -10,43 +10,88 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  getUserDateTimeConfig,
-  setUserDateTimeConfig,
   COMMON_TIMEZONES,
   type DateFormat,
   type TimeFormat,
 } from '@/lib/utils/date-time';
+import {
+  updateTimezone,
+  updateDateFormat,
+  updateTimeFormat,
+  getUserPreferences,
+} from '@/lib/actions/user-preferences';
 import { toast } from 'sonner';
 
-export function DateTimeSettings() {
-  const [timezone, setTimezone] = useState('UTC');
-  const [dateFormat, setDateFormat] = useState<DateFormat>('YYYY-MM-DD');
-  const [timeFormat, setTimeFormat] = useState<TimeFormat>('24h');
+interface DateTimeSettingsProps {
+  initialTimezone?: string;
+  initialDateFormat?: DateFormat;
+  initialTimeFormat?: TimeFormat;
+}
+
+export function DateTimeSettings({
+  initialTimezone = 'UTC',
+  initialDateFormat = 'YYYY-MM-DD',
+  initialTimeFormat = '24h',
+}: DateTimeSettingsProps) {
+  const [timezone, setTimezone] = useState(initialTimezone);
+  const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
+  const [timeFormat, setTimeFormat] = useState<TimeFormat>(initialTimeFormat);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load settings on mount
   useEffect(() => {
-    const config = getUserDateTimeConfig();
-    setTimezone(config.timezone);
-    setDateFormat(config.dateFormat);
-    setTimeFormat(config.timeFormat);
+    const loadPreferences = async () => {
+      const result = await getUserPreferences();
+      if (result.success && result.data) {
+        setTimezone(result.data.timezone);
+        setDateFormat(result.data.dateFormat as DateFormat);
+        setTimeFormat(result.data.timeFormat as TimeFormat);
+      }
+    };
+    loadPreferences();
   }, []);
 
-  const handleTimezoneChange = (value: string) => {
+  const handleTimezoneChange = async (value: string) => {
+    setIsLoading(true);
     setTimezone(value);
-    setUserDateTimeConfig({ timezone: value });
-    toast.success('Settings saved');
+    const result = await updateTimezone(value);
+    setIsLoading(false);
+
+    if (result.success) {
+      toast.success('Timezone updated');
+    } else {
+      toast.error(result.error || 'Failed to update timezone');
+      // Revert on error
+      setTimezone(timezone);
+    }
   };
 
-  const handleDateFormatChange = (value: DateFormat) => {
+  const handleDateFormatChange = async (value: DateFormat) => {
+    setIsLoading(true);
     setDateFormat(value);
-    setUserDateTimeConfig({ dateFormat: value });
-    toast.success('Settings saved');
+    const result = await updateDateFormat(value);
+    setIsLoading(false);
+
+    if (result.success) {
+      toast.success('Date format updated');
+    } else {
+      toast.error(result.error || 'Failed to update date format');
+      setDateFormat(dateFormat);
+    }
   };
 
-  const handleTimeFormatChange = (value: TimeFormat) => {
+  const handleTimeFormatChange = async (value: TimeFormat) => {
+    setIsLoading(true);
     setTimeFormat(value);
-    setUserDateTimeConfig({ timeFormat: value });
-    toast.success('Settings saved');
+    const result = await updateTimeFormat(value);
+    setIsLoading(false);
+
+    if (result.success) {
+      toast.success('Time format updated');
+    } else {
+      toast.error(result.error || 'Failed to update time format');
+      setTimeFormat(timeFormat);
+    }
   };
 
   return (
@@ -54,7 +99,7 @@ export function DateTimeSettings() {
       {/* Timezone */}
       <div className="space-y-2">
         <Label htmlFor="timezone">Timezone</Label>
-        <Select value={timezone} onValueChange={handleTimezoneChange}>
+        <Select value={timezone} onValueChange={handleTimezoneChange} disabled={isLoading}>
           <SelectTrigger id="timezone">
             <SelectValue placeholder="Select timezone" />
           </SelectTrigger>
@@ -74,7 +119,7 @@ export function DateTimeSettings() {
       {/* Date Format */}
       <div className="space-y-2">
         <Label htmlFor="date-format">Date Format</Label>
-        <Select value={dateFormat} onValueChange={handleDateFormatChange}>
+        <Select value={dateFormat} onValueChange={handleDateFormatChange} disabled={isLoading}>
           <SelectTrigger id="date-format">
             <SelectValue />
           </SelectTrigger>
@@ -96,7 +141,7 @@ export function DateTimeSettings() {
       {/* Time Format */}
       <div className="space-y-2">
         <Label htmlFor="time-format">Time Format</Label>
-        <Select value={timeFormat} onValueChange={handleTimeFormatChange}>
+        <Select value={timeFormat} onValueChange={handleTimeFormatChange} disabled={isLoading}>
           <SelectTrigger id="time-format">
             <SelectValue />
           </SelectTrigger>

@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppearanceSettings } from '@/components/settings/appearance-settings';
 import { NotificationSettings } from '@/components/settings/notification-settings';
 import { DisplaySettings } from '@/components/settings/display-settings';
+import { DateTimeSettings } from '@/components/settings/date-time-settings';
 import { SettingsIcon } from 'lucide-react';
 
 export const metadata = {
@@ -58,6 +59,9 @@ export default async function SettingsPage() {
           <TabsTrigger value="display" className="px-6">
             Display
           </TabsTrigger>
+          <TabsTrigger value="datetime" className="px-6">
+            Date & Time
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="appearance">
@@ -70,6 +74,10 @@ export default async function SettingsPage() {
 
         <TabsContent value="display">
           <DisplaySettings />
+        </TabsContent>
+
+        <TabsContent value="datetime">
+          <DateTimeSettings />
         </TabsContent>
       </Tabs>
     </div>
