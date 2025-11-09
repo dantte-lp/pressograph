@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **i18n Navigation Integration** - Sidebar navigation now supports internationalization
+  - **Translation Files Updated** (`src/i18n/locales/`):
+    - Added navigation keys to English translations (en/common.json)
+    - Added navigation keys to Russian translations (ru/common.json)
+    - Translation keys: dashboard, projects, active, archived, tests, createTest, testHistory, documentation, apiDocs, profile, settings, admin, collapse, expand, expandMenu, collapseMenu
+  - **Sidebar Component Enhanced** (`src/components/layout/sidebar.tsx`):
+    - Integrated useTranslation hook for dynamic translations
+    - Changed navigation items from hardcoded labels to translation keys (labelKey)
+    - All navigation text now translates based on user locale
+    - Expand/collapse buttons with translated aria-labels
+    - Sidebar collapse button with translated tooltip
+  - **Impact**:
+    - Users can now switch between English and Russian for navigation
+    - Seamless language switching without page reload
+    - Improved accessibility with translated aria-labels
+  - Date: 2025-11-10
+  - Sprint: Sprint 6 (i18n Integration)
+  - Priority: P1 - High (User Experience)
+  - Files Modified: 3 files
+  - Lines Modified: ~100 lines
+
 - **Admin Panel User Management** - Full CRUD functionality for user administration
   - **User Management Page** (`src/app/(dashboard)/admin/users/page.tsx`):
     - List all users with pagination support

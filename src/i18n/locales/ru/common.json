@@ -2,14 +2,24 @@
   "nav": {
     "dashboard": "Панель управления",
     "projects": "Проекты",
+    "active": "Активные",
+    "archived": "Архивные",
     "tests": "Тесты",
+    "createTest": "Создать тест",
+    "testHistory": "История тестов",
+    "documentation": "Документация",
+    "apiDocs": "API Документация",
     "profile": "Профиль",
     "settings": "Настройки",
     "admin": "Администрирование",
     "users": "Пользователи",
     "organizations": "Организации",
     "system": "Система",
-    "logout": "Выход"
+    "logout": "Выход",
+    "collapse": "Свернуть",
+    "expand": "Развернуть",
+    "expandMenu": "Развернуть {{menu}}",
+    "collapseMenu": "Свернуть {{menu}}"
   },
   "common": {
     "save": "Сохранить",

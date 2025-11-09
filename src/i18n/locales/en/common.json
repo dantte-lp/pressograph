@@ -2,14 +2,24 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",
+    "active": "Active",
+    "archived": "Archived",
     "tests": "Tests",
+    "createTest": "Create Test",
+    "testHistory": "Test History",
+    "documentation": "Documentation",
+    "apiDocs": "API Documentation",
     "profile": "Profile",
     "settings": "Settings",
     "admin": "Admin",
     "users": "Users",
     "organizations": "Organizations",
     "system": "System",
-    "logout": "Logout"
+    "logout": "Logout",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "expandMenu": "Expand {{menu}}",
+    "collapseMenu": "Collapse {{menu}}"
   },
   "common": {
     "save": "Save",

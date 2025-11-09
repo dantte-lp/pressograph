@@ -11,6 +11,7 @@
  * - Logo and branding
  * - Improved hover states and animations
  * - Better visual hierarchy
+ * - i18n support for multi-language navigation
  */
 
 import { useState } from 'react';
@@ -29,66 +30,68 @@ import {
   UserIcon,
   ShieldCheckIcon,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 interface NavItem {
   href?: string;
-  label: string;
+  labelKey: string; // i18n translation key
   icon: React.ComponentType<{ className?: string }>;
   children?: NavItem[];
 }
 
-const navItems: NavItem[] = [
+// Navigation configuration with i18n keys
+const getNavItems = (): NavItem[] => [
   {
     href: '/dashboard',
-    label: 'Dashboard',
+    labelKey: 'nav.dashboard',
     icon: HomeIcon,
   },
   {
     href: '/projects',
-    label: 'Projects',
+    labelKey: 'nav.projects',
     icon: FolderIcon,
     children: [
-      { href: '/projects/active', label: 'Active', icon: FolderIcon },
-      { href: '/projects/archived', label: 'Archived', icon: FolderIcon },
+      { href: '/projects/active', labelKey: 'nav.active', icon: FolderIcon },
+      { href: '/projects/archived', labelKey: 'nav.archived', icon: FolderIcon },
     ],
   },
   {
     href: '/tests',
-    label: 'Tests',
+    labelKey: 'nav.tests',
     icon: FlaskConicalIcon,
     children: [
-      { href: '/tests/new', label: 'Create Test', icon: FlaskConicalIcon },
+      { href: '/tests/new', labelKey: 'nav.createTest', icon: FlaskConicalIcon },
     ],
   },
   {
     href: '/docs',
-    label: 'Documentation',
+    labelKey: 'nav.documentation',
     icon: HelpCircleIcon,
   },
   {
     href: '/api-docs',
-    label: 'API Docs',
+    labelKey: 'nav.apiDocs',
     icon: BarChart3Icon,
   },
 ];
 
-const bottomNavItems: NavItem[] = [
+const getBottomNavItems = (): NavItem[] => [
   {
     href: '/profile',
-    label: 'Profile',
+    labelKey: 'nav.profile',
     icon: UserIcon,
   },
   {
     href: '/settings',
-    label: 'Settings',
+    labelKey: 'nav.settings',
     icon: SettingsIcon,
   },
   {
     href: '/admin',
-    label: 'Admin',
+    labelKey: 'nav.admin',
     icon: ShieldCheckIcon,
   },
 ];
@@ -100,7 +103,11 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const navItems = getNavItems();
+  const bottomNavItems = getBottomNavItems();
 
   const isActive = (href?: string) => {
     if (!href) return false;
@@ -115,12 +122,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     return item.children.some((child) => isActive(child.href));
   };
 
-  const toggleExpanded = (label: string) => {
+  const toggleExpanded = (labelKey: string) => {
     const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(label)) {
-      newExpanded.delete(label);
+    if (newExpanded.has(labelKey)) {
+      newExpanded.delete(labelKey);
     } else {
-      newExpanded.add(label);
+      newExpanded.add(labelKey);
     }
     setExpandedItems(newExpanded);
   };
@@ -129,12 +136,13 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     const Icon = item.icon;
     const active = isActive(item.href);
     const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.has(item.label);
+    const isExpanded = expandedItems.has(item.labelKey);
     const hasActiveDescendant = hasActiveChild(item);
+    const label = t(item.labelKey);
 
     if (hasChildren) {
       return (
-        <div key={item.label}>
+        <div key={item.labelKey}>
           <div className="flex items-center gap-1">
             {/* Main navigation link */}
             <Link
@@ -146,7 +154,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 (active || hasActiveDescendant) && 'bg-accent text-accent-foreground shadow-sm',
                 collapsed && 'justify-center'
               )}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? label : undefined}
             >
               {/* Active indicator bar */}
               {(active || hasActiveDescendant) && (
@@ -157,18 +165,18 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 'group-hover:scale-110',
                 (active || hasActiveDescendant) && 'text-primary'
               )} />
-              {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+              {!collapsed && <span className="flex-1 text-left">{label}</span>}
             </Link>
             {/* Expand/collapse button */}
             {!collapsed && (
               <button
-                onClick={() => toggleExpanded(item.label)}
+                onClick={() => toggleExpanded(item.labelKey)}
                 className={cn(
                   'flex items-center justify-center rounded-lg p-2 text-sm transition-all duration-200',
                   'hover:bg-accent hover:text-accent-foreground',
                   'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2'
                 )}
-                aria-label={isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+                aria-label={isExpanded ? t('nav.collapseMenu', { menu: label }) : t('nav.expandMenu', { menu: label })}
               >
                 {isExpanded ? (
                   <ChevronDownIcon className="h-4 w-4 shrink-0 transition-transform duration-200" />
@@ -199,7 +207,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           collapsed && 'justify-center',
           depth > 0 && 'text-muted-foreground hover:text-foreground'
         )}
-        title={collapsed ? item.label : undefined}
+        title={collapsed ? label : undefined}
       >
         {/* Active indicator bar */}
         {active && (
@@ -210,7 +218,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           'group-hover:scale-110',
           active && 'text-primary'
         )} />
-        {!collapsed && <span>{item.label}</span>}
+        {!collapsed && <span>{label}</span>}
       </Link>
     );
   };
@@ -258,7 +266,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             size="sm"
             onClick={onToggle}
             className="w-full transition-all duration-200 hover:bg-accent"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? t('nav.expand') : t('nav.collapse')}
           >
             <ChevronLeftIcon
               className={cn(
@@ -266,7 +274,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 collapsed && 'rotate-180'
               )}
             />
-            {!collapsed && <span className="ml-2">Collapse</span>}
+            {!collapsed && <span className="ml-2">{t('nav.collapse')}</span>}
           </Button>
         </div>
       )}
