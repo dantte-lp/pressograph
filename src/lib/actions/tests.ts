@@ -228,8 +228,6 @@ export interface TestDetail {
   isPublic: boolean;
   shareToken: string | null;
   shareExpiresAt: Date | null;
-  startedAt: Date | null;
-  completedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -260,8 +258,6 @@ export async function getTestById(testId: string): Promise<TestDetail | null> {
       isPublic: pressureTests.isPublic,
       shareToken: pressureTests.shareToken,
       shareExpiresAt: pressureTests.shareExpiresAt,
-      startedAt: pressureTests.startedAt,
-      completedAt: pressureTests.completedAt,
       createdAt: pressureTests.createdAt,
       updatedAt: pressureTests.updatedAt,
     })

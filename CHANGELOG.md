@@ -145,6 +145,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **TypeScript Build Errors from Test Runs Cleanup** - Fixed residual TypeScript errors after removing test execution functionality
+  - **Errors Fixed**:
+    - Removed orphaned test runs imports from `src/app/(dashboard)/tests/[id]/page.tsx`
+    - Removed `src/app/(dashboard)/tests/[id]/runs/[runId]/` directory
+    - Removed "Test Runs" tab from test detail page
+    - Removed `startedAt` and `completedAt` fields from `TestDetail` interface in `src/lib/actions/tests.ts`
+    - Removed `startedAt` and `completedAt` from database query in `getTestById()`
+  - **Build Status**: ✅ Zero TypeScript errors, production build successful
+  - **Impact**: Clean compilation and correct application behavior after test runs removal
+  - Date: 2025-11-09
+  - Context: Follow-up cleanup after Issue #117 removal (commit 97d27e3f)
+  - Files Modified: 2 files (tests/[id]/page.tsx, tests.ts)
+  - Files Removed: 1 directory (tests/[id]/runs/)
+
 - **TypeScript Compilation Errors** - Resolved all TypeScript type errors and warnings for clean production builds
   - **Zod Schema Type Mismatches**: Fixed `temperatureUnit` and `intermediateStages` schema conflicts in `edit-test-form-client.tsx`
   - **ECharts Type Literals**: Added `as const` assertions to all ECharts configuration string literals in `pressure-test-preview.tsx`
