@@ -5,6 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { getTestById } from '@/lib/actions/tests';
 import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
@@ -44,61 +53,72 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
   return (
     <div className="container mx-auto space-y-6 p-6 lg:p-8">
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/tests" className="hover:text-foreground transition-colors">
-          Tests
-        </Link>
-        <span>/</span>
-        <span className="text-foreground font-medium">{test.testNumber}</span>
-      </div>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/tests">Tests</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{test.testNumber}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       {/* Page Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{test.name}</h1>
             <TestStatusBadge status={test.status} />
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span>Test #{test.testNumber}</span>
-            <span>•</span>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground" role="contentinfo" aria-label="Test metadata">
+            <span aria-label="Test number">Test #{test.testNumber}</span>
+            <span aria-hidden="true">•</span>
             <Link
               href={`/projects/${test.projectId}`}
               className="hover:text-foreground transition-colors"
+              aria-label={`Go to project ${test.projectName}`}
             >
               {test.projectName}
             </Link>
-            <span>•</span>
-            <span>Created {formatDate(test.createdAt)}</span>
+            <span aria-hidden="true">•</span>
+            <time dateTime={test.createdAt.toString()} aria-label="Creation date">
+              Created {formatDate(test.createdAt)}
+            </time>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Test actions">
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/tests/${test.id}/edit` as any}>
-              <EditIcon className="mr-2 h-4 w-4" />
+            <Link href={`/tests/${test.id}/edit` as any} aria-label="Edit test configuration">
+              <EditIcon className="mr-2 h-4 w-4" aria-hidden="true" />
               Edit
             </Link>
           </Button>
           <TestActionsDropdown test={test} />
         </div>
-      </div>
+      </header>
 
       {/* Tags */}
       {test.tags && test.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Test tags">
           {test.tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
+            <Badge key={tag} variant="secondary" role="note">
               {tag}
             </Badge>
           ))}
         </div>
       )}
 
+      <Separator className="my-6" />
+
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4" aria-label="Test information sections">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="graph">Graph Preview</TabsTrigger>
@@ -106,7 +126,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6" role="tabpanel" aria-label="Overview information">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Configuration Status Card */}
             <Card>
@@ -114,24 +134,32 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                 <CardTitle className="text-base">Configuration</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <dl className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant={test.status === 'ready' ? 'default' : 'secondary'}>
-                      {test.status === 'ready' ? 'Finalized' : 'Draft'}
-                    </Badge>
+                    <dt className="text-sm text-muted-foreground">Status</dt>
+                    <dd>
+                      <Badge variant={test.status === 'ready' ? 'default' : 'secondary'}>
+                        {test.status === 'ready' ? 'Finalized' : 'Draft'}
+                      </Badge>
+                    </dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Template</span>
-                    <Badge variant="outline">
-                      {test.templateType || 'Custom'}
-                    </Badge>
+                    <dt className="text-sm text-muted-foreground">Template</dt>
+                    <dd>
+                      <Badge variant="outline">
+                        {test.templateType || 'Custom'}
+                      </Badge>
+                    </dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Last Updated</span>
-                    <span className="text-sm">{formatDate(test.updatedAt)}</span>
+                    <dt className="text-sm text-muted-foreground">Last Updated</dt>
+                    <dd>
+                      <time dateTime={test.updatedAt.toString()} className="text-sm">
+                        {formatDate(test.updatedAt)}
+                      </time>
+                    </dd>
                   </div>
-                </div>
+                </dl>
               </CardContent>
             </Card>
 
@@ -141,26 +169,34 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                 <CardTitle className="text-base">Test Information</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <dl className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Test Number</span>
-                    <span className="text-sm font-medium">{test.testNumber}</span>
+                    <dt className="text-sm text-muted-foreground">Test Number</dt>
+                    <dd className="text-sm font-medium">{test.testNumber}</dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Created By</span>
-                    <span className="text-sm">{test.createdByName}</span>
+                    <dt className="text-sm text-muted-foreground">Created By</dt>
+                    <dd className="text-sm">{test.createdByName}</dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Created</span>
-                    <span className="text-sm">{formatDate(test.createdAt)}</span>
+                    <dt className="text-sm text-muted-foreground">Created</dt>
+                    <dd>
+                      <time dateTime={test.createdAt.toString()} className="text-sm">
+                        {formatDate(test.createdAt)}
+                      </time>
+                    </dd>
                   </div>
                   {test.config.startDateTime && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Scheduled</span>
-                      <span className="text-sm">{formatDateTime(test.config.startDateTime)}</span>
+                      <dt className="text-sm text-muted-foreground">Scheduled</dt>
+                      <dd>
+                        <time dateTime={test.config.startDateTime} className="text-sm">
+                          {formatDateTime(test.config.startDateTime)}
+                        </time>
+                      </dd>
                     </div>
                   )}
-                </div>
+                </dl>
               </CardContent>
             </Card>
 
@@ -170,35 +206,37 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                 <CardTitle className="text-base">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <EmulationExportDialog
-                  testNumber={test.testNumber}
-                  testName={test.name}
-                  config={test.config}
-                />
-                <EChartsExportDialog
-                  testNumber={test.testNumber}
-                  testName={test.name}
-                  config={test.config}
-                />
-                <ExportConfigButton
-                  config={test.config}
-                  testNumber={test.testNumber}
-                  testName={test.name}
-                  description={test.description || undefined}
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start"
-                />
-                <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                  <Share2Icon className="mr-2 h-4 w-4" />
-                  Create Share Link
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                  <Link href={`/tests/new?duplicate=${test.id}` as any}>
-                    <CopyIcon className="mr-2 h-4 w-4" />
-                    Duplicate Test
-                  </Link>
-                </Button>
+                <nav aria-label="Quick actions menu">
+                  <EmulationExportDialog
+                    testNumber={test.testNumber}
+                    testName={test.name}
+                    config={test.config}
+                  />
+                  <EChartsExportDialog
+                    testNumber={test.testNumber}
+                    testName={test.name}
+                    config={test.config}
+                  />
+                  <ExportConfigButton
+                    config={test.config}
+                    testNumber={test.testNumber}
+                    testName={test.name}
+                    description={test.description || undefined}
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                  />
+                  <Button variant="outline" size="sm" className="w-full justify-start" disabled aria-disabled="true">
+                    <Share2Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Create Share Link
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+                    <Link href={`/tests/new?duplicate=${test.id}` as any} aria-label="Duplicate this test">
+                      <CopyIcon className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Duplicate Test
+                    </Link>
+                  </Button>
+                </nav>
               </CardContent>
             </Card>
           </div>
@@ -226,77 +264,81 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+              <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
                 <div>
-                  <div className="text-muted-foreground mb-1">Working Pressure</div>
-                  <div className="font-medium">
+                  <dt className="text-muted-foreground mb-1">Working Pressure</dt>
+                  <dd className="font-medium">
                     {test.config.workingPressure} {test.config.pressureUnit || 'MPa'}
-                  </div>
+                  </dd>
                 </div>
                 <div>
-                  <div className="text-muted-foreground mb-1">Max Pressure</div>
-                  <div className="font-medium">
+                  <dt className="text-muted-foreground mb-1">Max Pressure</dt>
+                  <dd className="font-medium">
                     {test.config.maxPressure} {test.config.pressureUnit || 'MPa'}
-                  </div>
+                  </dd>
                 </div>
                 <div>
-                  <div className="text-muted-foreground mb-1">Test Duration</div>
-                  <div className="font-medium">{test.config.testDuration} hours</div>
+                  <dt className="text-muted-foreground mb-1">Test Duration</dt>
+                  <dd className="font-medium">{test.config.testDuration} hours</dd>
                 </div>
                 {test.config.temperature && (
                   <div>
-                    <div className="text-muted-foreground mb-1">Temperature</div>
-                    <div className="font-medium">
+                    <dt className="text-muted-foreground mb-1">Temperature</dt>
+                    <dd className="font-medium">
                       {test.config.temperature}°{test.config.temperatureUnit || 'C'}
-                    </div>
+                    </dd>
                   </div>
                 )}
                 {test.config.allowablePressureDrop && (
                   <div>
-                    <div className="text-muted-foreground mb-1">Allowable Pressure Drop</div>
-                    <div className="font-medium">
+                    <dt className="text-muted-foreground mb-1">Allowable Pressure Drop</dt>
+                    <dd className="font-medium">
                       {test.config.allowablePressureDrop} {test.config.pressureUnit || 'MPa'}
-                    </div>
+                    </dd>
                   </div>
                 )}
                 <div>
-                  <div className="text-muted-foreground mb-1">Intermediate Stages</div>
-                  <div className="font-medium">
+                  <dt className="text-muted-foreground mb-1">Intermediate Stages</dt>
+                  <dd className="font-medium">
                     {test.config.intermediateStages?.length || 0}
-                  </div>
+                  </dd>
                 </div>
                 {test.config.equipmentId && (
                   <div>
-                    <div className="text-muted-foreground mb-1">Equipment ID</div>
-                    <div className="font-medium">{test.config.equipmentId}</div>
+                    <dt className="text-muted-foreground mb-1">Equipment ID</dt>
+                    <dd className="font-medium">{test.config.equipmentId}</dd>
                   </div>
                 )}
                 {test.config.operatorName && (
                   <div>
-                    <div className="text-muted-foreground mb-1">Operator</div>
-                    <div className="font-medium">{test.config.operatorName}</div>
+                    <dt className="text-muted-foreground mb-1">Operator</dt>
+                    <dd className="font-medium">{test.config.operatorName}</dd>
                   </div>
                 )}
                 {test.config.startDateTime && (
                   <div>
-                    <div className="text-muted-foreground mb-1">Start Date/Time</div>
-                    <div className="font-medium">
-                      {formatDateTime(test.config.startDateTime)}
-                    </div>
+                    <dt className="text-muted-foreground mb-1">Start Date/Time</dt>
+                    <dd className="font-medium">
+                      <time dateTime={test.config.startDateTime}>
+                        {formatDateTime(test.config.startDateTime)}
+                      </time>
+                    </dd>
                   </div>
                 )}
                 {test.config.endDateTime && (
                   <div>
-                    <div className="text-muted-foreground mb-1">End Date/Time</div>
-                    <div className="font-medium">
-                      {formatDateTime(test.config.endDateTime)}
-                    </div>
+                    <dt className="text-muted-foreground mb-1">End Date/Time</dt>
+                    <dd className="font-medium">
+                      <time dateTime={test.config.endDateTime}>
+                        {formatDateTime(test.config.endDateTime)}
+                      </time>
+                    </dd>
                   </div>
                 )}
-              </div>
+              </dl>
               {test.config.notes && (
                 <div className="mt-4 pt-4 border-t">
-                  <div className="text-muted-foreground text-xs mb-2">Notes</div>
+                  <h3 className="text-muted-foreground text-xs mb-2">Notes</h3>
                   <p className="text-sm whitespace-pre-wrap">{test.config.notes}</p>
                 </div>
               )}
@@ -305,7 +347,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
         </TabsContent>
 
         {/* Configuration Tab */}
-        <TabsContent value="configuration">
+        <TabsContent value="configuration" role="tabpanel" aria-label="Configuration details">
           <Card>
             <CardHeader>
               <CardTitle>Test Configuration</CardTitle>
@@ -320,7 +362,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
         </TabsContent>
 
         {/* Graph Preview Tab */}
-        <TabsContent value="graph">
+        <TabsContent value="graph" role="tabpanel" aria-label="Graph preview">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <div className="space-y-1">
@@ -336,21 +378,23 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
               />
             </CardHeader>
             <CardContent>
-              <PressureTestPreview
-                workingPressure={test.config.workingPressure}
-                maxPressure={test.config.maxPressure}
-                testDuration={test.config.testDuration}
-                intermediateStages={test.config.intermediateStages || []}
-                pressureUnit={test.config.pressureUnit || 'MPa'}
-                startDateTime={test.config.startDateTime || undefined}
-                endDateTime={test.config.endDateTime || undefined}
-              />
+              <div role="img" aria-label="Pressure test graph visualization">
+                <PressureTestPreview
+                  workingPressure={test.config.workingPressure}
+                  maxPressure={test.config.maxPressure}
+                  testDuration={test.config.testDuration}
+                  intermediateStages={test.config.intermediateStages || []}
+                  pressureUnit={test.config.pressureUnit || 'MPa'}
+                  startDateTime={test.config.startDateTime || undefined}
+                  endDateTime={test.config.endDateTime || undefined}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Sharing Tab */}
-        <TabsContent value="sharing">
+        <TabsContent value="sharing" role="tabpanel" aria-label="Sharing settings">
           <Card>
             <CardHeader>
               <CardTitle>Share Settings</CardTitle>
@@ -360,44 +404,48 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between" role="group" aria-label="Public access status">
                   <div className="space-y-0.5">
-                    <div className="font-medium">Public Access</div>
-                    <div className="text-sm text-muted-foreground">
+                    <h3 className="font-medium">Public Access</h3>
+                    <p className="text-sm text-muted-foreground">
                       {test.isPublic
                         ? 'This test is publicly accessible'
                         : 'This test is private'}
-                    </div>
+                    </p>
                   </div>
-                  <Badge variant={test.isPublic ? 'default' : 'secondary'}>
+                  <Badge variant={test.isPublic ? 'default' : 'secondary'} role="status">
                     {test.isPublic ? 'Public' : 'Private'}
                   </Badge>
                 </div>
 
                 {test.isPublic && test.shareToken && (
                   <>
+                    <Separator />
                     <div className="rounded-lg border p-4 space-y-2">
-                      <div className="text-sm font-medium">Share URL</div>
+                      <h3 className="text-sm font-medium">Share URL</h3>
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 rounded bg-muted px-2 py-1 text-sm">
+                        <code className="flex-1 rounded bg-muted px-2 py-1 text-sm" aria-label="Share link URL">
                           {`${process.env.NEXT_PUBLIC_APP_URL}/share/${test.shareToken}`}
                         </code>
-                        <Button size="sm" variant="outline">
-                          <CopyIcon className="h-4 w-4" />
+                        <Button size="sm" variant="outline" aria-label="Copy share link to clipboard">
+                          <CopyIcon className="h-4 w-4" aria-hidden="true" />
+                          <span className="sr-only">Copy</span>
                         </Button>
                       </div>
                     </div>
 
                     {test.shareExpiresAt && (
-                      <div className="text-sm text-muted-foreground">
-                        Expires: {formatDateTime(test.shareExpiresAt)}
-                      </div>
+                      <p className="text-sm text-muted-foreground" role="note">
+                        Expires: <time dateTime={test.shareExpiresAt.toString()}>{formatDateTime(test.shareExpiresAt)}</time>
+                      </p>
                     )}
                   </>
                 )}
 
-                <Button disabled>
-                  <Share2Icon className="mr-2 h-4 w-4" />
+                <Separator />
+
+                <Button disabled aria-disabled="true">
+                  <Share2Icon className="mr-2 h-4 w-4" aria-hidden="true" />
                   {test.isPublic ? 'Update Share Settings' : 'Create Share Link'}
                 </Button>
               </div>
