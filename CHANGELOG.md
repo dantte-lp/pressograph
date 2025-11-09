@@ -9,6 +9,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Panel User Management** - Full CRUD functionality for user administration
+  - **User Management Page** (`src/app/(dashboard)/admin/users/page.tsx`):
+    - List all users with pagination support
+    - Display user details (name, email, username, role, organization)
+    - Show user statistics (projects count, tests count)
+    - Last login tracking
+  - **User Management Dialog** (`src/components/admin/user-management-dialog.tsx`):
+    - Create new users with email, username, password
+    - Edit existing users (name, email, username, role, organization)
+    - Role assignment (admin/user)
+    - Organization assignment from dropdown
+    - Form validation with Zod schema
+    - Real-time error handling and toast notifications
+  - **Delete User Dialog** (`src/components/admin/delete-user-dialog.tsx`):
+    - Confirmation dialog with user details
+    - Warning about cascading deletes
+    - Safe deletion with error handling
+  - **Server Actions** (`src/lib/actions/admin.ts`):
+    - `createUser()` - Create user with bcrypt password hashing
+    - `updateUser()` - Update user details with validation
+    - `deleteUser()` - Delete user with dependency checks
+    - `resetUserPassword()` - Admin password reset functionality
+  - Date: 2025-11-10
+  - Sprint: Sprint 6 (Admin Features)
+  - Priority: P0 - Critical (Admin functionality)
+  - Files Modified/Added: 4 files
+  - Lines Added: ~450+ lines
+
+- **Admin Panel Organization Management** - Full CRUD functionality for organization administration
+  - **Organization Management Page** (`src/app/(dashboard)/admin/organizations/page.tsx`):
+    - List all organizations with counts
+    - Display organization details (name, slug, logo, primary color)
+    - Show organization statistics (users count, projects count)
+    - Visual organization branding preview
+  - **Organization Management Dialog** (`src/components/admin/organization-management-dialog.tsx`):
+    - Create new organizations with name and slug
+    - Auto-generate URL-friendly slug from name
+    - Edit existing organizations
+    - Logo URL configuration
+    - Primary brand color picker (hex color)
+    - Form validation with Zod schema
+  - **Delete Organization Dialog** (`src/components/admin/delete-organization-dialog.tsx`):
+    - Dependency checks (users, projects)
+    - Prevention of deletion when dependencies exist
+    - Clear error messaging
+  - **Server Actions** (`src/lib/actions/admin.ts`):
+    - `createOrganization()` - Create organization with unique slug
+    - `updateOrganization()` - Update organization details
+    - `deleteOrganization()` - Safe deletion with dependency validation
+    - Enhanced `getOrganizations()` - Include logoUrl and primaryColor
+  - Date: 2025-11-10
+  - Sprint: Sprint 6 (Admin Features)
+  - Priority: P0 - Critical (Admin functionality)
+  - Files Modified/Added: 4 files
+  - Lines Added: ~400+ lines
+
+- **Internationalization (i18n) Infrastructure** - Multi-language support for EN and RU
+  - **i18n Configuration** (`src/i18n/`):
+    - i18next 25.6.1 integration
+    - react-i18next 16.2.4 for React components
+    - i18next-resources-to-backend for dynamic imports
+    - Cookie-based locale persistence
+    - Client-side initialization with SSR compatibility
+  - **Translation Files**:
+    - `src/i18n/locales/en/common.json` - English translations
+    - `src/i18n/locales/ru/common.json` - Russian translations
+    - Common UI elements (save, cancel, delete, edit, etc.)
+    - Navigation items (dashboard, projects, tests, admin, etc.)
+    - Admin terminology (user management, organizations, etc.)
+    - Success and error messages
+  - **Configuration Files**:
+    - `src/i18n/config.ts` - Locale configuration (en, ru)
+    - `src/i18n/client.ts` - Client-side i18next initialization
+  - **Custom Hook** (`src/hooks/use-translation.ts`):
+    - Automatic locale detection from cookies
+    - Namespace support for organized translations
+    - Ready state tracking for hydration
+  - **Toast Notifications** (`src/hooks/use-toast.ts`):
+    - Sonner integration for toast messages
+    - Support for success and error variants
+    - Consistent API across admin components
+  - Date: 2025-11-10
+  - Sprint: Sprint 6 (i18n)
+  - Priority: P1 - High (User experience)
+  - Files Added: 7 files
+  - Lines Added: ~300+ lines
+
+### Fixed
+
+- **React Hydration Mismatch Error** - Resolved Radix UI Select ID mismatch
+  - **Issue**: Radix UI Select components generate random IDs that differ between server and client render
+  - **Location**: `src/components/locale-switcher.tsx`
+  - **Root Cause**: SelectTrigger's `aria-controls` attribute had different values on server vs client
+  - **Solution**: Implemented client-only rendering pattern
+    - Added `mounted` state to detect client-side rendering
+    - Render static placeholder until component mounts
+    - Prevents hydration mismatch by only rendering Select after mount
+  - **Impact**:
+    - Eliminated console warnings about hydration mismatches
+    - Maintains full functionality of language switcher
+    - Preserves server-side locale detection
+  - Date: 2025-11-10
+  - Sprint: Sprint 6
+  - Priority: P0 - Critical (Bug fix)
+  - Files Modified: 1 file
+  - Lines Modified: ~20 lines
+
+### Added
+
 - **CI/CD Pipeline with GitHub Actions** - Comprehensive automation for testing, security, and deployments
   - **CI Workflow** (`.github/workflows/ci.yml`):
     - Automated linting and type checking with ESLint and TypeScript
