@@ -9,6 +9,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Test Runs Tracking System** - ✅ COMPLETED - Comprehensive test execution tracking with measurements and results analysis
+  - **Database Schema**:
+    - Created `test_runs` table with 16 columns
+    - Sequential run numbering per test (test_id + run_number unique index)
+    - Multiple status states (scheduled, in_progress, completed, failed, cancelled)
+    - JSONB measurements storage (timestamps, pressure, temperature, sampling rate)
+    - JSONB results analysis (pass/fail, deviations, statistics, specification comparison)
+    - Operator tracking with foreign key to users table
+    - Duration tracking (started_at, completed_at, duration_seconds)
+    - Detailed notes and operator observations (text fields)
+    - 5 performance indexes (test_id, operator_id, status, started_at, completed_at)
+    - Foreign key cascade delete when pressure test deleted
+  - **TypeScript Interfaces**:
+    - `TestRunMeasurements` - Data points with timestamps and sensor readings
+    - `TestRunResults` - Pass/fail status, deviations, statistics, specification comparison
+    - Full type safety for JSONB columns
+  - **Server Actions** (`src/lib/actions/test-runs.ts`):
+    - `getTestRuns(testId)` - List all runs for a test with operator info and JOIN queries
+    - `getTestRunById(runId)` - Fetch single run with full details including test config
+    - `createTestRun(testId, data)` - Create new run with auto-incrementing run_number
+    - `updateTestRun(runId, data)` - Update run status, measurements, results, notes
+    - `deleteTestRun(runId)` - Delete run with authorization checks (operator/creator only)
+    - `getTestRunStatistics(testId)` - Aggregate stats (total, completed, failed, success rate, avg duration)
+    - `compareTestRuns(runIds[])` - Compare multiple runs side-by-side
+    - `getTestRunsByDateRange(testId, start, end)` - Filter runs by date range
+    - Multi-tenancy with organization-scoped queries
+    - Authorization checks for modify/delete operations
+    - SQL aggregations for statistics calculations
+  - **UI Components**:
+    - `TestRunStatusBadge` - Status visualization with color-coded badges and icons
+    - `TestRunsList` - Tabular display with sortable columns and filters:
+      - Sort by run number, status, start date, duration (ascending/descending)
+      - Filter by status with multi-select dropdown
+      - View and delete actions per run
+      - Duration formatting (hours, minutes, seconds)
+      - Relative date display with date-fns
+      - Empty state with helpful message
+      - Loading skeletons for better UX
+    - `TestRunDetail` - Comprehensive run information display:
+      - Run metadata (operator, timing, duration) cards
+      - Results section with pass/fail status
+      - Statistics (min/max/avg pressure, std deviation)
+      - Deviation analysis (max, avg, exceedances with timestamps)
+      - Specification comparison against test parameters
+      - Measurements graph with LTTB downsampling integration
+      - Notes and operator observations sections
+      - Visual result icons (check, x, warning)
+      - Color-coded status badges
+    - `StartTestRunButton` - Modal dialog for run creation:
+      - Pre-test notes/observations input
+      - Test information display
+      - Operator assignment (defaults to current user)
+      - Loading states with spinner animation
+      - Toast notifications for success/error
+      - Auto-navigation to new run detail page
+      - Revalidates Next.js cache
+  - **Page Integration**:
+    - Updated test detail page (`/tests/[id]/page.tsx`):
+      - Added "Test Runs" tab (now 5 tabs total)
+      - Displays run count badge in tab label
+      - Shows statistics cards (total runs, completed, success rate, avg duration)
+      - Integrates TestRunsList component
+      - Includes StartTestRunButton for creating new runs
+      - Parallel data fetching (test + runs + stats) with Promise.all
+    - Created test run detail page (`/tests/[id]/runs/[runId]/page.tsx`):
+      - Full breadcrumb navigation (Tests → Test → Runs → Run #)
+      - Back button to return to test runs list
+      - Integrates TestRunDetail component
+      - Proper route structure with dynamic segments
+      - Server-side data fetching with React Server Components
+  - **Features**:
+    - Sequential run numbering per test (auto-calculated with SQL)
+    - Real-time measurements tracking capability
+    - Pass/fail determination with deviation analysis
+    - Statistical summary (min, max, avg, std deviation)
+    - Specification comparison against test parameters
+    - Operator notes during and after test execution
+    - Duration tracking (planned vs actual)
+    - Multi-run comparison support
+    - Date range filtering for historical analysis
+    - Integration with LTTB downsampling for graph performance
+  - **Security**:
+    - Multi-tenancy with organization-scoped data access
+    - Authorization: operator or test creator can modify/delete runs
+    - Proper cascade delete when test is removed
+    - Restrict delete when operator user is removed
+    - Validation of run number uniqueness per test
+  - **UI/UX**:
+    - Full TypeScript type safety throughout
+    - shadcn/ui design system consistency
+    - Accessibility (ARIA labels, keyboard navigation)
+    - Responsive mobile-first design
+    - Loading and error states everywhere
+    - Optimistic UI updates with error recovery
+    - Toast notifications for all actions
+    - Empty states with helpful guidance
+    - Sortable and filterable data tables
+    - Color-coded status indicators
+  - **Performance**:
+    - Database indexes for fast queries
+    - LTTB downsampling for large measurement datasets
+    - Efficient JOIN queries for related data
+    - Parallel data fetching with Promise.all
+    - Proper Next.js cache revalidation
+  - Date: 2025-11-09
+  - Issue: #117 (Sprint 3, 5 SP, P1) - ✅ COMPLETED
+  - Commits: a6041134, debc8728, 11133686, b638b34d, f676b8f0
+  - Files Added: 9 files (schema, actions, 4 UI components, 2 page routes)
+  - Files Modified: 3 files (schema index, relations, test detail page)
+  - Routes: Added `/tests/[id]/runs/[runId]` (dynamic route)
+
 - **Test Templates System** - ✅ COMPLETED - Reusable test configuration templates for quick test creation
   - **Database Schema**:
     - Created `test_templates` table with 13 columns
