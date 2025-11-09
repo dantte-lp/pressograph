@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Below Graph Data Placement** - Improved positioning of data display text when "Below Graph" option is selected
+  - Changed bottom position from percentage (8%) to pixel-based positioning (20px) for precise control
+  - Increased grid bottom margin from 100px to 110px to ensure adequate space
+  - Text is now centered exactly under the X-axis label ("Дата и время" / "Date and Time")
+  - Positioned between the graph line and bottom edge for better visual alignment
+  - Added z-index (100) to ensure text appears above other elements
+  - Date: 2025-11-09
+  - Commit: c1e6c9ba
+
 ### Fixed
 
 - **SVG Export Column 133 Error** - Fixed persistent "attributes construct error" at column 133 in SVG exports
