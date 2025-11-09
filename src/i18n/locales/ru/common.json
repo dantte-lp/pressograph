@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "dashboard": "Панель управления",
+    "projects": "Проекты",
+    "tests": "Тесты",
+    "profile": "Профиль",
+    "settings": "Настройки",
+    "admin": "Администрирование",
+    "users": "Пользователи",
+    "organizations": "Организации",
+    "system": "Система",
+    "logout": "Выход"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "create": "Создать",
+    "update": "Обновить",
+    "close": "Закрыть",
+    "submit": "Отправить",
+    "loading": "Загрузка...",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "actions": "Действия",
+    "yes": "Да",
+    "no": "Нет",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "next": "Далее",
+    "previous": "Предыдущий",
+    "viewAll": "Показать все"
+  },
+  "admin": {
+    "title": "Администрирование",
+    "dashboard": "Панель администратора",
+    "userManagement": "Управление пользователями",
+    "organizationManagement": "Управление организациями",
+    "systemHealth": "Состояние системы",
+    "statistics": "Статистика",
+    "quickActions": "Быстрые действия"
+  },
+  "user": {
+    "users": "Пользователи",
+    "createUser": "Создать пользователя",
+    "editUser": "Редактировать пользователя",
+    "deleteUser": "Удалить пользователя",
+    "name": "Имя",
+    "email": "Email",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "role": "Роль",
+    "organization": "Организация",
+    "isActive": "Активен",
+    "lastLogin": "Последний вход",
+    "createdAt": "Создан",
+    "projects": "Проекты",
+    "tests": "Тесты"
+  },
+  "organization": {
+    "organizations": "Организации",
+    "createOrganization": "Создать организацию",
+    "editOrganization": "Редактировать организацию",
+    "deleteOrganization": "Удалить организацию",
+    "name": "Название",
+    "slug": "Слаг",
+    "logoUrl": "URL логотипа",
+    "primaryColor": "Основной цвет",
+    "users": "Пользователи",
+    "projects": "Проекты"
+  },
+  "errors": {
+    "generic": "Произошла ошибка",
+    "notFound": "Не найдено",
+    "unauthorized": "Не авторизован",
+    "forbidden": "Доступ запрещен",
+    "serverError": "Ошибка сервера",
+    "validation": "Ошибка валидации"
+  },
+  "success": {
+    "saved": "Успешно сохранено",
+    "created": "Успешно создано",
+    "updated": "Успешно обновлено",
+    "deleted": "Успешно удалено"
+  }
+}

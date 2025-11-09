@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "tests": "Tests",
+    "profile": "Profile",
+    "settings": "Settings",
+    "admin": "Admin",
+    "users": "Users",
+    "organizations": "Organizations",
+    "system": "System",
+    "logout": "Logout"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "close": "Close",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "viewAll": "View All"
+  },
+  "admin": {
+    "title": "Administration",
+    "dashboard": "Admin Dashboard",
+    "userManagement": "User Management",
+    "organizationManagement": "Organization Management",
+    "systemHealth": "System Health",
+    "statistics": "Statistics",
+    "quickActions": "Quick Actions"
+  },
+  "user": {
+    "users": "Users",
+    "createUser": "Create User",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "name": "Name",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "role": "Role",
+    "organization": "Organization",
+    "isActive": "Active",
+    "lastLogin": "Last Login",
+    "createdAt": "Created At",
+    "projects": "Projects",
+    "tests": "Tests"
+  },
+  "organization": {
+    "organizations": "Organizations",
+    "createOrganization": "Create Organization",
+    "editOrganization": "Edit Organization",
+    "deleteOrganization": "Delete Organization",
+    "name": "Name",
+    "slug": "Slug",
+    "logoUrl": "Logo URL",
+    "primaryColor": "Primary Color",
+    "users": "Users",
+    "projects": "Projects"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "serverError": "Server error",
+    "validation": "Validation error"
+  },
+  "success": {
+    "saved": "Saved successfully",
+    "created": "Created successfully",
+    "updated": "Updated successfully",
+    "deleted": "Deleted successfully"
+  }
+}
