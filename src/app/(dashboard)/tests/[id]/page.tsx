@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTestById } from '@/lib/actions/tests';
+import { getTestRuns, getTestRunStatistics } from '@/lib/actions/test-runs';
 import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
@@ -13,6 +14,8 @@ import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
 import { EmulationExportDialog } from '@/components/tests/emulation-export-dialog';
 import { EChartsExportDialog } from '@/components/tests/echarts-export-dialog';
 import { ExportConfigButton } from '@/components/tests/export-config-button';
+import { TestRunsList } from '@/components/test-runs/test-runs-list';
+import { StartTestRunButton } from '@/components/test-runs/start-test-run-button';
 import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 /**
@@ -35,12 +38,18 @@ interface TestDetailPageProps {
 export default async function TestDetailPage({ params }: TestDetailPageProps) {
   const { id } = await params;
 
-  // Fetch test details
+  // Fetch test details and runs
   const test = await getTestById(id);
 
   if (!test) {
     notFound();
   }
+
+  // Fetch test runs and statistics
+  const [runs, stats] = await Promise.all([
+    getTestRuns(id),
+    getTestRunStatistics(id),
+  ]);
 
   return (
     <div className="container mx-auto space-y-6 p-6 lg:p-8">
@@ -99,8 +108,16 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="runs">
+            Test Runs
+            {stats.totalRuns > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {stats.totalRuns}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="graph">Graph Preview</TabsTrigger>
           <TabsTrigger value="sharing">Sharing</TabsTrigger>
@@ -301,6 +318,69 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   <p className="text-sm whitespace-pre-wrap">{test.config.notes}</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Test Runs Tab */}
+        <TabsContent value="runs" className="space-y-6">
+          {/* Statistics Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Total Runs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalRuns}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{stats.completedRuns}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.successRate.toFixed(1)}%</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats.averageDuration
+                    ? `${Math.round(stats.averageDuration / 60)}m`
+                    : '—'}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Runs List */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div className="space-y-1">
+                <CardTitle>Test Execution History</CardTitle>
+                <CardDescription>
+                  All test runs with measurements, results, and operator notes
+                </CardDescription>
+              </div>
+              <StartTestRunButton
+                testId={test.id}
+                testNumber={test.testNumber}
+                testName={test.name}
+              />
+            </CardHeader>
+            <CardContent>
+              <TestRunsList runs={runs} testId={test.id} />
             </CardContent>
           </Card>
         </TabsContent>
