@@ -93,63 +93,66 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Quick Navigation - Projects */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FolderIcon className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>Projects</CardTitle>
-          </div>
-          <CardDescription>
-            Manage your pressure test projects
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/projects">
-                <FolderIcon className="mr-2 h-4 w-4" />
-                List Projects
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/projects?archived=true">
-                <Archive className="mr-2 h-4 w-4" />
-                Archived Projects
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Quick Actions Grid */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Projects Quick Actions */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FolderIcon className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Projects</CardTitle>
+            </div>
+            <CardDescription>
+              Manage your pressure test projects
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/projects">
+                  <FolderIcon className="mr-2 h-4 w-4" />
+                  All Projects
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/projects/archived">
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archived
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Quick Navigation - Tests */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FlaskConicalIcon className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>Tests</CardTitle>
-          </div>
-          <CardDescription>
-            View and create pressure tests
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/tests">
-                <FlaskConicalIcon className="mr-2 h-4 w-4" />
-                List Tests
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/tests?status=active">
-                <ActivityIcon className="mr-2 h-4 w-4" />
-                Active Tests
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Tests Quick Actions */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FlaskConicalIcon className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Tests</CardTitle>
+            </div>
+            <CardDescription>
+              View and create pressure tests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/tests">
+                  <FlaskConicalIcon className="mr-2 h-4 w-4" />
+                  All Tests
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/tests/new">
+                  <ActivityIcon className="mr-2 h-4 w-4" />
+                  Create Test
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Recent Activity */}
       <Card>
