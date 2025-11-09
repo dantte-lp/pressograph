@@ -60,6 +60,8 @@ interface LocaleSwitcherProps {
  * IMPORTANT: This component requires the currentLocale prop to be passed from a Server Component
  * that reads the locale from cookies. This avoids the need for next-intl context.
  *
+ * FIX: Uses client-only rendering to avoid hydration mismatch errors with Radix UI Select IDs
+ *
  * @example
  * ```tsx
  * // In Server Component (e.g., layout or header)
@@ -83,7 +85,13 @@ export function LocaleSwitcher({
   size = 'default',
 }: LocaleSwitcherProps) {
   const [locale, setLocale] = useState<Locale>(currentLocale);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  // Prevent hydration mismatch by only rendering after client mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Update local state when prop changes (e.g., after server refresh)
   useEffect(() => {
@@ -104,6 +112,26 @@ export function LocaleSwitcher({
     size === 'lg' ? 'w-[180px] h-12 text-lg' :
     'w-[160px] h-10'
   );
+
+  // Render placeholder until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div
+        className={triggerClassName}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderRadius: 'var(--radius)',
+          border: '1px solid hsl(var(--input))',
+          backgroundColor: 'transparent',
+          padding: '0 0.75rem',
+        }}
+      >
+        <span className="text-sm">{LOCALE_NAMES[currentLocale]}</span>
+      </div>
+    );
+  }
 
   return (
     <Select value={locale} onValueChange={handleChange}>
