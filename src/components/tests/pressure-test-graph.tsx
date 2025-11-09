@@ -3,6 +3,11 @@
 import { useMemo } from 'react';
 import { EChartsWrapper } from '@/components/charts';
 import type { PressureChartOption } from '@/lib/echarts-config';
+import {
+  downsampleMeasurements,
+  getOptimalThreshold,
+  logDownsamplingStats,
+} from '@/lib/utils/lttb-downsampling';
 
 interface Measurement {
   timestamp: Date;
@@ -15,6 +20,10 @@ interface PressureTestGraphProps {
   targetPressure: number;
   maxPressure: number;
   pressureUnit: string;
+  /** Enable LTTB downsampling for large datasets (default: true) */
+  enableDownsampling?: boolean;
+  /** Custom downsampling threshold (default: auto-calculated based on viewport) */
+  downsamplingThreshold?: number;
 }
 
 export function PressureTestGraph({
@@ -22,11 +31,36 @@ export function PressureTestGraph({
   targetPressure,
   maxPressure,
   pressureUnit,
+  enableDownsampling = true,
+  downsamplingThreshold,
 }: PressureTestGraphProps) {
   const option = useMemo<PressureChartOption>(() => {
+    // Apply LTTB downsampling if enabled and measurements exceed threshold
+    let processedMeasurements = measurements;
+    let downsamplingApplied = false;
+
+    if (enableDownsampling) {
+      const threshold = downsamplingThreshold ?? getOptimalThreshold();
+      const { data: downsampledData, stats } = downsampleMeasurements(measurements, threshold);
+
+      // Log downsampling statistics in development
+      if (process.env.NODE_ENV === 'development' && stats.wasDownsampled) {
+        logDownsamplingStats(stats, 'PressureTestGraph');
+      }
+
+      // Convert back to Measurement format
+      if (stats.wasDownsampled) {
+        processedMeasurements = downsampledData.map(([timestamp, pressure]) => ({
+          timestamp: new Date(timestamp),
+          pressure,
+        }));
+        downsamplingApplied = true;
+      }
+    }
+
     // Prepare data for chart
-    const timestamps = measurements.map(m => m.timestamp.toLocaleTimeString());
-    const pressureData = measurements.map(m => m.pressure);
+    const timestamps = processedMeasurements.map(m => m.timestamp.toLocaleTimeString());
+    const pressureData = processedMeasurements.map(m => m.pressure);
 
     // V1 STYLING: Calculate Y-axis max (same as v1: Math.ceil(maxPressure * 1.1 / 5) * 5)
     const pressureMaxRaw = maxPressure * 1.1;
@@ -34,11 +68,18 @@ export function PressureTestGraph({
 
     return {
       title: {
-        text: 'Real-Time Pressure Monitoring',
+        text: 'Real-Time Pressure Monitoring' + (downsamplingApplied ? ' (Optimized)' : ''),
         left: 'center',
         textStyle: {
           fontSize: 20,
           fontWeight: 'bold',
+        },
+        subtext: downsamplingApplied
+          ? `Showing ${processedMeasurements.length} of ${measurements.length} points (LTTB downsampled)`
+          : undefined,
+        subtextStyle: {
+          fontSize: 11,
+          color: '#666',
         },
       },
       tooltip: {
@@ -161,7 +202,7 @@ export function PressureTestGraph({
         },
       ],
     };
-  }, [measurements, targetPressure, maxPressure, pressureUnit]);
+  }, [measurements, targetPressure, maxPressure, pressureUnit, enableDownsampling, downsamplingThreshold]);
 
   if (measurements.length === 0) {
     return (

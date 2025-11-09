@@ -29,6 +29,12 @@ import {
   convertToMinutes,
 } from '@/lib/utils/pressure-drift-simulator';
 import { applyCanvasStyle } from '@/lib/utils/echarts-canvas-style';
+import {
+  downsampleLTTB,
+  getOptimalThreshold,
+  logDownsamplingStats,
+  type DownsamplingStats,
+} from '@/lib/utils/lttb-downsampling';
 
 // Use centralized ECharts configuration
 type ECOption = PressureChartOption;
@@ -75,6 +81,10 @@ interface PressureTestPreviewProps {
   enableCanvasStyle?: boolean;
   /** Theme for Canvas style (light or dark) */
   canvasTheme?: 'light' | 'dark';
+  /** Enable LTTB downsampling for large datasets (default: true) */
+  enableDownsampling?: boolean;
+  /** Custom downsampling threshold (default: auto-calculated based on viewport) */
+  downsamplingThreshold?: number;
 }
 
 /**
@@ -155,6 +165,8 @@ export function PressureTestPreview({
   enableDrift = false,
   enableCanvasStyle = false,
   canvasTheme = 'light',
+  enableDownsampling = true,
+  downsamplingThreshold,
 }: PressureTestPreviewProps) {
   // Refs for DOM element and chart instance
   const chartRef = useRef<HTMLDivElement>(null);
@@ -384,12 +396,41 @@ export function PressureTestPreview({
       timeLabels.push(formatTime(totalMinutes));
     }
 
-    return { dataPoints, timeLabels };
+    // Apply LTTB downsampling if enabled and not using drift (drift already has ECharts sampling)
+    let processedDataPoints = dataPoints;
+    let downsamplingStats: DownsamplingStats | null = null;
+
+    if (enableDownsampling && !enableDrift && dataPoints.length > 100) {
+      const threshold = downsamplingThreshold ?? getOptimalThreshold();
+
+      if (dataPoints.length > threshold) {
+        const startTime = performance.now();
+        processedDataPoints = downsampleLTTB(dataPoints, threshold);
+        const endTime = performance.now();
+
+        downsamplingStats = {
+          originalCount: dataPoints.length,
+          downsampledCount: processedDataPoints.length,
+          reductionPercent: ((dataPoints.length - processedDataPoints.length) / dataPoints.length) * 100,
+          wasDownsampled: true,
+          executionTimeMs: endTime - startTime,
+        };
+
+        // Log in development mode
+        if (process.env.NODE_ENV === 'development') {
+          logDownsamplingStats(downsamplingStats, 'PressureTestPreview');
+        }
+      }
+    }
+
+    return { dataPoints: processedDataPoints, timeLabels };
   }, [
     workingPressure,
     sanitizedDuration,
     intermediateStages,
     enableDrift,
+    enableDownsampling,
+    downsamplingThreshold,
   ]);
 
   /**
