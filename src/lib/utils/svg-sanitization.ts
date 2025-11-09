@@ -79,6 +79,46 @@ export function validateSVG(svgString: string): { valid: boolean; error?: string
 }
 
 /**
+ * Clean SVG header (first 3 lines) to fix attribute errors
+ *
+ * Fixes common issues in SVG root element that cause "attributes construct error":
+ * 1. Removes duplicate quotes in attributes
+ * 2. Removes empty attributes
+ * 3. Fixes malformed style attributes
+ * 4. Ensures proper XML attribute formatting
+ *
+ * @param svg - Raw SVG string
+ * @returns SVG string with cleaned header
+ */
+function cleanSVGHeader(svg: string): string {
+  const lines = svg.split('\n');
+
+  // Fix line 3 (index 2) if it exists - this is where the SVG root element usually is
+  if (lines.length > 2) {
+    lines[2] = lines[2]
+      // Remove duplicate quotes in attributes
+      .replace(/="([^"]*)"([^>\s]*)"([^"]*)"/g, '="$1$2$3"')
+      // Remove empty attributes
+      .replace(/\s+([a-z-]+)=""\s*/gi, ' ')
+      // Fix malformed style attributes with unescaped quotes
+      .replace(/style="([^"]*)"/g, (match, content) => {
+        const cleaned = content
+          // Convert inner double quotes to single quotes
+          .replace(/"/g, "'")
+          // Escape ampersands in style values
+          .replace(/&(?!(amp|lt|gt|quot|apos);)/g, '&amp;');
+        return `style="${cleaned}"`;
+      })
+      // Remove any attributes with value but no quotes (malformed)
+      .replace(/\s+([a-z-]+)=([^\s"'][^\s>]*)/gi, ' $1="$2"')
+      // Clean up multiple spaces
+      .replace(/\s+/g, ' ');
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Post-process SVG string to fix common XML attribute issues
  *
  * Applies minimal cleaning to fix ECharts-generated SVG issues:
@@ -114,9 +154,10 @@ function postProcessSVGString(svg: string): string {
  * Clean and validate SVG string before download
  *
  * Performs comprehensive SVG sanitization:
- * 1. Post-processes the SVG to fix common ECharts issues
- * 2. Validates SVG is well-formed XML (warning only, not blocking)
- * 3. Returns cleaned SVG for download
+ * 1. Cleans the SVG header (first 3 lines) to fix attribute errors
+ * 2. Post-processes the SVG to fix common ECharts issues
+ * 3. Validates SVG is well-formed XML (warning only, not blocking)
+ * 4. Returns cleaned SVG for download
  *
  * @param svgString - SVG string to clean and validate
  * @returns Cleaned SVG string
@@ -132,11 +173,24 @@ function postProcessSVGString(svg: string): string {
  * ```
  */
 export function cleanSVGForExport(svgString: string): string {
-  // Step 1: Post-process the SVG to fix common issues
-  const processedSVG = postProcessSVGString(svgString);
+  // Step 0: Debug logging - inspect the raw SVG header
+  const lines = svgString.split('\n');
+  console.log('[SVG Debug] Total lines:', lines.length);
+  console.log('[SVG Debug] First 5 lines:', lines.slice(0, 5));
+  if (lines.length > 2) {
+    console.log('[SVG Debug] Line 3 length:', lines[2]?.length);
+    console.log('[SVG Debug] Line 3 char at column 133:', lines[2]?.[132]); // 0-indexed
+    console.log('[SVG Debug] Line 3 substring around column 133:', lines[2]?.substring(125, 145));
+  }
 
-  // Step 2: Validate SVG (warning only, not blocking)
-  const validation = validateSVG(processedSVG);
+  // Step 1: Clean the SVG header specifically (fixes line 3 attribute errors)
+  let cleaned = cleanSVGHeader(svgString);
+
+  // Step 2: Post-process the rest of the SVG to fix common issues
+  cleaned = postProcessSVGString(cleaned);
+
+  // Step 3: Validate SVG (warning only, not blocking)
+  const validation = validateSVG(cleaned);
   if (!validation.valid) {
     console.warn('SVG validation warning:', validation.error);
     console.warn('Proceeding with download anyway - user can verify in browser');
@@ -144,8 +198,8 @@ export function cleanSVGForExport(svgString: string): string {
     // The post-processing above should fix most issues
   }
 
-  // Step 3: Return cleaned SVG
-  return processedSVG;
+  // Step 4: Return cleaned SVG
+  return cleaned;
 }
 
 /**

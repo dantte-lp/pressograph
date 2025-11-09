@@ -475,7 +475,7 @@ export function EChartsExportDialog({
           right: 40, // REDUCED from '8%' for tighter right margin (matches v1: 50px)
           bottom: dataPlacement === 'below' && dataText ? 100 : 80, // REDUCED from '20%'/'15%' for tighter bottom margin
           top: 60, // REDUCED from '20%' to minimize space between title and graph
-          containLabel: true,
+          // containLabel removed - using explicit margins instead per ECharts v6 best practices
         },
         // Add graphic elements for data display based on placement
         ...(dataPlacement === 'below' && sanitizedDataText

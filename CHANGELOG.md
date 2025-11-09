@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **SVG Line 3 Attribute Error** - Fixed "attributes construct error" at line 3, column 133 in SVG exports
+  - **Root Cause**: ECharts deprecated `grid.containLabel` option was generating malformed SVG attributes
+  - Removed `grid.containLabel: true` from grid configuration (deprecated in ECharts v6)
+  - Using explicit margin values instead: `left: 60, right: 40, top: 60, bottom: 80-100`
+  - Added `cleanSVGHeader()` function to specifically fix SVG root element attribute issues:
+    - Removes duplicate quotes in attributes
+    - Removes empty attributes
+    - Fixes malformed style attributes with unescaped quotes
+    - Ensures proper XML attribute formatting
+  - Enhanced debug logging to inspect exact SVG header content:
+    - Logs line 3 length and character at column 133
+    - Logs substring around problematic column for diagnostics
+  - No more "[ECharts] Specified `grid.containLabel` but no `use(LegacyGridContainLabel)`;use `grid.outerBounds` instead" warning
+  - SVG files now open correctly in all browsers and vector editors
+  - Components:
+    - `src/components/tests/echarts-export-dialog.tsx` - Removed containLabel
+    - `src/lib/utils/svg-sanitization.ts` - Added cleanSVGHeader() function
+  - Issue: Console error "error on line 3 at column 133: attributes construct error"
+
 - **SVG Export Error Handling** - Resolved persistent SVG export failures with comprehensive error handling
   - **BREAKING FIX**: Completely rewrote SVG export error handling with granular try-catch blocks
   - Identified exact failure points in SVG generation pipeline:
