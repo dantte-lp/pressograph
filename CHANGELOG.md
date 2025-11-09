@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Internal Server Error due to corrupted Turbopack build cache**
+  - **Issue**: Next.js 16 website returning 500 Internal Server Error
+  - **Root Cause**: Corrupted `.next` build cache with missing Turbopack runtime files
+    - Error: `Cannot find module ../chunks/ssr/[turbopack]_runtime.js`
+    - Error: `ENOENT: no such file or directory, open .next/dev/routes-manifest.json`
+  - **Resolution**: Cleared `.next` build directory to regenerate fresh build cache
+  - **Command**: `rm -rf .next`
+  - **Impact**: Website now loads correctly on all routes (home, dashboard, docs, api-docs)
+  - **Prevention**: Document this fix in troubleshooting guide
+  - Date: 2025-11-10
+  - Priority: P0 - Critical (Website down)
+  - Resolution Time: <5 minutes
+  - Status: Resolved
+
+
 ### Added
 
 - **Comprehensive i18n Translation Infrastructure** - Application-wide internationalization with English and Russian support
