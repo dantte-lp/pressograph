@@ -14,6 +14,7 @@ import { users } from "./users";
 import { organizations } from "./organizations";
 import { projects } from "./projects";
 import { pressureTests } from "./pressure-tests";
+import { testTemplates } from "./test-templates";
 import { fileUploads } from "./file-uploads";
 import { shareLinks } from "./share-links";
 import { auditLogs } from "./audit-logs";
@@ -28,6 +29,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
   projects: many(projects),
   pressureTests: many(pressureTests),
+  testTemplates: many(testTemplates),
   auditLogs: many(auditLogs),
   apiKeys: many(apiKeys),
 }));
@@ -42,6 +44,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   ownedProjects: many(projects, { relationName: "project_owner" }),
   createdTests: many(pressureTests, { relationName: "test_creator" }),
+  createdTemplates: many(testTemplates, { relationName: "template_creator" }),
   uploadedFiles: many(fileUploads, { relationName: "file_uploader" }),
   createdShareLinks: many(shareLinks),
   performedAudits: many(auditLogs, { relationName: "audit_performer" }),
@@ -157,5 +160,20 @@ export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
   createdBy: one(users, {
     fields: [shareLinks.createdBy],
     references: [users.id],
+  }),
+}));
+
+/**
+ * Test Template Relations
+ */
+export const testTemplatesRelations = relations(testTemplates, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [testTemplates.organizationId],
+    references: [organizations.id],
+  }),
+  creator: one(users, {
+    fields: [testTemplates.createdBy],
+    references: [users.id],
+    relationName: "template_creator",
   }),
 }));
