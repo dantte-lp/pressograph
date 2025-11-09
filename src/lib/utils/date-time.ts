@@ -175,7 +175,10 @@ export function formatRelativeTime(
 }
 
 /**
- * Get user's date/time configuration from cookies or localStorage
+ * Get user's date/time configuration from localStorage (client-side only)
+ * Note: Server-side components should fetch from database via getUserPreferences action
+ *
+ * @deprecated Use getUserPreferences server action for database-backed preferences
  */
 export function getUserDateTimeConfig(): DateTimeConfig {
   if (typeof window === 'undefined') {
@@ -195,7 +198,10 @@ export function getUserDateTimeConfig(): DateTimeConfig {
 }
 
 /**
- * Save user's date/time configuration
+ * Save user's date/time configuration to localStorage (client-side only)
+ *
+ * @deprecated Use updateTimezone, updateDateFormat, updateTimeFormat server actions
+ * for persistent storage in database
  */
 export function setUserDateTimeConfig(config: Partial<DateTimeConfig>): void {
   if (typeof window === 'undefined') return;
