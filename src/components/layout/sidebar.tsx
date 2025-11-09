@@ -3,12 +3,14 @@
 /**
  * Dashboard Sidebar Navigation
  *
- * Responsive sidebar with:
- * - Main navigation links
+ * Enhanced responsive sidebar with:
+ * - Main navigation links with smooth transitions
  * - Nested menu support with expand/collapse
- * - Active route highlighting
+ * - Active route highlighting with visual indicators
  * - Mobile collapse/expand
  * - Logo and branding
+ * - Improved hover states and animations
+ * - Better visual hierarchy
  */
 
 import { useState } from 'react';
@@ -28,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 interface NavItem {
   href?: string;
@@ -132,15 +135,23 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             <Link
               href={item.href as any}
               className={cn(
-                'flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                'hover:bg-accent hover:text-accent-foreground',
+                'group relative flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'hover:bg-accent hover:text-accent-foreground hover:shadow-sm',
                 'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
-                (active || hasActiveDescendant) && 'bg-accent text-accent-foreground',
+                (active || hasActiveDescendant) && 'bg-accent text-accent-foreground shadow-sm',
                 collapsed && 'justify-center'
               )}
               title={collapsed ? item.label : undefined}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              {/* Active indicator bar */}
+              {(active || hasActiveDescendant) && (
+                <span className="bg-primary absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r" />
+              )}
+              <Icon className={cn(
+                'h-5 w-5 shrink-0 transition-transform duration-200',
+                'group-hover:scale-110',
+                (active || hasActiveDescendant) && 'text-primary'
+              )} />
               {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
             </Link>
             {/* Expand/collapse button */}
@@ -148,22 +159,22 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               <button
                 onClick={() => toggleExpanded(item.label)}
                 className={cn(
-                  'flex items-center justify-center rounded-lg p-2 text-sm transition-colors',
+                  'flex items-center justify-center rounded-lg p-2 text-sm transition-all duration-200',
                   'hover:bg-accent hover:text-accent-foreground',
                   'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2'
                 )}
                 aria-label={isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
               >
                 {isExpanded ? (
-                  <ChevronDownIcon className="h-4 w-4 shrink-0" />
+                  <ChevronDownIcon className="h-4 w-4 shrink-0 transition-transform duration-200" />
                 ) : (
-                  <ChevronRightIcon className="h-4 w-4 shrink-0" />
+                  <ChevronRightIcon className="h-4 w-4 shrink-0 transition-transform duration-200" />
                 )}
               </button>
             )}
           </div>
           {!collapsed && isExpanded && item.children && (
-            <div className="ml-4 mt-1 space-y-1">
+            <div className="ml-4 mt-1 space-y-1 border-l-2 border-muted pl-2">
               {item.children.map((child) => renderNavItem(child, depth + 1))}
             </div>
           )}
@@ -176,16 +187,24 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         key={item.href}
         href={item.href as any}
         className={cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
+          'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+          'hover:bg-accent hover:text-accent-foreground hover:shadow-sm',
           'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
-          active && 'bg-accent text-accent-foreground',
+          active && 'bg-accent text-accent-foreground shadow-sm',
           collapsed && 'justify-center',
-          depth > 0 && 'text-muted-foreground'
+          depth > 0 && 'text-muted-foreground hover:text-foreground'
         )}
         title={collapsed ? item.label : undefined}
       >
-        <Icon className="h-5 w-5 shrink-0" />
+        {/* Active indicator bar */}
+        {active && (
+          <span className="bg-primary absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r" />
+        )}
+        <Icon className={cn(
+          'h-5 w-5 shrink-0 transition-transform duration-200',
+          'group-hover:scale-110',
+          active && 'text-primary'
+        )} />
         {!collapsed && <span>{item.label}</span>}
       </Link>
     );
@@ -194,7 +213,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'bg-card border-border flex h-full flex-col border-r transition-all duration-300',
+        'bg-card border-border flex h-full flex-col border-r transition-all duration-300 ease-in-out',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -202,24 +221,27 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       <div className="border-border flex h-16 items-center border-b px-4">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 font-semibold"
+          className="group flex items-center gap-2 font-semibold transition-all duration-200 hover:opacity-80"
         >
-          <div className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-lg">
+          <div className="bg-primary text-primary-foreground flex h-9 w-9 items-center justify-center rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105">
             <BarChart3Icon className="h-5 w-5" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold">Pressograph</span>
+            <span className="text-lg font-bold tracking-tight">Pressograph</span>
           )}
         </Link>
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
         {navItems.map((item) => renderNavItem(item))}
       </nav>
 
+      {/* Separator */}
+      <Separator className="my-2" />
+
       {/* Bottom Navigation */}
-      <div className="border-border space-y-1 border-t p-3">
+      <div className="space-y-1 p-3">
         {bottomNavItems.map((item) => renderNavItem(item))}
       </div>
 
@@ -230,12 +252,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={onToggle}
-            className="w-full"
+            className="w-full transition-all duration-200 hover:bg-accent"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronLeftIcon
               className={cn(
-                'h-4 w-4 transition-transform',
+                'h-4 w-4 transition-transform duration-300',
                 collapsed && 'rotate-180'
               )}
             />

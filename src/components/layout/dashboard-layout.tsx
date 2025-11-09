@@ -3,18 +3,25 @@
 /**
  * Dashboard Layout Component
  *
- * Responsive dashboard layout with:
- * - Collapsible sidebar
+ * Enhanced responsive dashboard layout with:
+ * - Collapsible sidebar with smooth animations
  * - Header with user menu
  * - Main content area
- * - Mobile-responsive behavior
+ * - Mobile-responsive behavior using Sheet component
+ * - Better accessibility and UX
  */
 
 import { useState } from 'react';
 import { Sidebar } from './sidebar';
 import { DashboardHeaderClient } from './dashboard-header';
 import { type Locale } from '@/components/locale-switcher';
-import { cn } from '@/lib/utils';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -44,27 +51,18 @@ export function DashboardLayout({ children, title, locale }: DashboardLayoutProp
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
-            onClick={toggleMobileMenu}
-            aria-hidden="true"
-          />
-
-          {/* Sidebar */}
-          <div
-            className={cn(
-              'fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out md:hidden',
-              mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-            )}
-          >
-            <Sidebar />
-          </div>
-        </>
-      )}
+      {/* Mobile Sidebar using Sheet */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+            <SheetDescription>
+              Access dashboard navigation and settings
+            </SheetDescription>
+          </SheetHeader>
+          <Sidebar />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
