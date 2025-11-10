@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[i18n] Comprehensive Translations for User Management and Profile**
+  - **Objective**: Complete internationalization coverage for all user-facing components
+  - **New Translation Sections**:
+    * **toast**: Success and error notification messages (2 keys)
+    * **user**: Complete user management interface (30+ keys)
+      - User creation, editing, deletion dialogs
+      - Role and organization selection
+      - Form labels, placeholders, and validation messages
+      - Success/error feedback messages
+    * **profile**: Comprehensive profile management (40+ keys)
+      - Profile information and account details
+      - Password change functionality with requirements
+      - Password validation and security requirements
+      - Form states and error messages
+  - **Languages Updated**:
+    * English (en.json): Added 70+ new translation keys
+    * Russian (ru.json): Added 70+ new translation keys with proper localization
+  - **Impact**:
+    * User management dialog now fully translated
+    * Profile and password change forms fully localized
+    * No more missing translation placeholders in UI
+    * Improved UX for both English and Russian users
+  - **Files Modified**:
+    * `messages/en.json` - Added user, profile, toast sections
+    * `messages/ru.json` - Added user, profile, toast sections
+  - **Date**: 2025-11-10
+  - **Resolves**: User-reported issue "Not all interfaces are translated"
+
+### Added
+
 - **[Sprint 4] Enhanced Organization Settings and Configuration (Issue #118)**
   - **Objective**: Expand organization settings to support comprehensive configuration options for enterprise customers
   - **New Features**:
@@ -54,6 +84,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Note**: Server action imports use placeholder functions pending path resolution
 
 ### Fixed
+
+- **[Critical] User Update Form Not Saving Changes**
+  - **Issue**: Admin user management dialog appeared non-functional when updating users
+  - **Symptoms**:
+    * User role changes were not being saved to database
+    * Organization assignment updates were not persisting
+    * Update button appeared to work but changes were silently dropped
+    * No error messages displayed to user
+  - **Root Cause**: React Hook Form integration bug with shadcn/ui Select components
+    * Select components for `role` and `organizationId` fields were using `defaultValue` prop instead of `value`
+    * This made them uncontrolled components that don't respond to form state changes
+    * User selections were captured visually but not in the actual form data
+    * Form submission sent original values instead of updated selections
+  - **Technical Details**:
+    * `defaultValue` in React sets initial value only - doesn't update with state changes
+    * `value` prop is required for controlled components in React Hook Form
+    * shadcn/ui Select component requires `value` prop for proper form integration
+  - **Fix Applied**:
+    * Changed `role` Select from `defaultValue={field.value}` to `value={field.value}`
+    * Changed `organizationId` Select from `defaultValue={field.value || 'none'}` to `value={field.value || 'none'}`
+    * Both Select components now properly controlled and respond to form state
+  - **Impact**:
+    * User role changes now save correctly to database
+    * Organization assignment updates now persist properly
+    * All user data fields (name, email, username, role, org) save as expected
+    * Form properly validates and submits all changes
+  - **Affected Components**:
+    * `src/components/admin/user-management-dialog.tsx`
+  - **Testing**: Verified update functionality works for all user fields including organization assignment
+  - **Date**: 2025-11-10
+  - **Priority**: P0 (Critical) - User management is core admin functionality
+  - **Resolves**: User-reported critical issue "User cannot update created users"
 
 - **[Critical] Authentication Error - Database Connection Failure**
   - **Issue**: Users were redirected to `/api/auth/error` after attempting to sign in
