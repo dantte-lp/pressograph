@@ -150,7 +150,7 @@ export default async function AdminPage() {
               <CardDescription>Manage organizations and their settings</CardDescription>
             </div>
             <Button asChild variant="outline">
-              <Link href="/admin/organizations">View All</Link>
+              <Link href={"/admin/organizations" as any}>View All</Link>
             </Button>
           </div>
         </CardHeader>
@@ -263,19 +263,19 @@ export default async function AdminPage() {
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
             <Button asChild variant="outline" className="justify-start">
-              <Link href="/admin/users">
+              <Link href={"/admin/users" as any}>
                 <UsersIcon className="mr-2 h-4 w-4" />
                 Manage Users
               </Link>
             </Button>
             <Button asChild variant="outline" className="justify-start">
-              <Link href="/admin/organizations">
+              <Link href={"/admin/organizations" as any}>
                 <Building2Icon className="mr-2 h-4 w-4" />
                 Manage Organizations
               </Link>
             </Button>
             <Button asChild variant="outline" className="justify-start">
-              <Link href="/admin/system">
+              <Link href={"/admin/system" as any}>
                 <ActivityIcon className="mr-2 h-4 w-4" />
                 System Health
               </Link>

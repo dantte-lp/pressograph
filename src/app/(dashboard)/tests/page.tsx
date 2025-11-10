@@ -55,7 +55,7 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
   const sortBy = params.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
 
   // Fetch projects for filter dropdown
-  const projectsResult = await getProjects({ page: 1, pageSize: 100 });
+  const projectsResult = await getProjects({ limit: 100, offset: 0 });
   const projects = projectsResult.projects.map(p => ({ id: p.id, name: p.name }));
 
   return (

@@ -31,7 +31,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   FileDownIcon,
-  ArrowUpDownIcon,
+  // ArrowUpDownIcon, // Unused - kept for future sorting UI
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatBytes } from '@/lib/utils/format';

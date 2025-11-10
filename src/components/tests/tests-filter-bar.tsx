@@ -43,15 +43,16 @@ const TEST_STATUSES = [
   'cancelled',
 ] as const;
 
-const SORT_OPTIONS = [
-  'newest',
-  'oldest',
-  'testNumber',
-  'name',
-  'nameDesc',
-  'lastRun',
-  'runCount',
-] as const;
+// Sort options for tests (unused but kept for future UI enhancement)
+// const SORT_OPTIONS = [
+//   'newest',
+//   'oldest',
+//   'testNumber',
+//   'name',
+//   'nameDesc',
+//   'lastRun',
+//   'runCount',
+// ] as const;
 
 /**
  * TestsFilterBar Component
@@ -115,7 +116,7 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
       sortBy: newParams.sortBy !== undefined ? newParams.sortBy : sortBy,
     };
 
-    router.push(buildURL(params));
+    router.push(buildURL(params) as any);
   }, [searchValue, selectedProject, selectedStatuses, sortBy, buildURL, router]);
 
   // Handle status toggle
