@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **[Critical] Authentication Error - Database Connection Failure**
+  - **Issue**: Users were redirected to `/api/auth/error` after attempting to sign in
+  - **Error Type**: CredentialsSignin error in NextAuth
+  - **Root Cause**: Database password mismatch between `.env.local` and actual PostgreSQL container
+    * `.env.local` contained incorrect password: `4dVDfBH8CadyQQYNeQY9H0Il6DJEtDO4`
+    * Actual database password: `postgres`
+    * This prevented NextAuth from querying the users table during authentication
+  - **Impact**: All authentication attempts failed silently, appearing as invalid credentials
+  - **Fix**:
+    * Updated `DATABASE_URL` in `.env.local` to use correct password
+    * Updated `POSTGRES_PASSWORD` environment variable
+    * Restarted dev server to load new configuration
+  - **Verification**:
+    * Database connection test successful from dev container
+    * User accounts verified (testuser, dantte) with passwords and active status
+    * Dev server responding correctly to HTTP requests
+    * NextAuth API endpoints functioning
+  - **Documentation**: Created comprehensive troubleshooting guide at `docs/troubleshooting/AUTH_ERROR_FIX_2025-11-10.md`
+  - **Prevention**: Recommended implementing database health checks and environment validation
+  - **Date**: 2025-11-10
+  - **Files Changed**:
+    * `.env.local` - Updated database connection credentials
+    * `docs/troubleshooting/AUTH_ERROR_FIX_2025-11-10.md` - New troubleshooting guide
+
 ### Changed
 
 - **[Sprint 6] Settings Page: shadcn/ui Integration**
