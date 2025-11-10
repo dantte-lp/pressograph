@@ -1,5 +1,8 @@
-import { Suspense } from 'react';
+'use client';
+
+import React, { Suspense } from 'react';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ProjectList } from '@/components/projects/project-list';
 import { ProjectListSkeleton } from '@/components/projects/project-list-skeleton';
@@ -21,9 +24,16 @@ interface ProjectsPageProps {
   }>;
 }
 
-export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
+export default function ProjectsPage({ searchParams }: ProjectsPageProps) {
+  const { t } = useTranslation();
+
   // Parse search params (await Promise in Next.js 16+)
-  const params = await searchParams;
+  const [params, setParams] = React.useState<{ archived?: string }>({});
+
+  React.useEffect(() => {
+    searchParams.then(setParams);
+  }, [searchParams]);
+
   const showArchived = params.archived === 'true';
 
   return (
@@ -32,12 +42,12 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {showArchived ? 'Archived Projects' : 'Projects'}
+            {showArchived ? t('projects.archivedProjects') : t('projects.title')}
           </h1>
           <p className="text-muted-foreground mt-2">
             {showArchived
-              ? 'View and restore archived projects'
-              : 'Organize your pressure tests into projects'}
+              ? t('projects.viewAndRestoreArchived')
+              : t('projects.organizeYourTests')}
           </p>
         </div>
 
@@ -45,7 +55,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
         <CreateProjectDialog>
           <Button size="lg">
             <Plus className="mr-2 h-5 w-5" />
-            New Project
+            {t('projects.newProject')}
           </Button>
         </CreateProjectDialog>
       </div>
