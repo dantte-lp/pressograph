@@ -47,6 +47,11 @@
     "title": "Pressure Tests",
     "allTests": "Manage all pressure tests across all projects",
     "createTest": "Create Test",
+    "editTest": "Edit Test",
+    "modifyConfiguration": "Modify configuration for test {testNumber}",
+    "backToTest": "Back to Test",
+    "testConfiguration": "Test Configuration",
+    "updateParameters": "Update test parameters and settings",
     "create": {
       "title": "Create Pressure Test",
       "basicInfo": "Basic Information",
