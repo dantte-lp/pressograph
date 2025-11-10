@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { PlusIcon, TrashIcon, SaveIcon } from 'lucide-react';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -27,23 +29,24 @@ import { PressureTestPreview } from './pressure-test-preview';
 import { PreviewDialog } from './preview-dialog';
 
 // Validation schema for test form (matches create form schema)
+// Note: Error messages are now handled via i18n in the component
 const intermediateStageSchema = z.object({
-  time: z.number().min(0, 'Time must be positive'), // Minutes after previous stage
-  pressure: z.number().min(0, 'Pressure must be positive'), // Target pressure
-  duration: z.number().min(0, 'Duration must be positive'), // Hold duration in minutes
+  time: z.number().min(0), // Minutes after previous stage
+  pressure: z.number().min(0), // Target pressure
+  duration: z.number().min(0), // Hold duration in minutes
 });
 
 const testSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters'),
-  testNumber: z.string().min(3, 'Test number must be at least 3 characters').max(100, 'Test number too long'),
+  name: z.string().min(3),
+  testNumber: z.string().min(3).max(100),
   description: z.string().optional(),
-  projectId: z.string().min(1, 'Project is required'),
+  projectId: z.string().min(1),
   templateType: z.enum(['daily', 'extended', 'custom']),
-  workingPressure: z.number().min(0.1, 'Working pressure must be positive'),
-  maxPressure: z.number().min(0.1, 'Max pressure must be positive'),
-  testDuration: z.number().min(0.1, 'Duration must be at least 0.1 hours'),
+  workingPressure: z.number().min(0.1),
+  maxPressure: z.number().min(0.1),
+  testDuration: z.number().min(0.1),
   temperature: z.number(),
-  allowablePressureDrop: z.number().min(0, 'Allowable drop must be non-negative'),
+  allowablePressureDrop: z.number().min(0),
   pressureUnit: z.enum(['MPa', 'Bar', 'PSI']),
   temperatureUnit: z.enum(['C', 'F']),
   equipmentId: z.string().optional(),
@@ -60,7 +63,7 @@ const testSchema = z.object({
     );
   },
   {
-    message: 'Intermediate stage pressure cannot be below working pressure',
+    message: 'stagePressureBelowWorking', // i18n key
     path: ['intermediateStages'],
   }
 );
@@ -73,6 +76,7 @@ interface EditTestFormClientProps {
 
 export function EditTestFormClient({ test }: EditTestFormClientProps) {
   const router = useRouter();
+  const t = useTranslations();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -132,6 +136,31 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
   const debouncedIntermediateStages = useDebounce(intermediateStages, 300);
   const debouncedPressureUnit = useDebounce(formValues.pressureUnit ?? 'MPa', 300);
 
+  // Auto-save to localStorage every 30 seconds
+  useEffect(() => {
+    const saveInterval = setInterval(() => {
+      const formData = watch();
+      localStorage.setItem(`edit-test-draft-${test.id}`, JSON.stringify(formData));
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(saveInterval);
+  }, [watch, test.id]);
+
+  // Restore from localStorage on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(`edit-test-draft-${test.id}`);
+    if (savedDraft) {
+      try {
+        const parsedDraft = JSON.parse(savedDraft);
+        Object.keys(parsedDraft).forEach((key) => {
+          setValue(key as keyof TestFormData, parsedDraft[key]);
+        });
+      } catch (error) {
+        console.error('Failed to restore draft:', error);
+      }
+    }
+  }, [test.id, setValue]);
+
   const onSubmit = (data: TestFormData) => {
     startTransition(async () => {
       try {
@@ -168,15 +197,17 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
         const result = await updateTest(test.id, updatePayload);
 
         if (result.success) {
-          toast.success('Test updated successfully');
+          // Clear localStorage draft on successful save
+          localStorage.removeItem(`edit-test-draft-${test.id}`);
+          toast.success(t('testForm.testUpdatedSuccess'));
           router.push(`/tests/${test.id}`);
           router.refresh();
         } else {
-          toast.error(result.error || 'Failed to update test');
+          toast.error(result.error || t('testForm.failedToUpdateTest'));
         }
       } catch (error) {
         console.error('Error updating test:', error);
-        toast.error('An unexpected error occurred');
+        toast.error(t('testForm.unexpectedError'));
       }
     });
   };
@@ -185,10 +216,10 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="parameters">Parameters</TabsTrigger>
-          <TabsTrigger value="stages">Stages</TabsTrigger>
-          <TabsTrigger value="preview">Graph Preview</TabsTrigger>
+          <TabsTrigger value="basic">{t('testForm.basicInfo')}</TabsTrigger>
+          <TabsTrigger value="parameters">{t('testForm.parameters')}</TabsTrigger>
+          <TabsTrigger value="stages">{t('testForm.stages')}</TabsTrigger>
+          <TabsTrigger value="preview">{t('testForm.graphPreview')}</TabsTrigger>
         </TabsList>
 
         {/* Basic Info Tab */}

@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getTestById } from '@/lib/actions/tests';
@@ -21,6 +22,7 @@ interface EditTestPageProps {
 
 export default async function EditTestPage({ params }: EditTestPageProps) {
   const { id } = await params;
+  const t = await getTranslations();
 
   // Fetch test details
   const test = await getTestById(id);
@@ -39,29 +41,29 @@ export default async function EditTestPage({ params }: EditTestPageProps) {
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/tests" className="hover:text-foreground transition-colors">
-          Tests
+          {t('tests.title')}
         </Link>
         <span>/</span>
         <Link href={`/tests/${id}`} className="hover:text-foreground transition-colors">
           {test.testNumber}
         </Link>
         <span>/</span>
-        <span className="text-foreground font-medium">Edit</span>
+        <span className="text-foreground font-medium">{t('common.edit')}</span>
       </div>
 
       {/* Page Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Edit Test</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('tests.editTest')}</h1>
           <p className="text-muted-foreground">
-            Modify test configuration for {test.testNumber}
+            {t('tests.modifyConfiguration', { testNumber: test.testNumber })}
           </p>
         </div>
 
         <Button variant="outline" asChild>
           <Link href={`/tests/${id}`}>
             <ArrowLeftIcon className="mr-2 h-4 w-4" />
-            Back to Test
+            {t('tests.backToTest')}
           </Link>
         </Button>
       </div>
@@ -69,9 +71,9 @@ export default async function EditTestPage({ params }: EditTestPageProps) {
       {/* Edit Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Test Configuration</CardTitle>
+          <CardTitle>{t('tests.testConfiguration')}</CardTitle>
           <CardDescription>
-            Update the pressure test parameters and settings below
+            {t('tests.updateParameters')}
           </CardDescription>
         </CardHeader>
         <CardContent>

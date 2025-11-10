@@ -9,6 +9,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Issue #112] Test Edit Page - shadcn/ui Integration Refactoring (Phase 1)**
+  - **Objective**: Apply shadcn/ui Integration Strategy and add i18n support to Test Edit Page
+  - **Scope**: Refactor edit test page with translation support and auto-save functionality
+  - **Changes Made**:
+    1. **Translation System Enhancement**:
+       - Added comprehensive `testForm` section with 72 new translation keys
+       - Covers all form labels, placeholders, hints, validation messages
+       - Added to both `src/i18n/locales/en/common.json` (lines 442-513)
+       - Added to both `src/i18n/locales/ru/common.json` (lines 442-513)
+       - Total translation file size: 514 lines per language (up from 442)
+    2. **Translation Keys Added**:
+       - **Form Structure**: basicInfo, parameters, stages, graphPreview
+       - **Field Labels**: testName, testNumber, workingPressure, maxPressure, etc.
+       - **Placeholders**: All field-specific examples in EN and RU
+       - **Hints**: testNumberHint, tagsHint, start/endDateTimeHint
+       - **Validation Messages**: nameMinLength, projectRequired, stageTimePositive, etc.
+       - **UI Feedback**: testUpdatedSuccess, saving, unexpectedError
+       - **Section Titles**: pressureSettings, durationAndTemperature, equipmentAndOperator
+    3. **i18n Implementation**:
+       - `src/app/(dashboard)/tests/[id]/edit/page.tsx`: Full i18n with `getTranslations()`
+       - Breadcrumb navigation translated (Tests, Edit)
+       - Page header and card titles using i18n keys
+       - `src/components/tests/edit-test-form-client.tsx`: Added `useTranslations()` hook
+       - Tab labels translated (Basic Info, Parameters, Stages, Graph Preview)
+       - Toast messages using i18n (success, error states)
+    4. **Auto-Save Feature**:
+       - Implemented localStorage auto-save every 30 seconds
+       - Auto-restore form data from localStorage on component mount
+       - Clear localStorage draft on successful test update
+       - Draft key format: `edit-test-draft-${testId}`
+       - Prevents data loss during editing sessions
+    5. **Code Quality Improvements**:
+       - Added `Separator` component import for future section dividers
+       - Updated validation schema to use i18n error messages
+       - Added `useEffect` for auto-save and restore functionality
+       - Maintained type safety with TypeScript
+    6. **shadcn/ui Components Used**:
+       - ✅ Form (react-hook-form integration)
+       - ✅ Input, Label, Textarea, Select
+       - ✅ Button (with loading states)
+       - ✅ Card (for form sections)
+       - ✅ Tabs (for multi-step form)
+       - ✅ FormError (custom error display)
+       - ✅ Separator (imported, pending implementation)
+  - **Status**: Phase 1 Complete (i18n infrastructure + auto-save)
+  - **Next Phase**: Full form label i18n replacement and Separator additions
+  - **Files Modified**:
+    - `src/i18n/locales/en/common.json` (+72 keys)
+    - `src/i18n/locales/ru/common.json` (+72 keys)
+    - `src/app/(dashboard)/tests/[id]/edit/page.tsx` (full i18n)
+    - `src/components/tests/edit-test-form-client.tsx` (i18n + auto-save)
+  - Date: 2025-11-10
+  - Issue: #112
+  - Story Points: 8 SP (In Progress)
+  - Priority: P1 - High
+
 - **Comprehensive Translation Expansion - Phase 2**
   - **Objective**: Achieve 100% translation coverage across entire application
   - **Scope**: Add 100+ missing translation keys for pages, settings, profile, and admin system
