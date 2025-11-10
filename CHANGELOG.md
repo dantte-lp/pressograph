@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[Critical] Tests Page i18n Configuration Error**
+  - **Issue**: Tests page (/tests) was throwing "Couldn't find next-intl config file" error, making the page completely inaccessible
+  - **Root Cause**: Tests page was using server-side `getTranslations()` from next-intl/server without proper next-intl plugin configuration in next.config.ts
+  - **Fix**: Refactored tests page to use client component pattern (consistent with profile page):
+    * Created new `src/components/tests/tests-page-client.tsx` client component
+    * Updated `src/app/(dashboard)/tests/page.tsx` to use client component wrapper
+    * Uses `useTranslation()` hook (client-side) instead of `getTranslations()` (server-side)
+  - **Additional Changes**:
+    * Added missing translation keys to `messages/en.json`:
+      - `tests.allTests`: "Manage all pressure tests across all projects"
+      - `tests.createTest`: "Create Test"
+    * Added missing translation keys to `messages/ru.json`:
+      - `tests.allTests`: "Управление всеми испытаниями на давление во всех проектах"
+      - `tests.createTest`: "Создать испытание"
+  - **Impact**: Tests page now loads correctly with full i18n support
+  - **Pattern**: Consistent with profile page implementation (server component + client wrapper)
+  - **Files Changed**:
+    * NEW: `src/components/tests/tests-page-client.tsx` - Client component with i18n
+    * MODIFIED: `src/app/(dashboard)/tests/page.tsx` - Server component wrapper
+    * MODIFIED: `messages/en.json` - Added missing translations
+    * MODIFIED: `messages/ru.json` - Added missing translations
+  - **Date**: 2025-11-10
+
 - **[Critical] Authentication Hanging Issue**
   - **Issue**: Login process would hang indefinitely, preventing users from authenticating
   - **Root Cause**: Conflicting authentication configuration - JWT strategy was configured with DrizzleAdapter, which is only needed for database sessions

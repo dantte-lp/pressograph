@@ -45,6 +45,8 @@
   },
   "tests": {
     "title": "Pressure Tests",
+    "allTests": "Manage all pressure tests across all projects",
+    "createTest": "Create Test",
     "create": {
       "title": "Create Pressure Test",
       "basicInfo": "Basic Information",

@@ -1,14 +1,3 @@
-import { Suspense } from 'react';
-import { getTranslations } from 'next-intl/server';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusIcon } from 'lucide-react';
-import Link from 'next/link';
-import { TestsTable } from '@/components/tests/tests-table';
-import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
-import { TestsFilterBar } from '@/components/tests/tests-filter-bar';
-import { getProjects } from '@/lib/actions/projects';
-
 /**
  * Tests Page
  *
@@ -25,7 +14,17 @@ import { getProjects } from '@/lib/actions/projects';
  * - Status indicators
  * - Empty states
  * - Full i18n support
+ *
+ * @route /tests
  */
+
+import { getProjects } from '@/lib/actions/projects';
+import { TestsPageClient } from '@/components/tests/tests-page-client';
+
+export const metadata = {
+  title: 'Tests | Pressograph',
+  description: 'Manage all pressure tests across all projects',
+};
 
 interface TestsPageProps {
   searchParams: Promise<{
@@ -39,9 +38,6 @@ interface TestsPageProps {
 }
 
 export default async function TestsPage({ searchParams }: TestsPageProps) {
-  // Get translations
-  const t = await getTranslations('tests');
-
   // Parse search params (await Promise in Next.js 16+)
   const params = await searchParams;
   const page = parseInt(params.page ?? '1', 10);
@@ -63,48 +59,14 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
   const projects = projectsResult.projects.map(p => ({ id: p.id, name: p.name }));
 
   return (
-    <div className="container mx-auto space-y-8 p-6 lg:p-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground mt-2">
-            {t('allTests')}
-          </p>
-        </div>
-        <Button asChild>
-          <Link href={"/tests/new" as any}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            {t('createTest')}
-          </Link>
-        </Button>
-      </div>
-
-      {/* Tests Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('allTests')}</CardTitle>
-          <CardDescription>
-            {t('allTests')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Filter Bar */}
-          <TestsFilterBar projects={projects} />
-
-          {/* Table */}
-          <Suspense fallback={<TestsTableSkeleton />}>
-            <TestsTable
-              page={page}
-              pageSize={pageSize}
-              search={search}
-              projectId={projectId}
-              status={status}
-              sortBy={sortBy}
-            />
-          </Suspense>
-        </CardContent>
-      </Card>
-    </div>
+    <TestsPageClient
+      page={page}
+      pageSize={pageSize}
+      search={search}
+      projectId={projectId}
+      status={status}
+      sortBy={sortBy}
+      projects={projects}
+    />
   );
 }
