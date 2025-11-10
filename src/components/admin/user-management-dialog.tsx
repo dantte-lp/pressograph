@@ -287,7 +287,7 @@ export function UserManagementDialog({
                   <FormLabel>{t('user.role')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -319,7 +319,7 @@ export function UserManagementDialog({
                         // Convert "none" to null for the form value
                         field.onChange(value === 'none' ? null : value);
                       }}
-                      defaultValue={field.value || 'none'}
+                      value={field.value || 'none'}
                     >
                       <FormControl>
                         <SelectTrigger>
