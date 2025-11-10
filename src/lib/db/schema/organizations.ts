@@ -2,9 +2,13 @@ import { pgTable, uuid, varchar, jsonb, timestamp, uniqueIndex } from "drizzle-o
 
 /**
  * Organization Settings Type
+ * Enhanced with comprehensive configuration options
  */
 export interface OrganizationSettings {
+  // Localization
   defaultLanguage: "en" | "ru";
+
+  // Legacy settings (kept for backward compatibility)
   allowPublicSharing: boolean;
   requireApprovalForTests: boolean;
   maxTestDuration: number; // hours
@@ -12,6 +16,51 @@ export interface OrganizationSettings {
     enabled: boolean;
     headerText?: string;
     footerText?: string;
+  };
+
+  // Enhanced Branding
+  branding?: {
+    logo?: string; // URL or base64
+    primaryColor?: string; // hex color
+    secondaryColor?: string; // hex color
+    customCSS?: string; // Custom CSS for advanced branding
+  };
+
+  // Notifications
+  notifications?: {
+    emailEnabled?: boolean;
+    slackWebhook?: string;
+    discordWebhook?: string;
+    digestFrequency?: "daily" | "weekly" | "never";
+  };
+
+  // Data Retention (GDPR compliance)
+  dataRetention?: {
+    testDataDays?: number; // Default: 365
+    auditLogDays?: number; // Default: 730 (2 years)
+    autoDeleteEnabled?: boolean;
+  };
+
+  // Feature Flags
+  features?: {
+    apiAccessEnabled?: boolean;
+    publicSharingEnabled?: boolean;
+    exportFormats?: string[]; // ['pdf', 'png', 'svg', 'csv']
+    maxTestsPerMonth?: number; // Rate limiting
+    advancedAnalytics?: boolean;
+  };
+
+  // Security
+  security?: {
+    mfaRequired?: boolean;
+    allowedIPRanges?: string[];
+    sessionTimeout?: number; // minutes
+    passwordPolicy?: {
+      minLength?: number;
+      requireSpecialChars?: boolean;
+      requireNumbers?: boolean;
+      requireUppercase?: boolean;
+    };
   };
 }
 
