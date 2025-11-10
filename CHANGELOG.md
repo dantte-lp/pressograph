@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **[Critical] Authentication Hanging Issue**
+  - **Issue**: Login process would hang indefinitely, preventing users from authenticating
+  - **Root Cause**: Conflicting authentication configuration - JWT strategy was configured with DrizzleAdapter, which is only needed for database sessions
+  - **Fix**: Removed DrizzleAdapter from NextAuth configuration since JWT strategy stores sessions client-side in tokens, not in the database
+  - **Additional Fix**: Updated redirect callback to use NEXTAUTH_URL environment variable instead of hardcoded production URL, making it work correctly in all environments
+  - **Impact**: Authentication now works correctly without hanging
+  - **Files Changed**:
+    * `src/lib/auth/config.ts` - Removed adapter, fixed redirect logic
+  - **Date**: 2025-11-10
+
 ### Added
 
 - **[Enhancement] Tests Page - Advanced Filtering, Search, and Sorting (COMPLETE)**

@@ -7,7 +7,7 @@
  */
 
 import { NextAuthOptions } from 'next-auth';
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
+// import { DrizzleAdapter } from '@auth/drizzle-adapter'; // Not needed for JWT strategy
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcrypt';
 import { db } from '@/lib/db';
@@ -51,7 +51,10 @@ declare module 'next-auth/jwt' {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: DrizzleAdapter(db) as any,
+  // NOTE: Adapter is commented out because we're using JWT strategy
+  // When using JWT strategy, database adapter is not needed for sessions
+  // Uncomment if switching to database sessions (set strategy: 'database' below)
+  // adapter: DrizzleAdapter(db) as any,
 
   providers: [
     // Credentials Provider - Username/Password Authentication
@@ -193,52 +196,47 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // HARDCODED production URL to prevent localhost issues
-      // Do NOT rely on environment variables in this callback as they may not be available
-      const PRODUCTION_URL = 'https://dev-pressograph.infra4.dev';
+      // Use environment variable or fallback to baseUrl
+      const BASE_URL = process.env.NEXTAUTH_URL || baseUrl;
 
       console.log('[NextAuth Redirect]', {
         url,
         baseUrl,
-        productionUrl: PRODUCTION_URL,
-        envNextAuthUrl: process.env.NEXTAUTH_URL, // For debugging only
+        nextAuthUrl: process.env.NEXTAUTH_URL,
         nodeEnv: process.env.NODE_ENV,
       });
 
-      // If starts with /, make it absolute with production URL
+      // If starts with /, make it absolute with base URL
       if (url.startsWith('/')) {
-        const redirectTo = `${PRODUCTION_URL}${url}`;
+        const redirectTo = `${BASE_URL}${url}`;
         console.log('[NextAuth Redirect] Relative path, returning:', redirectTo);
         return redirectTo;
       }
 
-      // If contains localhost or 127.0.0.1, extract path and use production URL
-      if (url.includes('localhost') || url.includes('127.0.0.1')) {
-        try {
-          const urlObj = new URL(url);
-          const redirectTo = `${PRODUCTION_URL}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
-          console.log('[NextAuth Redirect] Localhost detected, returning:', redirectTo);
-          return redirectTo;
-        } catch (error) {
-          console.error('[NextAuth Redirect] URL parsing error:', error);
-          return PRODUCTION_URL;
-        }
+      // If it's a relative URL (no protocol), treat as path
+      if (!url.includes('://')) {
+        const redirectTo = `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+        console.log('[NextAuth Redirect] No protocol, treating as path:', redirectTo);
+        return redirectTo;
       }
 
-      // If same origin as production URL, allow
+      // Allow redirects to the same origin
       try {
         const urlObj = new URL(url);
-        if (urlObj.origin === PRODUCTION_URL) {
+        const baseUrlObj = new URL(BASE_URL);
+
+        if (urlObj.origin === baseUrlObj.origin) {
           console.log('[NextAuth Redirect] Same origin, allowing:', url);
           return url;
         }
       } catch (error) {
-        console.error('[NextAuth Redirect] URL comparison error:', error);
+        console.error('[NextAuth Redirect] URL parsing error:', error);
       }
 
-      // Default to production home
-      console.log('[NextAuth Redirect] Default case, returning home:', PRODUCTION_URL);
-      return PRODUCTION_URL;
+      // For security, don't redirect to external domains
+      // Default to base URL home page
+      console.log('[NextAuth Redirect] Different origin, defaulting to home:', BASE_URL);
+      return BASE_URL;
     },
   },
 
