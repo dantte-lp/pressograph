@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Medium] Translation Support for /tests/new Page**
+  - **Feature**: Full i18n support for test creation page
+  - **Implementation**:
+    * Created CreateTestPageClient component wrapper for i18n support
+    * Refactored page to use server-side data fetching with client-side rendering
+    * Added 11 new translation keys for test creation flow
+    * Supports both English and Russian languages
+  - **Translation Keys Added**:
+    * tests.createNewTest - "Create New Test"
+    * tests.createDescription - "Configure and create a new pressure test"
+    * tests.duplicateTest - "Duplicate: {{number}}"
+    * tests.duplicateTest_title - "Duplicate Test"
+    * tests.duplicateDescription - "Creating a copy of test {{number}}: {{name}}"
+    * tests.backToTests - "Back to Tests"
+    * tests.errorLoadingProjects - "Error Loading Projects"
+    * tests.errorLoadingProjectsDescription - Error message details
+    * tests.noProjectsAvailable - "No Projects Available"
+    * tests.noProjectsAvailableDescription - Instructions for creating projects
+    * tests.goToProjects - "Go to Projects"
+  - **Files Modified**:
+    * `src/app/(dashboard)/tests/new/page.tsx`: Refactored to use client component
+    * `src/components/tests/create-test-page-client.tsx`: New client component with i18n
+    * `src/i18n/locales/en/common.json`: Added 11 new keys
+    * `src/i18n/locales/ru/common.json`: Added 11 new keys with Russian translations
+  - **User Experience**:
+    * Test creation page now fully translatable
+    * Seamless language switching for all UI text
+    * Consistent with rest of application
+
 - **[Medium] Real-Time Language Switching**
   - **Feature**: Language changes now apply immediately without requiring page reload
   - **Implementation**:
