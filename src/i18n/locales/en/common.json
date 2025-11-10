@@ -279,6 +279,7 @@
   "user": {
     "users": "Users",
     "createUser": "Create User",
+    "updateUser": "Update User",
     "editUser": "Edit User",
     "deleteUser": "Delete User",
     "name": "Name",

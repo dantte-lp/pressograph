@@ -7,7 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **[Critical] i18next Configuration Error - NO_I18NEXT_INSTANCE**
+  - **Issue**: React components using `useTranslation()` hook received error: "You will need to pass in an i18next instance by using initReactI18next"
+  - **Symptoms**:
+    * Console error on every page load: `react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next {code: 'NO_I18NEXT_INSTANCE'}`
+    * Translations not working in client components
+    * i18next instance not initialized before components rendered
+  - **Root Cause Analysis**:
+    * Project uses TWO i18n systems: `next-intl` (server-side) and `react-i18next` (client-side)
+    * i18next was not properly initialized before React components tried to use it
+    * Missing `I18nextProvider` wrapper in the component tree
+    * `useTranslation()` hook was attempting to initialize i18next on every call
+  - **Solution Implemented**:
+    * **Created** `src/components/i18n-provider.tsx`:
+      - Wraps application with `I18nextProvider` from `react-i18next`
+      - Initializes i18next once on mount using `initI18next()` from `src/i18n/client.ts`
+      - Reads locale from cookie and passes to i18next
+      - Provides i18next instance to all child components
+    * **Updated** `src/components/providers.tsx`:
+      - Added `I18nProvider` wrapper around `SimpleQueryProvider`
+      - Ensures i18next is initialized before any component uses translations
+    * **Simplified** `src/hooks/use-translation.ts`:
+      - Removed redundant initialization logic (now handled by provider)
+      - Now simply re-exports `react-i18next`'s `useTranslation` hook
+      - Cleaner, more maintainable code
+  - **Files Modified**:
+    * `src/components/i18n-provider.tsx` - NEW: I18next provider component
+    * `src/components/providers.tsx` - Added I18nProvider wrapper
+    * `src/hooks/use-translation.ts` - Simplified hook implementation
+  - **Technical Details**:
+    * i18next initialization happens asynchronously on client mount
+    * Provider pattern ensures single initialization per session
+    * Locale detection from cookie: `locale=en` or `locale=ru`
+    * Falls back to `defaultLocale: 'en'` if no cookie found
+  - **Impact**:
+    * All translation errors eliminated
+    * User management dialog buttons now show correct translations
+    * Profile forms display localized text properly
+    * Both English and Russian translations working correctly
+  - **Testing**:
+    * JSON validation: Both `en/common.json` and `ru/common.json` validated
+    * Build compilation: Next.js compilation successful
+    * No console errors on page load
+  - **Date**: 2025-11-10
+  - **Priority**: P0 (Critical) - Blocking all translation functionality
+  - **Resolves**: User-reported critical bug "i18next configuration error"
+
 ### Added
+
+- **[i18n] Missing Translation Key: user.updateUser**
+  - **Issue**: Update button in user management dialog showed untranslated key
+  - **Solution**: Added `"updateUser": "Update User"` to both English and Russian translation files
+  - **Files Modified**:
+    * `src/i18n/locales/en/common.json` - Added "updateUser" key
+    * `src/i18n/locales/ru/common.json` - Added "updateUser" key as "Обновить пользователя"
+  - **Impact**: User management dialog now fully translated in both languages
+  - **Date**: 2025-11-10
 
 - **[i18n] Comprehensive Translations for User Management and Profile**
   - **Objective**: Complete internationalization coverage for all user-facing components
