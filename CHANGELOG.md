@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[High] NextAuth Logout and Session Management Issues**
+  - **Issues**:
+    1. After clicking logout, users were redirected to `/` instead of `/auth/signin`
+    2. Clearing browser cookies did not properly log users out
+    3. Session cookies were not properly configured for secure logout
+  - **Root Causes**:
+    * UserMenu component was using `signOut({ callbackUrl: '/' })` with incorrect redirect URL
+    * NextAuth cookies configuration was using defaults without explicit httpOnly and sameSite settings
+    * JWT session cookies needed explicit configuration for proper clearing mechanism
+  - **Fixes**:
+    * **UserMenu Redirect**: Changed `signOut({ callbackUrl: '/' })` to `signOut({ callbackUrl: '/auth/signin' })` in `src/components/layout/user-menu.tsx`
+    * **Cookie Configuration**: Added explicit cookies configuration in `src/lib/auth/config.ts`:
+      - Set `httpOnly: true` to prevent client-side JavaScript access
+      - Set `sameSite: 'lax'` for CSRF protection
+      - Set `path: '/'` for application-wide cookie scope
+      - Set `secure: true` for production (HTTPS only)
+      - Proper cookie naming convention with `__Secure-` prefix in production
+  - **Impact**:
+    * Users are now correctly redirected to signin page after logout
+    * Session cookies are properly cleared when browser cookies are deleted
+    * Improved security with httpOnly and sameSite cookie attributes
+  - **Files Changed**:
+    * MODIFIED: `src/components/layout/user-menu.tsx` - Fixed signOut redirect URL
+    * MODIFIED: `src/lib/auth/config.ts` - Added explicit cookies configuration
+  - **Testing**:
+    * Test user credentials: `testuser` / `test123` (in dev database)
+    * Verify logout redirects to `/auth/signin`
+    * Verify clearing cookies properly logs out user
+  - **Date**: 2025-11-10
+
+### Fixed
+
 - **[Critical] NextIntlClientProvider Context Error on Tests Page**
   - **Issue**: Tests page (/tests) was throwing "Failed to call `useTranslations` because the context from `NextIntlClientProvider` was not found" error
   - **Root Cause**: Three tests components (TestsFilterBar, TestsTableClient, EditTestFormClient) were importing `useTranslations()` from 'next-intl' which requires NextIntlClientProvider context, but the application uses a custom i18n setup

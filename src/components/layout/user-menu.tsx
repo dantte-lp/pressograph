@@ -65,7 +65,7 @@ export function UserMenu() {
   });
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: '/auth/signin' });
   };
 
   // Show loading state while session is being checked
