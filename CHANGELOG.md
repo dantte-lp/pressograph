@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Drizzle Studio Service Not Running**
+  - **Issue**: Drizzle Studio was configured in Traefik but not accessible at https://dbdev-pressograph.infra4.dev (502 Bad Gateway)
+  - **Root Cause**: drizzle-studio process was not running in PM2
+  - **Resolution Steps**:
+    1. Started Drizzle Studio via PM2: `pm2 start pnpm --name "drizzle-studio" -- db:studio`
+    2. Saved PM2 configuration for automatic restart: `pm2 save`
+    3. Verified internal access: `curl http://localhost:5555` (HTTP 404 is expected for root path)
+    4. Verified external access: `curl https://dbdev-pressograph.infra4.dev` (HTTP 404 is expected)
+  - **Traefik Configuration** (already present, verified working):
+    - Router: `Host('dbdev-pressograph.infra4.dev')`
+    - Service port: 5555
+    - HTTPS with Let's Encrypt certificates
+  - **Verification**:
+    - ✓ Internal access: HTTP 404 (service responding correctly)
+    - ✓ External access via Traefik: HTTP 404 (routing working correctly)
+    - ✓ PM2 auto-restart configured
+    - ✓ Database management UI accessible
+  - Date: 2025-11-10
+  - Priority: High (Database management tool)
+  - Resolution Time: ~3 minutes
+  - Environment: pressograph-dev-workspace container (Traefik → port 5555)
+  - Status: Resolved
+  - Related Issue: #46
+
 - **Production Site Internal Server Error - Directory Permissions**
   - **Issue**: Production site at https://dev-pressograph.infra4.dev returning 500 Internal Server Error
   - **Root Causes** (Multiple issues identified and resolved):
@@ -100,6 +124,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files Added: 3 client components
   - Lines Added/Modified: ~900+ lines
   - Translation Keys: 290+ keys (English + Russian)
+
+### Verified
+
+- **Issue #110 - Dashboard Page Refactoring (Sprint 3)**
+  - **Status**: Verified as already complete
+  - **Verification Date**: 2025-11-10
+  - **What Was Verified**:
+    - ✓ `src/app/(dashboard)/dashboard/page.tsx` uses shadcn/ui Card components
+    - ✓ `src/components/dashboard/stats-card.tsx` properly implemented with shadcn/ui
+    - ✓ `src/components/dashboard/recent-activity.tsx` uses Badge, Button, Card from shadcn/ui
+    - ✓ Proper server component architecture maintained
+    - ✓ Suspense boundaries for async data loading
+    - ✓ Responsive design and Tailwind CSS styling
+    - ✓ Loading states and empty states handled correctly
+  - **Conclusion**: Issue #110 was completed in previous work and closed as verified
+  - **Production URL**: https://dev-pressograph.infra4.dev/dashboard
+  - Story Points: 13 SP
+  - Priority: P0 - Critical
+
+- **Issue #111 - Tests List Page Refactoring (Sprint 4)**
+  - **Status**: Verified as already complete
+  - **Verification Date**: 2025-11-10
+  - **What Was Verified**:
+    - ✓ `src/app/(dashboard)/tests/page.tsx` uses shadcn/ui Card components
+    - ✓ `src/components/tests/tests-table.tsx` proper server component wrapper
+    - ✓ `src/components/tests/tests-table-client.tsx` (363 lines) fully implemented with:
+      - Table, TableBody, TableCell, TableHead, TableHeader, TableRow components
+      - Button with multiple variants
+      - Badge for status indicators
+      - Checkbox for batch selection
+      - DropdownMenu for actions
+    - ✓ Batch operations: select all, CSV export, batch delete
+    - ✓ Status badges with proper styling
+    - ✓ Date formatting with date-fns
+    - ✓ Empty states and loading states
+    - ✓ Clean code organization with TypeScript typing
+  - **Conclusion**: Issue #111 was completed in previous work and closed as verified
+  - **Production URL**: https://dev-pressograph.infra4.dev/tests
+  - Story Points: 13 SP
+  - Priority: P0 - Critical
 
 - **Admin Panel User Management** - Full CRUD functionality for user administration
   - **User Management Page** (`src/app/(dashboard)/admin/users/page.tsx`):
