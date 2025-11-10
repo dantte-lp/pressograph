@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Medium] Real-Time Language Switching**
+  - **Feature**: Language changes now apply immediately without requiring page reload
+  - **Implementation**:
+    * Added i18next.changeLanguage() call in appearance settings
+    * Update locale cookie for SSR consistency
+    * Call router.refresh() to update server-rendered content
+    * Imported i18next client instance for direct language control
+  - **User Experience**:
+    * Language switches instantly across all client components
+    * No page reload or navigation interruption required
+    * Server-rendered content updates via router.refresh()
+    * Seamless transition between English and Russian
+  - **Files Modified**:
+    * `src/components/settings/appearance-settings.tsx`: Added applyLanguage() function
+  - **Technical Details**:
+    * Uses i18next's changeLanguage() API for client-side updates
+    * Updates both i18next instance and locale cookie
+    * Router refresh ensures server components reflect new language
+  - **Impact**:
+    * Significantly improved UX for multilingual users
+    * Eliminates the need to manually reload after language change
+    * Maintains consistency between client and server rendering
+
 - **[High Security] Admin Route Authorization and Access Control**
   - **Feature**: Implement role-based access control for admin routes and navigation
   - **Implementation**:

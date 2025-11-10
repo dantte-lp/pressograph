@@ -12,10 +12,12 @@
  * - Visual theme selector
  * - Language dropdown
  * - Auto-save on change
+ * - Real-time language switching without page reload
  * - Toast notifications
  */
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -29,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { SunIcon, MoonIcon, MonitorIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import i18next from '@/i18n/client';
 
 type Theme = 'light' | 'dark' | 'system';
 type Language = 'en' | 'ru';
@@ -39,6 +42,7 @@ interface Preferences {
 }
 
 export function AppearanceSettings() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<Preferences>({
@@ -87,6 +91,11 @@ export function AppearanceSettings() {
       if (updates.themePreference) {
         applyTheme(updates.themePreference);
       }
+
+      // Apply language change immediately
+      if (updates.languagePreference) {
+        await applyLanguage(updates.languagePreference);
+      }
     } catch (error) {
       toast.error('Failed to update preferences');
     } finally {
@@ -111,6 +120,22 @@ export function AppearanceSettings() {
 
     // Update cookie for SSR
     document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+  };
+
+  const applyLanguage = async (language: Language) => {
+    try {
+      // Update i18next language immediately for client-side re-render
+      await i18next.changeLanguage(language);
+
+      // Update locale cookie for SSR
+      document.cookie = `locale=${language}; path=/; max-age=31536000`;
+
+      // Refresh the router to update server-rendered content
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to change language:', error);
+      throw error;
+    }
   };
 
   if (loading) {
