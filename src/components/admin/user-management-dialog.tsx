@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -94,6 +95,7 @@ export function UserManagementDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
@@ -116,8 +118,8 @@ export function UserManagementDialog({
         if (!values.password) {
           toast({
             variant: 'destructive',
-            title: 'Error',
-            description: 'Password is required for new users',
+            title: t('toast.error'),
+            description: t('user.passwordRequired'),
           });
           setIsSubmitting(false);
           return;
@@ -134,8 +136,8 @@ export function UserManagementDialog({
 
         if (result.success) {
           toast({
-            title: 'Success',
-            description: 'User created successfully',
+            title: t('toast.success'),
+            description: t('user.userCreatedSuccess'),
           });
           setOpen(false);
           form.reset();
@@ -143,14 +145,14 @@ export function UserManagementDialog({
         } else {
           toast({
             variant: 'destructive',
-            title: 'Error',
-            description: result.error || 'Failed to create user',
+            title: t('toast.error'),
+            description: result.error || t('user.failedToCreateUser'),
           });
         }
       } else {
         // Edit mode
         if (!user?.id) {
-          throw new Error('User ID is required for editing');
+          throw new Error(t('user.userIdRequired'));
         }
 
         const result = await updateUser(user.id, {
@@ -163,16 +165,16 @@ export function UserManagementDialog({
 
         if (result.success) {
           toast({
-            title: 'Success',
-            description: 'User updated successfully',
+            title: t('toast.success'),
+            description: t('user.userUpdatedSuccess'),
           });
           setOpen(false);
           router.refresh();
         } else {
           toast({
             variant: 'destructive',
-            title: 'Error',
-            description: result.error || 'Failed to update user',
+            title: t('toast.error'),
+            description: result.error || t('user.failedToUpdateUser'),
           });
         }
       }
@@ -180,8 +182,8 @@ export function UserManagementDialog({
       console.error('Form submission error:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred',
+        title: t('toast.error'),
+        description: t('errors.unknownError'),
       });
     } finally {
       setIsSubmitting(false);
@@ -194,12 +196,12 @@ export function UserManagementDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Create New User' : 'Edit User'}
+            {mode === 'create' ? t('user.createNewUser') : t('user.editUser')}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
-              ? 'Add a new user to the system. Fill in all required fields.'
-              : 'Update user information. Leave password blank to keep unchanged.'}
+              ? t('user.addNewUserDescription')
+              : t('user.updateUserInfo')}
           </DialogDescription>
         </DialogHeader>
 
@@ -210,7 +212,7 @@ export function UserManagementDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('user.name')}</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -224,7 +226,7 @@ export function UserManagementDialog({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('user.email')}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -242,12 +244,12 @@ export function UserManagementDialog({
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{t('user.username')}</FormLabel>
                   <FormControl>
                     <Input placeholder="johndoe" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Used for login authentication
+                    {t('user.usedForLogin')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -260,7 +262,7 @@ export function UserManagementDialog({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('user.password')}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -269,7 +271,7 @@ export function UserManagementDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      Minimum 8 characters
+                      {t('user.minimumCharacters')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -282,23 +284,23 @@ export function UserManagementDialog({
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>{t('user.role')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
+                        <SelectValue placeholder={t('user.selectARole')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="user">{t('user.userRole')}</SelectItem>
+                      <SelectItem value="admin">{t('user.adminRole')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Admin users have full system access
+                    {t('user.adminFullAccess')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -311,7 +313,7 @@ export function UserManagementDialog({
                 name="organizationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Organization (Optional)</FormLabel>
+                    <FormLabel>{t('user.organizationOptional')}</FormLabel>
                     <Select
                       onValueChange={(value) => {
                         // Convert "none" to null for the form value
@@ -321,11 +323,11 @@ export function UserManagementDialog({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select an organization" />
+                          <SelectValue placeholder={t('user.selectAnOrganization')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">No Organization</SelectItem>
+                        <SelectItem value="none">{t('user.noOrganization')}</SelectItem>
                         {organizations.map((org) => (
                           <SelectItem key={org.id} value={org.id}>
                             {org.name}
@@ -346,13 +348,13 @@ export function UserManagementDialog({
                 onClick={() => setOpen(false)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && (
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {mode === 'create' ? 'Create User' : 'Update User'}
+                {mode === 'create' ? t('user.createUser') : t('user.updateUser')}
               </Button>
             </DialogFooter>
           </form>

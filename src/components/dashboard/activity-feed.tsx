@@ -4,6 +4,7 @@
  * Displays recent activity with user avatars and timestamps
  */
 
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,17 +22,19 @@ const activityIcons = {
 } as const;
 
 export function ActivityFeed({ activities }: ActivityFeedProps) {
+  const { t } = useTranslation();
+
   if (activities.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Your recent actions will appear here</CardDescription>
+          <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
+          <CardDescription>{t('dashboard.recentActionsWillAppear')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <p className="text-sm text-muted-foreground">
-              No recent activity yet. Create a project or test to get started.
+              {t('dashboard.noRecentActivityYet')}
             </p>
           </div>
         </CardContent>
@@ -42,8 +45,8 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>Your latest actions and updates</CardDescription>
+        <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
+        <CardDescription>{t('dashboard.latestActionsAndUpdates')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

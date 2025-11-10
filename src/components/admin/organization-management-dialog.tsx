@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -84,6 +85,7 @@ export function OrganizationManagementDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationFormSchema),
@@ -120,8 +122,8 @@ export function OrganizationManagementDialog({
 
         if (result.success) {
           toast({
-            title: 'Success',
-            description: 'Organization created successfully',
+            title: t('toast.success'),
+            description: t('organization.organizationCreatedSuccess'),
           });
           setOpen(false);
           form.reset();
@@ -129,14 +131,14 @@ export function OrganizationManagementDialog({
         } else {
           toast({
             variant: 'destructive',
-            title: 'Error',
-            description: result.error || 'Failed to create organization',
+            title: t('toast.error'),
+            description: result.error || t('organization.failedToCreateOrganization'),
           });
         }
       } else {
         // Edit mode
         if (!organization?.id) {
-          throw new Error('Organization ID is required for editing');
+          throw new Error(t('organization.organizationIdRequired'));
         }
 
         const result = await updateOrganization(organization.id, {
@@ -148,16 +150,16 @@ export function OrganizationManagementDialog({
 
         if (result.success) {
           toast({
-            title: 'Success',
-            description: 'Organization updated successfully',
+            title: t('toast.success'),
+            description: t('organization.organizationUpdatedSuccess'),
           });
           setOpen(false);
           router.refresh();
         } else {
           toast({
             variant: 'destructive',
-            title: 'Error',
-            description: result.error || 'Failed to update organization',
+            title: t('toast.error'),
+            description: result.error || t('organization.failedToUpdateOrganization'),
           });
         }
       }
@@ -165,8 +167,8 @@ export function OrganizationManagementDialog({
       console.error('Form submission error:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred',
+        title: t('toast.error'),
+        description: t('errors.unknownError'),
       });
     } finally {
       setIsSubmitting(false);
@@ -179,12 +181,12 @@ export function OrganizationManagementDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Create New Organization' : 'Edit Organization'}
+            {mode === 'create' ? t('organization.createNewOrganization') : t('organization.editOrganization')}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
-              ? 'Add a new organization to the system. The slug will be auto-generated from the name.'
-              : 'Update organization information.'}
+              ? t('organization.addNewOrgDescription')
+              : t('organization.updateOrgInfo')}
           </DialogDescription>
         </DialogHeader>
 
@@ -195,7 +197,7 @@ export function OrganizationManagementDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('organization.name')}</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Acme Corporation"
@@ -216,12 +218,12 @@ export function OrganizationManagementDialog({
               name="slug"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Slug</FormLabel>
+                  <FormLabel>{t('organization.slug')}</FormLabel>
                   <FormControl>
                     <Input placeholder="acme-corporation" {...field} />
                   </FormControl>
                   <FormDescription>
-                    URL-friendly identifier (lowercase, numbers, hyphens only)
+                    {t('organization.slugUrlFriendly')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -233,7 +235,7 @@ export function OrganizationManagementDialog({
               name="logoUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo URL (Optional)</FormLabel>
+                  <FormLabel>{t('organization.logoUrlOptional')}</FormLabel>
                   <FormControl>
                     <Input
                       type="url"
@@ -242,7 +244,7 @@ export function OrganizationManagementDialog({
                     />
                   </FormControl>
                   <FormDescription>
-                    URL to organization logo image
+                    {t('organization.urlToLogo')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -254,7 +256,7 @@ export function OrganizationManagementDialog({
               name="primaryColor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Primary Color</FormLabel>
+                  <FormLabel>{t('organization.primaryColor')}</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Input
@@ -272,7 +274,7 @@ export function OrganizationManagementDialog({
                     />
                   </div>
                   <FormDescription>
-                    Brand color for organization (hex format)
+                    {t('organization.brandColor')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -286,13 +288,13 @@ export function OrganizationManagementDialog({
                 onClick={() => setOpen(false)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && (
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {mode === 'create' ? 'Create Organization' : 'Update Organization'}
+                {mode === 'create' ? t('organization.createOrganization') : t('organization.updateOrganization')}
               </Button>
             </DialogFooter>
           </form>
