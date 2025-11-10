@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[High] Hydration Mismatch Errors in Radix UI Components**
+  - **Issue**: Console errors showing hydration mismatches in SelectTrigger, PopoverTrigger, and DropdownMenuTrigger components
+  - **Symptoms**:
+    * Console warnings: "Prop `aria-controls` did not match. Server: radix-_R_cmklritritmlb_ Client: radix-_R_1iqinebneitmlb_"
+    * Hydration errors on every page using Select, Popover, or DropdownMenu components
+    * Affects tests table, filter bar, date pickers, and other interactive components
+  - **Root Cause**:
+    * Radix UI generates random IDs for ARIA attributes during SSR
+    * These IDs differ between server-side render and client-side hydration
+    * Known issue with Radix UI in SSR environments
+  - **Solution**:
+    * Added `suppressHydrationWarning` attribute to SelectTrigger component
+    * Added `suppressHydrationWarning` attribute to PopoverTrigger component
+    * Added `suppressHydrationWarning` attribute to DropdownMenuTrigger component
+    * This is the recommended approach by Radix UI for SSR scenarios
+  - **Files Modified**:
+    * `src/components/ui/select.tsx`: Line 42 - Added suppressHydrationWarning to SelectTrigger
+    * `src/components/ui/popover.tsx`: Line 17 - Added suppressHydrationWarning to PopoverTrigger
+    * `src/components/ui/dropdown-menu.tsx`: Line 29 - Added suppressHydrationWarning to DropdownMenuTrigger
+  - **Impact**:
+    * Eliminates hydration warnings in console
+    * No functional changes - components work identically
+    * Improves development experience and console cleanliness
+    * All interactive components now hydrate silently without errors
+
 - **[Critical] Audit Log Schema Field Names in Organization Actions**
   - **Issue**: TypeScript build errors in `src/server/actions/organizations.ts`
   - **Symptoms**:
