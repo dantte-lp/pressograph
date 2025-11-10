@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[Critical] NextIntlClientProvider Context Error on Tests Page**
+  - **Issue**: Tests page (/tests) was throwing "Failed to call `useTranslations` because the context from `NextIntlClientProvider` was not found" error
+  - **Root Cause**: Three tests components (TestsFilterBar, TestsTableClient, EditTestFormClient) were importing `useTranslations()` from 'next-intl' which requires NextIntlClientProvider context, but the application uses a custom i18n setup
+  - **Fix**:
+    * Updated all three components to use `useTranslation()` from '@/hooks/use-translation' instead
+    * Changed from `const t = useTranslations('tests')` to `const { t } = useTranslation()`
+  - **Impact**: Tests page now loads correctly without translation context errors
+  - **Files Changed**:
+    * MODIFIED: `src/components/tests/tests-filter-bar.tsx` - Replaced useTranslations with useTranslation
+    * MODIFIED: `src/components/tests/tests-table-client.tsx` - Replaced useTranslations with useTranslation
+    * MODIFIED: `src/components/tests/edit-test-form-client.tsx` - Replaced useTranslations with useTranslation
+  - **Date**: 2025-11-10
+  - **Commit**: fab3e740
+
 - **[Critical] NextAuth CLIENT_FETCH_ERROR**
   - **Issue**: NextAuth was throwing "CLIENT_FETCH_ERROR: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON" error, preventing authentication from working properly
   - **Root Cause**: Components using `useSession()` hook (Header, UserMenu) were being rendered before SessionProvider could properly hydrate on the client side, causing fetch errors during SSR
