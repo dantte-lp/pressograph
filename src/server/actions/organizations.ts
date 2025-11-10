@@ -105,7 +105,7 @@ export async function updateOrganizationSettings(
     if (!validation.success) {
       return {
         success: false,
-        error: `Invalid settings: ${validation.error.errors[0]?.message}`,
+        error: `Invalid settings: ${validation.error.issues[0]?.message || 'Validation failed'}`,
       };
     }
 
@@ -121,10 +121,11 @@ export async function updateOrganizationSettings(
     // Log the change
     await db.insert(auditLogs).values({
       userId: session.user.id,
-      action: "update_organization_settings",
-      entityType: "organization",
-      entityId: organizationId,
-      details: {
+      userEmail: session.user.email || undefined,
+      action: "organization.update_settings",
+      resource: "organization",
+      resourceId: organizationId,
+      metadata: {
         updatedFields: Object.keys(settings),
         timestamp: new Date().toISOString(),
       },
@@ -187,10 +188,11 @@ export async function updateOrganizationBranding(
     // Log the change
     await db.insert(auditLogs).values({
       userId: session.user.id,
-      action: "update_organization_branding",
-      entityType: "organization",
-      entityId: organizationId,
-      details: {
+      userEmail: session.user.email || undefined,
+      action: "organization.update_branding",
+      resource: "organization",
+      resourceId: organizationId,
+      metadata: {
         branding,
         timestamp: new Date().toISOString(),
       },
