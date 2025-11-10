@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[Critical] User Management Dialog Update Button Non-Responsive**
+  - **Issue**: In user edit mode, the "Update User" button does not respond to clicks and settings are not saved
+  - **User Report**: "В окне изменения пользователя не работает кнопка обновления - нет реакции на нажатие, настройки не сохраняются"
+  - **Symptoms**:
+    * Update button appears clickable but has no response on click
+    * No form submission occurs
+    * No validation errors displayed
+    * Settings are not saved to database
+  - **Root Cause Analysis**:
+    * Zod schema validation blocking form submission silently
+    * Password field schema: `z.string().min(8).optional()` was problematic
+    * In edit mode, password input renders with empty string `""`, not `undefined`
+    * `.optional()` only allows `undefined`, not empty strings
+    * Empty string failed `.min(8)` validation rule
+    * Form blocked submission due to validation failure
+    * No error shown because password field hidden in edit mode (line 259)
+  - **Solution Implemented**:
+    * Changed password field schema from `z.string().min(8).optional()` to `z.string()`
+    * Moved password validation to `onSubmit` handler with mode check
+    * In create mode: validate password is present and meets min 8 chars
+    * In edit mode: allow empty string (no password validation)
+    * Added comments explaining behavior for both modes
+  - **Files Modified**:
+    * `src/components/admin/user-management-dialog.tsx`:
+      - Line 54: Changed password schema to `z.string()` (allows empty strings)
+      - Lines 47-49: Added explanatory comments
+      - Line 120: Enhanced password validation in create mode to check length
+  - **Technical Details**:
+    * Zod `.optional()` makes field optional only when value is `undefined`
+    * React input with `value=""` passes empty string, not `undefined`
+    * Schema validation runs before `onSubmit`, blocking submission
+    * Solution: Remove validation constraint from schema, add to handler
+  - **Impact**:
+    * Update button now responds to clicks in edit mode
+    * Form submits successfully without password changes
+    * Create mode still validates password requirement
+    * All user profile updates working correctly
+  - **Testing**:
+    * Verified TypeScript type checking passes (no errors in dialog component)
+    * Edit mode: button responds, form submits, users can update name/email/role
+    * Create mode: password validation still enforces 8 char minimum
+  - **Files**: `src/components/admin/user-management-dialog.tsx`
+  - **Commit**: Current commit
+
 - **[Critical] i18next Configuration Error - NO_I18NEXT_INSTANCE**
   - **Issue**: React components using `useTranslation()` hook received error: "You will need to pass in an i18next instance by using initReactI18next"
   - **Symptoms**:

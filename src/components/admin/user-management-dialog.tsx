@@ -45,11 +45,13 @@ import { createUser, updateUser } from '@/lib/actions/admin';
 import { Loader2Icon } from 'lucide-react';
 
 // Form validation schema
+// In edit mode, password is optional (empty string is allowed)
+// In create mode, password is required and must be at least 8 characters
 const userFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   username: z.string().min(3, 'Username must be at least 3 characters'),
-  password: z.string().min(8, 'Password must be at least 8 characters').optional(),
+  password: z.string(),
   role: z.enum(['admin', 'user']),
   organizationId: z.string().nullable().optional(),
 });
@@ -114,8 +116,8 @@ export function UserManagementDialog({
 
     try {
       if (mode === 'create') {
-        // Create mode requires password
-        if (!values.password) {
+        // Create mode requires password with minimum 8 characters
+        if (!values.password || values.password.length < 8) {
           toast({
             variant: 'destructive',
             title: t('toast.error'),
