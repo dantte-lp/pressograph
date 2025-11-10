@@ -1,4 +1,6 @@
 import { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface TestConfigDisplayProps {
   config: PressureTestConfig;
@@ -11,64 +13,78 @@ export function TestConfigDisplay({ config }: TestConfigDisplayProps) {
       <div>
         <h3 className="text-sm font-semibold mb-3">Core Parameters</h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-sm text-muted-foreground">Working Pressure</div>
-            <div className="text-lg font-semibold">
-              {config.workingPressure} {config.pressureUnit}
-            </div>
-          </div>
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-sm text-muted-foreground">Max Pressure</div>
-            <div className="text-lg font-semibold">
-              {config.maxPressure} {config.pressureUnit}
-            </div>
-          </div>
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-sm text-muted-foreground">Test Duration</div>
-            <div className="text-lg font-semibold">
-              {config.testDuration} hours
-            </div>
-          </div>
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-sm text-muted-foreground">Temperature</div>
-            <div className="text-lg font-semibold">
-              {config.temperature}°{config.temperatureUnit}
-            </div>
-          </div>
-          <div className="rounded-lg border p-3 space-y-1">
-            <div className="text-sm text-muted-foreground">Allowable Pressure Drop</div>
-            <div className="text-lg font-semibold">
-              {config.allowablePressureDrop} {config.pressureUnit}
-            </div>
-          </div>
+          <Card>
+            <CardContent className="pt-6 space-y-1">
+              <div className="text-sm text-muted-foreground">Working Pressure</div>
+              <div className="text-lg font-semibold">
+                {config.workingPressure} {config.pressureUnit}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 space-y-1">
+              <div className="text-sm text-muted-foreground">Max Pressure</div>
+              <div className="text-lg font-semibold">
+                {config.maxPressure} {config.pressureUnit}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 space-y-1">
+              <div className="text-sm text-muted-foreground">Test Duration</div>
+              <div className="text-lg font-semibold">
+                {config.testDuration} hours
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 space-y-1">
+              <div className="text-sm text-muted-foreground">Temperature</div>
+              <div className="text-lg font-semibold">
+                {config.temperature}°{config.temperatureUnit}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 space-y-1">
+              <div className="text-sm text-muted-foreground">Allowable Pressure Drop</div>
+              <div className="text-lg font-semibold">
+                {config.allowablePressureDrop} {config.pressureUnit}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {/* Intermediate Stages */}
       {config.intermediateStages && config.intermediateStages.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold mb-3">Intermediate Stages</h3>
+          <h3 className="text-sm font-semibold mb-3">
+            Intermediate Stages
+            <Badge variant="secondary" className="ml-2">
+              {config.intermediateStages.length}
+            </Badge>
+          </h3>
           <div className="space-y-2">
             {config.intermediateStages.map((stage, index) => (
-              <div
-                key={index}
-                className="rounded-lg border p-3 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {index + 1}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-sm">
-                      <span className="font-medium">{stage.pressure} {config.pressureUnit}</span>
-                      <span className="text-muted-foreground"> at {stage.time} min</span>
+              <Card key={index}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {index + 1}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Hold for {stage.duration} minutes
+                    <div className="space-y-1">
+                      <div className="text-sm">
+                        <span className="font-medium">{stage.pressure} {config.pressureUnit}</span>
+                        <span className="text-muted-foreground"> at {stage.time} min</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Hold for {stage.duration} minutes
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
