@@ -37,8 +37,9 @@ services:
       REDIS_URL: redis://cache:6379
 
       # Authentication
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: dev-secret-change-in-production
+      # Use NEXTAUTH_URL from .env.local or default to localhost
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
 
       # Observability (OpenTelemetry + VictoriaMetrics)
       OTEL_ENABLED: ${OTEL_ENABLED:-false}
