@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslation } from '@/hooks/use-translation';
 import {
   Table,
   TableBody,
@@ -56,7 +56,7 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export function TestsTableClient({ data, filters, pagination }: TestsTableClientProps) {
-  const t = useTranslations('tests');
+  const { t } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState<{ id: string; number: string; name?: string } | null>(null);

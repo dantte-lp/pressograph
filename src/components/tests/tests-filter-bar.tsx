@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslation } from '@/hooks/use-translation';
 import {
   FilterIcon,
   SearchIcon,
@@ -71,7 +71,7 @@ const TEST_STATUSES = [
 export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const t = useTranslations('tests');
+  const { t } = useTranslation();
 
   // State
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');

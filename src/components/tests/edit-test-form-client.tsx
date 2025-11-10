@@ -6,7 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useTranslation } from '@/hooks/use-translation';
 import { PlusIcon, TrashIcon, SaveIcon } from 'lucide-react';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { Button } from '@/components/ui/button';
@@ -76,7 +76,7 @@ interface EditTestFormClientProps {
 
 export function EditTestFormClient({ test }: EditTestFormClientProps) {
   const router = useRouter();
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState('basic');
 
