@@ -19,6 +19,8 @@
  */
 
 import { getProjects } from '@/lib/actions/projects';
+import { getTests } from '@/lib/actions/tests';
+import type { TestFilters, PaginationParams } from '@/lib/actions/tests';
 import { TestsPageClient } from '@/components/tests/tests-page-client';
 
 export const metadata = {
@@ -58,14 +60,28 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
   const projectsResult = await getProjects({ limit: 100, offset: 0 });
   const projects = projectsResult.projects.map(p => ({ id: p.id, name: p.name }));
 
+  // Build filters for tests query
+  const filters: TestFilters = {
+    search,
+    projectId,
+    status: status as any,
+    sortBy,
+  };
+
+  // Build pagination
+  const paginationParams: PaginationParams = {
+    page,
+    pageSize,
+  };
+
+  // Fetch tests data on server
+  const testsData = await getTests(filters, paginationParams);
+
   return (
     <TestsPageClient
-      page={page}
-      pageSize={pageSize}
-      search={search}
-      projectId={projectId}
-      status={status}
-      sortBy={sortBy}
+      initialData={testsData}
+      filters={filters}
+      pagination={paginationParams}
       projects={projects}
     />
   );

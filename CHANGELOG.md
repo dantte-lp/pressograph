@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[Critical] Async Client Component Error in TestsTable**
+  - **Issue**: Tests page (/tests) and project detail page (/projects/[id]) were throwing React errors:
+    * "TestsTable is an async Client Component. Only Server Components can be async"
+    * "Cannot update a component (Router) while rendering a different component (TestsTable)"
+    * "Server Functions cannot be called during initial render"
+  - **Root Cause**: TestsTable was an async Client Component attempting to call Server Actions (getTests) during render
+  - **Architecture Problem**:
+    * page.tsx (Server) → TestsPageClient (Client) → TestsTable (async Client!) → TestsTableClient
+    * Client Components cannot be async or call Server Functions during render
+    * Suspense boundary was used incorrectly around async Client Component
+  - **Fix**:
+    * Removed intermediate TestsTable component entirely (deleted tests-table.tsx)
+    * Moved getTests() data fetching to page.tsx (Server Component)
+    * Updated TestsPageClient to receive initialData and pass directly to TestsTableClient
+    * Applied same pattern to projects/[id]/page.tsx
+  - **New Architecture**:
+    * page.tsx (Server with getTests) → TestsPageClient (Client) → TestsTableClient
+    * Data fetching happens on server, client components only handle UI
+  - **Impact**:
+    * /tests page now renders without React errors
+    * /projects/[id] page now renders tests table correctly
+    * Proper Server/Client Component boundaries
+    * Better performance with SSR data fetching
+  - **Files Changed**:
+    * MODIFIED: src/app/(dashboard)/tests/page.tsx - Added getTests() call, pass data to client
+    * MODIFIED: src/app/(dashboard)/projects/[id]/page.tsx - Added getTests() call
+    * MODIFIED: src/components/tests/tests-page-client.tsx - Updated props, removed Suspense
+    * DELETED: src/components/tests/tests-table.tsx - No longer needed
+  - **Date**: 2025-11-10
+
 - **[High] NextAuth Logout and Session Management Issues**
   - **Issues**:
     1. After clicking logout, users were redirected to `/` instead of `/auth/signin`

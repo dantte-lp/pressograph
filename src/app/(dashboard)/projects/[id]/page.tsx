@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +12,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { getProjectById } from '@/lib/actions/projects';
-import { TestsTable } from '@/components/tests/tests-table';
-import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
+import { getTests } from '@/lib/actions/tests';
+import type { TestFilters, PaginationParams } from '@/lib/actions/tests';
+import { TestsTableClient } from '@/components/tests/tests-table-client';
 import { formatDate, formatRelativeTime } from '@/lib/utils/format';
 
 interface ProjectDetailPageProps {
@@ -50,6 +50,23 @@ export default async function ProjectDetailPage({
   const search = searchParamsResolved.search;
   const status = searchParamsResolved.status?.split(',').filter(Boolean);
   const sortBy = searchParamsResolved.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
+
+  // Build filters for tests query
+  const filters: TestFilters = {
+    search,
+    projectId: project.id, // Filter tests by this project
+    status: status as any,
+    sortBy,
+  };
+
+  // Build pagination
+  const paginationParams: PaginationParams = {
+    page,
+    pageSize,
+  };
+
+  // Fetch tests data on server
+  const testsData = await getTests(filters, paginationParams);
 
   return (
     <div className="container mx-auto space-y-8 p-6 lg:p-8">
@@ -147,16 +164,11 @@ export default async function ProjectDetailPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<TestsTableSkeleton />}>
-            <TestsTable
-              page={page}
-              pageSize={pageSize}
-              search={search}
-              projectId={project.id}
-              status={status}
-              sortBy={sortBy}
-            />
-          </Suspense>
+          <TestsTableClient
+            data={testsData}
+            filters={filters}
+            pagination={paginationParams}
+          />
         </CardContent>
       </Card>
     </div>

@@ -14,33 +14,26 @@
  * - Full i18n support
  */
 
-import { Suspense } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
-import { TestsTable } from '@/components/tests/tests-table';
-import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
+import { TestsTableClient } from '@/components/tests/tests-table-client';
 import { TestsFilterBar } from '@/components/tests/tests-filter-bar';
+import type { PaginatedTests, TestFilters, PaginationParams } from '@/lib/actions/tests';
 
 interface TestsPageClientProps {
-  page: number;
-  pageSize: number;
-  search?: string;
-  projectId?: string;
-  status?: string[];
-  sortBy?: 'newest' | 'oldest' | 'testNumber' | 'name';
+  initialData: PaginatedTests;
+  filters: TestFilters;
+  pagination: PaginationParams;
   projects: Array<{ id: string; name: string }>;
 }
 
 export function TestsPageClient({
-  page,
-  pageSize,
-  search,
-  projectId,
-  status,
-  sortBy,
+  initialData,
+  filters,
+  pagination,
   projects,
 }: TestsPageClientProps) {
   const { t } = useTranslation();
@@ -75,17 +68,12 @@ export function TestsPageClient({
           {/* Filter Bar */}
           <TestsFilterBar projects={projects} />
 
-          {/* Table */}
-          <Suspense fallback={<TestsTableSkeleton />}>
-            <TestsTable
-              page={page}
-              pageSize={pageSize}
-              search={search}
-              projectId={projectId}
-              status={status}
-              sortBy={sortBy}
-            />
-          </Suspense>
+          {/* Table - directly use client component with server-fetched data */}
+          <TestsTableClient
+            data={initialData}
+            filters={filters}
+            pagination={pagination}
+          />
         </CardContent>
       </Card>
     </div>
