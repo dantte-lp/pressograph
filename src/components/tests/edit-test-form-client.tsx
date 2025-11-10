@@ -226,11 +226,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
         <TabsContent value="basic" className="space-y-4 mt-6">
           {/* Test Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Test Name *</Label>
+            <Label htmlFor="name">{t('testForm.testName')} *</Label>
             <Input
               id="name"
               {...register('name')}
-              placeholder="e.g., Daily Pressure Test - Pipeline A"
+              placeholder={t('testForm.testNamePlaceholder')}
               aria-invalid={!!errors.name}
             />
             {errors.name && <FormError error={errors.name.message} />}
@@ -238,34 +238,36 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
           {/* Test Number */}
           <div className="space-y-2">
-            <Label htmlFor="testNumber">Test Number *</Label>
+            <Label htmlFor="testNumber">{t('testForm.testNumberLabel')} *</Label>
             <Input
               id="testNumber"
               {...register('testNumber')}
-              placeholder="e.g., PT-2025-001"
+              placeholder={t('testForm.testNumberPlaceholder')}
               aria-invalid={!!errors.testNumber}
             />
             <p className="text-sm text-muted-foreground">
-              Must be unique within your organization.
+              {t('testForm.testNumberHint')}
             </p>
             {errors.testNumber && <FormError error={errors.testNumber.message} />}
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('testForm.descriptionLabel')}</Label>
             <Textarea
               id="description"
               {...register('description')}
-              placeholder="Optional description of the test purpose..."
+              placeholder={t('testForm.descriptionPlaceholder')}
               rows={4}
             />
             {errors.description && <FormError error={errors.description.message} />}
           </div>
 
+          <Separator className="my-6" />
+
           {/* Template Type */}
           <div className="space-y-2">
-            <Label htmlFor="templateType">Template Type</Label>
+            <Label htmlFor="templateType">{t('testForm.templateType')}</Label>
             <Select
               value={formValues.templateType}
               onValueChange={(value) => setValue('templateType', value as any)}
@@ -274,23 +276,23 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Daily (24 hours)</SelectItem>
-                <SelectItem value="extended">Extended (48-72 hours)</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
+                <SelectItem value="daily">{t('testForm.templateDaily')}</SelectItem>
+                <SelectItem value="extended">{t('testForm.templateExtended')}</SelectItem>
+                <SelectItem value="custom">{t('testForm.templateCustom')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label htmlFor="tags">Tags (comma-separated)</Label>
+            <Label htmlFor="tags">{t('testForm.tagsLabel')}</Label>
             <Input
               id="tags"
               {...register('tags')}
-              placeholder="e.g., pipeline, commissioning, critical"
+              placeholder={t('testForm.tagsPlaceholder')}
             />
             <p className="text-xs text-muted-foreground">
-              Separate multiple tags with commas
+              {t('testForm.tagsHint')}
             </p>
           </div>
         </TabsContent>
@@ -303,13 +305,13 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               {/* Pressure Settings */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Pressure Settings</CardTitle>
+                  <CardTitle className="text-sm">{t('testForm.pressureSettings')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-3 md:grid-cols-2">
                 {/* Working Pressure */}
                 <div className="space-y-2">
-                  <Label htmlFor="workingPressure">Working Pressure *</Label>
+                  <Label htmlFor="workingPressure">{t('testForm.workingPressure')} *</Label>
                   <Input
                     id="workingPressure"
                     type="number"
@@ -324,7 +326,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
                 {/* Max Pressure */}
                 <div className="space-y-2">
-                  <Label htmlFor="maxPressure">Maximum Pressure *</Label>
+                  <Label htmlFor="maxPressure">{t('testForm.maximumPressure')} *</Label>
                   <Input
                     id="maxPressure"
                     type="number"
@@ -337,7 +339,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
                 {/* Allowable Pressure Drop */}
                 <div className="space-y-2">
-                  <Label htmlFor="allowablePressureDrop">Allowable Pressure Drop *</Label>
+                  <Label htmlFor="allowablePressureDrop">{t('testForm.allowablePressureDrop')} *</Label>
                   <Input
                     id="allowablePressureDrop"
                     type="number"
@@ -352,7 +354,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
                 {/* Pressure Unit */}
                 <div className="space-y-2">
-                  <Label htmlFor="pressureUnit">Pressure Unit</Label>
+                  <Label htmlFor="pressureUnit">{t('testForm.pressureUnit')}</Label>
                   <Select
                     value={formValues.pressureUnit}
                     onValueChange={(value) => setValue('pressureUnit', value as any)}
@@ -374,13 +376,13 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             {/* Duration and Temperature */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Duration & Temperature</CardTitle>
+                <CardTitle className="text-sm">{t('testForm.durationAndTemperature')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid gap-3 md:grid-cols-2">
                 {/* Test Duration */}
                 <div className="space-y-2">
-                  <Label htmlFor="testDuration">Test Duration (hours) *</Label>
+                  <Label htmlFor="testDuration">{t('testForm.testDurationHours')} *</Label>
                   <Input
                     id="testDuration"
                     type="number"
@@ -393,7 +395,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
 
                 {/* Temperature */}
                 <div className="space-y-2">
-                  <Label htmlFor="temperature">Temperature *</Label>
+                  <Label htmlFor="temperature">{t('testForm.temperature')} *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="temperature"
@@ -424,12 +426,12 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             {/* Test Schedule */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Test Schedule (Optional)</CardTitle>
+                <CardTitle className="text-sm">{t('testForm.testSchedule')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="startDateTime">Start Date & Time</Label>
+                    <Label htmlFor="startDateTime">{t('testForm.startDateTime')}</Label>
                     <Input
                       id="startDateTime"
                       type="datetime-local"
@@ -437,12 +439,12 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                       className="text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
-                      When the test should begin
+                      {t('testForm.startDateTimeHint')}
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="endDateTime">End Date & Time</Label>
+                    <Label htmlFor="endDateTime">{t('testForm.endDateTime')}</Label>
                     <Input
                       id="endDateTime"
                       type="datetime-local"
@@ -450,7 +452,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                       className="text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
-                      When the test should end
+                      {t('testForm.endDateTimeHint')}
                     </p>
                   </div>
                 </div>
@@ -460,34 +462,34 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             {/* Equipment and Operator */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Equipment & Operator (Optional)</CardTitle>
+                <CardTitle className="text-sm">{t('testForm.equipmentAndOperator')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="equipmentId">Equipment ID</Label>
+                    <Label htmlFor="equipmentId">{t('testForm.equipmentId')}</Label>
                     <Input
                       id="equipmentId"
-                      placeholder="e.g., PUMP-001"
+                      placeholder={t('testForm.equipmentIdPlaceholder')}
                       {...register('equipmentId')}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="operatorName">Operator Name</Label>
+                    <Label htmlFor="operatorName">{t('testForm.operatorName')}</Label>
                     <Input
                       id="operatorName"
-                      placeholder="e.g., John Doe"
+                      placeholder={t('testForm.operatorNamePlaceholder')}
                       {...register('operatorName')}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">{t('testForm.notes')}</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Additional notes"
+                    placeholder={t('testForm.notesPlaceholder')}
                     rows={3}
                     {...register('notes')}
                   />
@@ -502,9 +504,9 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-sm">Live Preview</CardTitle>
+                    <CardTitle className="text-sm">{t('testForm.livePreview')}</CardTitle>
                     <CardDescription className="text-xs">
-                      Real-time visualization of test configuration
+                      {t('testForm.livePreviewDescription')}
                     </CardDescription>
                   </div>
                   <PreviewDialog
@@ -538,16 +540,16 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
         <TabsContent value="stages" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Intermediate Stages</CardTitle>
+              <CardTitle className="text-base">{t('testForm.intermediateStages')}</CardTitle>
               <CardDescription>
-                Add optional pressure steps during the test
+                {t('testForm.intermediateStagesDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {fields.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>No intermediate stages added yet.</p>
-                  <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
+                  <p>{t('testForm.noStagesAdded')}</p>
+                  <p className="text-sm mt-1">{t('testForm.clickAddStage')}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -556,12 +558,12 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">#</th>
-                          <th className="px-3 py-2 text-left font-medium" title="Minutes AFTER previous stage's hold duration ends">
-                            Time (min)
+                          <th className="px-3 py-2 text-left font-medium" title={t('testForm.timeTooltip')}>
+                            {t('testForm.timeMinutes')}
                           </th>
-                          <th className="px-3 py-2 text-left font-medium">Pressure ({formValues.pressureUnit ?? 'MPa'})</th>
-                          <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
-                          <th className="px-3 py-2 text-center font-medium">Actions</th>
+                          <th className="px-3 py-2 text-left font-medium">{t('testForm.pressure')} ({formValues.pressureUnit ?? 'MPa'})</th>
+                          <th className="px-3 py-2 text-left font-medium">{t('testForm.holdMinutes')}</th>
+                          <th className="px-3 py-2 text-center font-medium">{t('testForm.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -577,7 +579,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                                 {...register(`intermediateStages.${index}.time` as const, {
                                   valueAsNumber: true,
                                 })}
-                                title="Minutes AFTER previous stage's hold duration ends"
+                                title={t('testForm.timeTooltip')}
                               />
                             </td>
                             <td className="px-3 py-1.5">
@@ -620,7 +622,7 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
-                    <span>Total Stages: {fields.length}</span>
+                    <span>{t('testForm.totalStages', { count: fields.length })}</span>
                   </div>
                 </div>
               )}
@@ -635,11 +637,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
                 className="w-full"
               >
                 <PlusIcon className="mr-2 h-4 w-4" />
-                Add Stage
+                {t('testForm.addStage')}
               </Button>
 
               {errors.intermediateStages && (
-                <FormError error={errors.intermediateStages.message || 'Invalid intermediate stages configuration'} />
+                <FormError error={errors.intermediateStages.message || t('testForm.invalidStagesConfiguration')} />
               )}
             </CardContent>
           </Card>
@@ -651,9 +653,9 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Graph Preview</CardTitle>
+                  <CardTitle>{t('testForm.graphPreviewTitle')}</CardTitle>
                   <CardDescription>
-                    Real-time pressure profile visualization
+                    {t('testForm.graphPreviewDescription')}
                   </CardDescription>
                 </div>
                 <PreviewDialog
@@ -690,11 +692,11 @@ export function EditTestFormClient({ test }: EditTestFormClientProps) {
           onClick={() => router.back()}
           disabled={isPending}
         >
-          Cancel
+          {t('testForm.cancel')}
         </Button>
         <Button type="submit" disabled={isPending}>
           <SaveIcon className="mr-2 h-4 w-4" />
-          {isPending ? 'Saving...' : 'Save Changes'}
+          {isPending ? t('testForm.saving') : t('testForm.saveChanges')}
         </Button>
       </div>
     </form>

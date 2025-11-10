@@ -509,6 +509,9 @@
     "stagePressurePositive": "Pressure must be positive",
     "stageDurationPositive": "Duration must be positive",
     "invalidStagesConfiguration": "Invalid intermediate stages configuration",
-    "timeTooltip": "Minutes AFTER previous stage's hold duration ends"
+    "timeTooltip": "Minutes AFTER previous stage's hold duration ends",
+    "actions": "Actions",
+    "cancel": "Cancel",
+    "requiredField": "Required field"
   }
 }
