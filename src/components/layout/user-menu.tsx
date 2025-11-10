@@ -60,11 +60,20 @@ function getUserInitials(name?: string | null): string {
  * ```
  */
 export function UserMenu() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession({
+    required: false,
+  });
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });
   };
+
+  // Show loading state while session is being checked
+  if (status === 'loading') {
+    return (
+      <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+    );
+  }
 
   if (!session) {
     return (

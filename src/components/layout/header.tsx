@@ -21,7 +21,9 @@ import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 
 export function Header() {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession({
+    required: false,
+  });
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
