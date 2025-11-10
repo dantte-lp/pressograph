@@ -99,15 +99,19 @@ const getBottomNavItems = (): NavItem[] => [
 interface SidebarProps {
   collapsed?: boolean;
   onToggle?: () => void;
+  userRole?: string;
 }
 
-export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed = false, onToggle, userRole }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const navItems = getNavItems();
-  const bottomNavItems = getBottomNavItems();
+  // Filter admin link based on user role
+  const bottomNavItems = getBottomNavItems().filter(
+    (item) => item.href !== '/admin' || userRole === 'admin'
+  );
 
   const isActive = (href?: string) => {
     if (!href) return false;

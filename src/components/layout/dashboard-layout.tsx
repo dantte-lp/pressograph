@@ -30,9 +30,13 @@ interface DashboardLayoutProps {
    * Current locale (passed from Server Component)
    */
   locale: Locale;
+  /**
+   * User role for conditional navigation display
+   */
+  userRole?: string;
 }
 
-export function DashboardLayout({ children, title, locale }: DashboardLayoutProps) {
+export function DashboardLayout({ children, title, locale, userRole }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -48,7 +52,7 @@ export function DashboardLayout({ children, title, locale }: DashboardLayoutProp
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} userRole={userRole} />
       </div>
 
       {/* Mobile Sidebar using Sheet */}
@@ -60,7 +64,7 @@ export function DashboardLayout({ children, title, locale }: DashboardLayoutProp
               Access dashboard navigation and settings
             </SheetDescription>
           </SheetHeader>
-          <Sidebar />
+          <Sidebar userRole={userRole} />
         </SheetContent>
       </Sheet>
 

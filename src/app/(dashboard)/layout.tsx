@@ -29,5 +29,9 @@ export default async function Layout({ children }: { children: React.ReactNode }
   const cookieStore = await cookies();
   const locale = (cookieStore.get('locale')?.value || 'en') as Locale;
 
-  return <DashboardLayout locale={locale}>{children}</DashboardLayout>;
+  return (
+    <DashboardLayout locale={locale} userRole={session.user.role}>
+      {children}
+    </DashboardLayout>
+  );
 }

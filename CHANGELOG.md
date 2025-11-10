@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **[High Security] Admin Route Authorization and Access Control**
+  - **Feature**: Implement role-based access control for admin routes and navigation
+  - **Implementation**:
+    * Created `/unauthorized` page for non-admin access attempts
+    * Updated Sidebar component to conditionally show admin link based on user role
+    * Modified DashboardLayout to pass user role from session to Sidebar
+    * Admin links now hidden from non-admin users in both desktop and mobile navigation
+  - **Security Benefits**:
+    * Prevents non-admin users from seeing admin navigation options
+    * Server-side authorization already in place via `requireAdmin()` function
+    * Provides clear feedback when unauthorized access is attempted
+  - **Files Modified**:
+    * `src/app/(dashboard)/unauthorized/page.tsx`: New unauthorized access page
+    * `src/components/layout/sidebar.tsx`: Added `userRole` prop and conditional filtering
+    * `src/components/layout/dashboard-layout.tsx`: Added `userRole` prop passthrough
+    * `src/app/(dashboard)/layout.tsx`: Pass user role from session to layout
+  - **User Experience**:
+    * Non-admin users see clean navigation without admin options
+    * Unauthorized access attempts show user-friendly error page
+    * Easy navigation back to dashboard or previous page
+
 ### Fixed
 
 - **[High] Hydration Mismatch Errors in Radix UI Components**
