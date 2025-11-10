@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Table,
   TableBody,
@@ -30,6 +31,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   FileDownIcon,
+  ArrowUpDownIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatBytes } from '@/lib/utils/format';
@@ -54,6 +56,7 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export function TestsTableClient({ data, filters, pagination }: TestsTableClientProps) {
+  const t = useTranslations('tests');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState<{ id: string; number: string; name?: string } | null>(null);
@@ -93,7 +96,15 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
   const handleBatchExportCSV = () => {
     const selectedTests = data.tests.filter(t => selectedIds.has(t.id));
     const csv = [
-      ['Test Number', 'Name', 'Project', 'Status', 'Runs', 'Last Run', 'Created'],
+      [
+        t('columnTestNumber'),
+        t('columnName'),
+        t('columnProject'),
+        t('columnStatus'),
+        t('columnRuns'),
+        t('columnLastRun'),
+        t('columnCreated'),
+      ],
       ...selectedTests.map(t => [
         t.testNumber,
         t.name,
@@ -127,14 +138,14 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
         <div className="text-muted-foreground mb-4 text-5xl">📊</div>
-        <h3 className="mb-2 text-lg font-semibold">No Tests Found</h3>
+        <h3 className="mb-2 text-lg font-semibold">{t('noTests')}</h3>
         <p className="text-muted-foreground mb-4 text-sm">
           {filters.search || filters.projectId || filters.status
-            ? 'Try adjusting your filters or search query'
-            : 'Create your first pressure test to get started'}
+            ? t('noTestsDescription')
+            : t('noTestsDescription')}
         </p>
         <Button asChild>
-          <Link href={"/tests/new" as any}>Create Test</Link>
+          <Link href={"/tests/new" as any}>{t('createTest')}</Link>
         </Button>
       </div>
     );
@@ -147,14 +158,14 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
         <div className="flex items-center justify-between rounded-md border bg-muted/50 p-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">
-              {selectedIds.size} test{selectedIds.size > 1 ? 's' : ''} selected
+              {t('testsSelected', { count: selectedIds.size })}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedIds(new Set())}
             >
-              Clear
+              {t('clearSelection')}
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -164,7 +175,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               onClick={handleBatchExportCSV}
             >
               <FileDownIcon className="mr-2 h-4 w-4" />
-              Export CSV
+              {t('exportCSV')}
             </Button>
             <Button
               variant="destructive"
@@ -172,7 +183,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               onClick={handleBatchDeleteClick}
             >
               <Trash2Icon className="mr-2 h-4 w-4" />
-              Delete
+              {t('batchDelete')}
             </Button>
           </div>
         </div>
@@ -187,17 +198,17 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                 <Checkbox
                   checked={selectedIds.size === data.tests.length && data.tests.length > 0}
                   onCheckedChange={toggleSelectAll}
-                  aria-label="Select all tests"
+                  aria-label={t('selectAll')}
                 />
               </TableHead>
-              <TableHead>Test Number</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Runs</TableHead>
-              <TableHead>Last Run</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('columnTestNumber')}</TableHead>
+              <TableHead>{t('columnName')}</TableHead>
+              <TableHead>{t('columnProject')}</TableHead>
+              <TableHead>{t('columnStatus')}</TableHead>
+              <TableHead>{t('columnRuns')}</TableHead>
+              <TableHead>{t('columnLastRun')}</TableHead>
+              <TableHead>{t('columnCreated')}</TableHead>
+              <TableHead className="text-right">{t('columnActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -259,31 +270,31 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                       <DropdownMenuItem asChild>
                         <Link href={`/tests/${test.id}` as any}>
                           <EyeIcon className="mr-2 h-4 w-4" />
-                          View Details
+                          {t('viewDetails')}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/tests/${test.id}/runs` as any}>
                           <PlayIcon className="mr-2 h-4 w-4" />
-                          View Runs
+                          {t('viewRuns')}
                         </Link>
                       </DropdownMenuItem>
                       {test.latestGraphSize && (
                         <DropdownMenuItem asChild>
                           <Link href={`/api/tests/${test.id}/download` as any}>
                             <DownloadIcon className="mr-2 h-4 w-4" />
-                            Download Graph ({formatBytes(test.latestGraphSize)})
+                            {t('downloadGraph')} ({formatBytes(test.latestGraphSize)})
                           </Link>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem>
                         <Share2Icon className="mr-2 h-4 w-4" />
-                        Create Share Link
+                        {t('createShareLink')}
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/tests/${test.id}/duplicate` as any}>
                           <CopyIcon className="mr-2 h-4 w-4" />
-                          Duplicate Test
+                          {t('duplicateAction')}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -292,7 +303,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                         onClick={() => handleDeleteClick(test.id, test.testNumber, test.name)}
                       >
                         <Trash2Icon className="mr-2 h-4 w-4" />
-                        Delete
+                        {t('deleteTest')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -307,8 +318,11 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
       {data.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-muted-foreground text-sm">
-            Showing {(data.page - 1) * data.pageSize + 1} to{' '}
-            {Math.min(data.page * data.pageSize, data.total)} of {data.total} tests
+            {t('showing', {
+              from: (data.page - 1) * data.pageSize + 1,
+              to: Math.min(data.page * data.pageSize, data.total),
+              total: data.total,
+            })}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -319,11 +333,11 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
             >
               <Link href={buildPageUrl(data.page - 1) as any}>
                 <ChevronLeftIcon className="h-4 w-4" />
-                Previous
+                {t('previous')}
               </Link>
             </Button>
             <span className="text-sm">
-              Page {data.page} of {data.totalPages}
+              {t('page', { current: data.page, total: data.totalPages })}
             </span>
             <Button
               variant="outline"
@@ -332,7 +346,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               disabled={data.page >= data.totalPages}
             >
               <Link href={buildPageUrl(data.page + 1) as any}>
-                Next
+                {t('next')}
                 <ChevronRightIcon className="h-4 w-4" />
               </Link>
             </Button>

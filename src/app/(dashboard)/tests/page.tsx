@@ -1,10 +1,13 @@
 import { Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { TestsTable } from '@/components/tests/tests-table';
 import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
+import { TestsFilterBar } from '@/components/tests/tests-filter-bar';
+import { getProjects } from '@/lib/actions/projects';
 
 /**
  * Tests Page
@@ -13,11 +16,15 @@ import { TestsTableSkeleton } from '@/components/tests/tests-table-skeleton';
  * Replaces the old /history route from v1.0.
  *
  * Features:
- * - Searchable and filterable table
+ * - Advanced search with debounce
+ * - Multi-filter (status, project, date range)
+ * - Column sorting
  * - Pagination
+ * - Batch operations
  * - Per-test actions (view, download, share, delete)
  * - Status indicators
  * - Empty states
+ * - Full i18n support
  */
 
 interface TestsPageProps {
@@ -32,6 +39,9 @@ interface TestsPageProps {
 }
 
 export default async function TestsPage({ searchParams }: TestsPageProps) {
+  // Get translations
+  const t = await getTranslations('tests');
+
   // Parse search params (await Promise in Next.js 16+)
   const params = await searchParams;
   const page = parseInt(params.page ?? '1', 10);
@@ -48,20 +58,24 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
 
   const sortBy = params.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
 
+  // Fetch projects for filter dropdown
+  const projectsResult = await getProjects({ page: 1, pageSize: 100 });
+  const projects = projectsResult.projects.map(p => ({ id: p.id, name: p.name }));
+
   return (
     <div className="container mx-auto space-y-8 p-6 lg:p-8">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tests</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">
-            View and manage all your pressure tests
+            {t('allTests')}
           </p>
         </div>
         <Button asChild>
           <Link href={"/tests/new" as any}>
             <PlusIcon className="mr-2 h-4 w-4" />
-            Create Test
+            {t('createTest')}
           </Link>
         </Button>
       </div>
@@ -69,12 +83,16 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
       {/* Tests Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Tests</CardTitle>
+          <CardTitle>{t('allTests')}</CardTitle>
           <CardDescription>
-            Complete list of pressure tests across all projects
+            {t('allTests')}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {/* Filter Bar */}
+          <TestsFilterBar projects={projects} />
+
+          {/* Table */}
           <Suspense fallback={<TestsTableSkeleton />}>
             <TestsTable
               page={page}

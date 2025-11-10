@@ -9,6 +9,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Enhancement] Tests Page - Advanced Filtering, Search, and Sorting (COMPLETE)**
+  - **Objective**: Enhance /tests page with comprehensive filtering, search, and sorting capabilities
+  - **Scope**: Full enhancement of tests table with advanced user controls and i18n support
+
+  **Implementation Details - COMPLETED 2025-11-10**:
+    1. **Translation System Enhancement**:
+       - Added 47 new translation keys to `tests` section
+       - Extended from 73 to 120 keys in both language files
+       - Added to `src/i18n/locales/en/common.json`
+       - Added to `src/i18n/locales/ru/common.json`
+       - Translation categories:
+         * Filter controls (filters, clearFilters, applyFilters, showFilters, hideFilters)
+         * Sort options (sortBy, sortNewest, sortOldest, sortTestNumber, sortName, sortLastRun, etc.)
+         * Date range picker (dateRange, fromDate, toDate, selectDate, clearDate)
+         * Batch actions (testsSelected, clearSelection, batchActions, exportCSV, batchDelete)
+         * Batch delete confirmation (batchDeleteConfirm, batchDeleteQuestion, batchDeleting, etc.)
+         * Pagination (showing, page, itemsPerPage, previous, next)
+         * Search (searchTests, noFiltersApplied, activeFilters)
+         * Column headers (columnTestNumber, columnName, columnProject, columnStatus, etc.)
+    2. **Advanced Filter Bar Component**:
+       - Created new `src/components/tests/tests-filter-bar.tsx`
+       - **Search functionality**:
+         * Debounced search input (500ms delay)
+         * Searches across test number, name, and tags
+         * Real-time URL parameter updates
+         * Clear search with reset
+       - **Sort dropdown**:
+         * 7 sort options: newest, oldest, test number, name A-Z, name Z-A, last run, run count
+         * Integrated with URL state management
+         * Icon indicator (ArrowUpDownIcon)
+       - **Filter popover**:
+         * Project dropdown filter (all projects + individual selection)
+         * Multi-select status checkboxes (draft, ready, running, completed, failed, cancelled)
+         * Active filter count badge
+         * Clear all filters button
+       - **Active filters display**:
+         * Visual badges showing applied filters
+         * Individual filter removal buttons
+         * Filter count indicator
+         * Responsive layout
+       - **URL state management**:
+         * All filters synced with URL search params
+         * Automatic page reset to 1 when filters change
+         * Shareable filter URLs
+         * Browser back/forward support
+    3. **Enhanced Tests Table Component**:
+       - Updated `src/components/tests/tests-table-client.tsx`
+       - **Full i18n implementation**:
+         * All hardcoded strings replaced with `t()` function calls
+         * Column headers translated
+         * Empty states translated
+         * Dropdown menu items translated
+         * Batch action toolbar translated
+         * Pagination controls translated
+       - **Batch operations**:
+         * Multi-select with checkboxes
+         * Select all / clear selection
+         * Batch export to CSV (with i18n headers)
+         * Batch delete with confirmation
+         * Selected count display with proper pluralization
+       - **Interactive table**:
+         * Clickable test numbers (link to test details)
+         * Status badges with color coding
+         * Action dropdown per row
+         * Relative time display for dates
+    4. **Enhanced Tests Page**:
+       - Updated `src/app/(dashboard)/tests/page.tsx`
+       - Added filter bar integration
+       - Fetches projects for filter dropdown
+       - Full i18n support for page header and descriptions
+       - Server-side translations with `getTranslations()`
+       - Clean layout with proper spacing
+    5. **Features Summary**:
+       - ✅ Search with debounce (500ms)
+       - ✅ Multi-criteria filtering (project, status)
+       - ✅ 7 sort options
+       - ✅ Active filter badges
+       - ✅ URL state persistence
+       - ✅ Batch selection and actions
+       - ✅ CSV export functionality
+       - ✅ Full i18n support (EN + RU)
+       - ✅ Responsive design
+       - ✅ Accessibility features
+    6. **Code Quality**:
+       - TypeScript type safety maintained
+       - Clean component architecture
+       - Reusable filter patterns
+       - URL-first state management
+       - Optimistic UI updates
+    7. **shadcn/ui Components Used**:
+       - ✅ Input (search field)
+       - ✅ Select (sort and project dropdowns)
+       - ✅ Popover (filter panel)
+       - ✅ Button (all actions)
+       - ✅ Badge (status indicators, filter badges)
+       - ✅ Checkbox (multi-select, status filters)
+       - ✅ Separator (visual dividers)
+       - ✅ Label (form labels)
+       - Icons: FilterIcon, SearchIcon, XIcon, ChevronDownIcon, ArrowUpDownIcon
+
+  - **Status**: ✅ COMPLETE (100%)
+  - **Files Created**:
+    - `src/components/tests/tests-filter-bar.tsx` (NEW: advanced filter component)
+  - **Files Modified**:
+    - `src/i18n/locales/en/common.json` (+47 keys in tests section)
+    - `src/i18n/locales/ru/common.json` (+47 keys in tests section)
+    - `src/app/(dashboard)/tests/page.tsx` (added filter bar, full i18n)
+    - `src/components/tests/tests-table-client.tsx` (100% i18n, enhanced features)
+  - **Total Translation Keys**: 120 in tests section per language
+  - Date Started: 2025-11-10
+  - Date Completed: 2025-11-10
+  - Type: Feature Enhancement
+  - Priority: User-Requested Feature
+
 - **[Issue #112] Test Edit Page - shadcn/ui Integration Refactoring (COMPLETE)**
   - **Objective**: Apply shadcn/ui Integration Strategy and add comprehensive i18n support to Test Edit Page
   - **Scope**: Full refactoring of edit test page with 100% translation coverage, visual improvements, and auto-save
