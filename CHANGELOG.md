@@ -9,8 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Internal Server Error due to corrupted Turbopack build cache**
-  - **Issue**: Next.js 16 website returning 500 Internal Server Error
+- **Production Site Internal Server Error - Directory Permissions**
+  - **Issue**: Production site at https://dev-pressograph.infra4.dev returning 500 Internal Server Error
+  - **Root Causes** (Multiple issues identified and resolved):
+    1. **Corrupted Turbopack Cache**:
+       - Symptom: `ENOENT: no such file or directory` errors in `.next/dev` directory
+       - Missing modules: `page.js`, `build-manifest.json`, Turbopack runtime files
+       - Resolution: Cleared `.next` directory in container (`rm -rf /workspace/.next`)
+    2. **Directory Permission Issues**:
+       - Symptom: Turbopack panic with "Permission denied (os error 13)"
+       - Affected: `/workspace/src/app/(dashboard)/projects/active` and `archived` directories
+       - Issue: Directories had restrictive permissions (700) preventing Turbopack file watching
+       - Resolution: Fixed permissions to 755 (`chmod 755 active archived`)
+    3. **Multiple Dev Server Processes**:
+       - Issue: Multiple Next.js dev servers running simultaneously causing port conflicts
+       - Resolution: Killed all orphaned processes, restarted single instance via PM2
+  - **Resolution Steps**:
+    1. Cleared corrupted `.next` cache in pressograph-dev-workspace container
+    2. Killed all orphaned Next.js dev server processes
+    3. Fixed directory permissions on `active` and `archived` route directories
+    4. Restarted dev server properly on port 3000 using PM2
+  - **Verification**:
+    - ✓ Root route: HTTP 200 OK
+    - ✓ Dashboard route: HTTP 307 (correct auth redirect)
+    - ✓ Docs route: HTTP 307 (correct auth redirect)
+    - ✓ API Docs route: Working correctly
+    - ✓ Traefik routing: Properly forwarding to port 3000
+  - Date: 2025-11-10
+  - Priority: P0 - Critical (Production site down)
+  - Resolution Time: ~25 minutes (investigation + fixes)
+  - Environment: pressograph-dev-workspace container (Traefik → port 3000)
+  - Status: Resolved
+
+- **Internal Server Error due to corrupted Turbopack build cache (Local)**
+  - **Issue**: Local development server returning 500 Internal Server Error
   - **Root Cause**: Corrupted `.next` build cache with missing Turbopack runtime files
     - Error: `Cannot find module ../chunks/ssr/[turbopack]_runtime.js`
     - Error: `ENOENT: no such file or directory, open .next/dev/routes-manifest.json`
@@ -18,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Command**: `rm -rf .next`
   - **Impact**: Website now loads correctly on all routes (home, dashboard, docs, api-docs)
   - **Prevention**: Document this fix in troubleshooting guide
-  - Date: 2025-11-10
+  - Date: 2025-11-09
   - Priority: P0 - Critical (Website down)
   - Resolution Time: <5 minutes
   - Status: Resolved
