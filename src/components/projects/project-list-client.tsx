@@ -1,21 +1,28 @@
+'use client';
+
 /**
- * Project List Component (Server Component)
+ * Project List Client Component
  *
- * Fetches and displays all projects for the current user.
- * Uses server-side data fetching for optimal performance.
+ * Displays list of projects with error handling and empty states.
+ * This is a client component to support interactivity.
  */
 
-import { getProjects } from '@/lib/actions/projects';
 import { ProjectCard } from './project-card';
 import { ProjectEmpty } from './project-empty';
+import type { Project } from '@/lib/db/schema/projects';
 
-interface ProjectListProps {
+interface ProjectListClientProps {
+  projects: Project[];
+  error: string | null;
   isArchived?: boolean;
 }
 
-export async function ProjectList({ isArchived = false }: ProjectListProps) {
-  const { projects, error } = await getProjects({ isArchived });
-
+export function ProjectListClient({
+  projects,
+  error,
+  isArchived = false,
+}: ProjectListClientProps) {
+  // Error state
   if (error) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
@@ -26,10 +33,12 @@ export async function ProjectList({ isArchived = false }: ProjectListProps) {
     );
   }
 
+  // Empty state
   if (projects.length === 0) {
     return <ProjectEmpty isArchived={isArchived} />;
   }
 
+  // Render project grid
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {projects.map((project) => (
