@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { FileImageIcon, FileCodeIcon, FileTextIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -216,33 +217,16 @@ export function DisplaySettings() {
             </p>
           </div>
 
-          <button
+          <Switch
             id="sidebarCollapsed"
-            type="button"
-            role="switch"
-            aria-checked={preferences.sidebarCollapsed}
-            onClick={() =>
+            checked={preferences.sidebarCollapsed}
+            onCheckedChange={(checked) =>
               updatePreference({
-                sidebarCollapsed: !preferences.sidebarCollapsed,
+                sidebarCollapsed: checked,
               })
             }
             disabled={saving}
-            className={cn(
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              preferences.sidebarCollapsed ? 'bg-primary' : 'bg-input'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-4 w-4 rounded-full bg-background transition-transform',
-                preferences.sidebarCollapsed
-                  ? 'translate-x-6'
-                  : 'translate-x-1'
-              )}
-            />
-          </button>
+          />
         </div>
 
         {/* Save Indicator */}

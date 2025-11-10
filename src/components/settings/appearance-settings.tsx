@@ -20,6 +20,13 @@ import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SunIcon, MoonIcon, MonitorIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -198,24 +205,23 @@ export function AppearanceSettings() {
           </p>
 
           <div className="max-w-xs">
-            <select
-              id="language"
+            <Select
               value={preferences.languagePreference}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 updatePreference({
-                  languagePreference: e.target.value as Language,
+                  languagePreference: value as Language,
                 })
               }
               disabled={saving}
-              className={cn(
-                'w-full px-3 py-2 rounded-md border border-input bg-background',
-                'focus:outline-none focus:ring-2 focus:ring-ring',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
             >
-              <option value="en">English</option>
-              <option value="ru">Русский (Russian)</option>
-            </select>
+              <SelectTrigger id="language">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="ru">Русский (Russian)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

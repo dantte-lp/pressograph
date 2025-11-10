@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 
 interface NotificationPreferences {
   emailNotifications: boolean;
@@ -105,35 +105,16 @@ export function NotificationSettings() {
             </p>
           </div>
 
-          <button
+          <Switch
             id="emailNotifications"
-            type="button"
-            role="switch"
-            aria-checked={preferences.emailNotifications}
-            onClick={() =>
+            checked={preferences.emailNotifications}
+            onCheckedChange={(checked) =>
               updatePreference({
-                emailNotifications: !preferences.emailNotifications,
+                emailNotifications: checked,
               })
             }
             disabled={saving}
-            className={cn(
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              preferences.emailNotifications
-                ? 'bg-primary'
-                : 'bg-input'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-4 w-4 rounded-full bg-background transition-transform',
-                preferences.emailNotifications
-                  ? 'translate-x-6'
-                  : 'translate-x-1'
-              )}
-            />
-          </button>
+          />
         </div>
 
         {/* In-App Notifications */}
@@ -148,35 +129,16 @@ export function NotificationSettings() {
             </p>
           </div>
 
-          <button
+          <Switch
             id="inAppNotifications"
-            type="button"
-            role="switch"
-            aria-checked={preferences.inAppNotifications}
-            onClick={() =>
+            checked={preferences.inAppNotifications}
+            onCheckedChange={(checked) =>
               updatePreference({
-                inAppNotifications: !preferences.inAppNotifications,
+                inAppNotifications: checked,
               })
             }
             disabled={saving}
-            className={cn(
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              preferences.inAppNotifications
-                ? 'bg-primary'
-                : 'bg-input'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-4 w-4 rounded-full bg-background transition-transform',
-                preferences.inAppNotifications
-                  ? 'translate-x-6'
-                  : 'translate-x-1'
-              )}
-            />
-          </button>
+          />
         </div>
 
         {/* Save Indicator */}

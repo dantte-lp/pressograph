@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **[Sprint 6] Settings Page: shadcn/ui Integration**
+  - **Objective**: Apply shadcn/ui Integration Strategy to Settings Page components
+  - **Changes Made**:
+    * Replaced custom toggle switches with shadcn/ui `Switch` component in NotificationSettings
+    * Replaced custom toggle switch with shadcn/ui `Switch` component in DisplaySettings (sidebar collapsed toggle)
+    * Replaced native HTML `<select>` with shadcn/ui `Select` component in AppearanceSettings (language selector)
+    * All settings components now use consistent shadcn/ui primitives
+  - **Benefits**:
+    * Improved UI consistency across settings pages
+    * Better accessibility with Radix UI primitives
+    * Enhanced keyboard navigation support
+    * Proper ARIA attributes for assistive technologies
+    * Consistent styling with rest of application
+  - **Components Refactored**:
+    * `src/components/settings/notification-settings.tsx` - Email and in-app notification switches
+    * `src/components/settings/display-settings.tsx` - Sidebar collapsed toggle
+    * `src/components/settings/appearance-settings.tsx` - Language select dropdown
+  - **Technical Details**:
+    * Switch component uses Radix UI's `@radix-ui/react-switch` primitive
+    * Select component uses Radix UI's `@radix-ui/react-select` primitive
+    * Maintained all existing functionality (auto-save, validation, loading states)
+    * No breaking changes to component APIs or user experience
+  - **Issue**: #114 (partial completion - main shadcn/ui integration done, i18n integration pending)
+  - **Date**: 2025-11-10
+
 ### Fixed
 
 - **[Critical] Async Client Component Error in TestsTable**
