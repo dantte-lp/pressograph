@@ -50,7 +50,7 @@ const userFormSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   role: z.enum(['admin', 'user']),
-  organizationId: z.string().optional(),
+  organizationId: z.string().nullable().optional(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -129,7 +129,7 @@ export function UserManagementDialog({
           username: values.username,
           password: values.password,
           role: values.role,
-          organizationId: values.organizationId,
+          organizationId: values.organizationId || undefined,
         });
 
         if (result.success) {
@@ -313,8 +313,11 @@ export function UserManagementDialog({
                   <FormItem>
                     <FormLabel>Organization (Optional)</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      onValueChange={(value) => {
+                        // Convert "none" to null for the form value
+                        field.onChange(value === 'none' ? null : value);
+                      }}
+                      defaultValue={field.value || 'none'}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -322,7 +325,7 @@ export function UserManagementDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Organization</SelectItem>
+                        <SelectItem value="none">No Organization</SelectItem>
                         {organizations.map((org) => (
                           <SelectItem key={org.id} value={org.id}>
                             {org.name}

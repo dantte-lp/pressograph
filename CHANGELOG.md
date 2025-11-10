@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Admin Users Edit Dialog - Select.Item Empty String Value Error**
+  - **Issue**: Radix UI Select component throwing error when editing users: "A <Select.Item /> must have a value prop that is not an empty string"
+  - **Location**: `/admin/users` page user management dialog
+  - **Root Cause**: Organization select field had `<SelectItem value="">No Organization</SelectItem>` which violates Radix UI constraint (empty string is reserved for clearing selection)
+  - **Resolution**:
+    1. Changed "No Organization" option value from empty string to "none"
+    2. Added conversion logic in `onValueChange` handler to map "none" to `null`
+    3. Updated Zod schema to accept `nullable()` for organizationId
+    4. Ensured proper default value handling with `field.value || 'none'`
+  - **Files Changed**:
+    - `src/components/admin/user-management-dialog.tsx`
+  - **Impact**: User editing in admin panel now works without errors
+  - Date: 2025-11-10
+  - Priority: P0 - Critical (Admin functionality broken)
+  - Resolution Time: ~5 minutes
+  - Status: Resolved
+
 - **Drizzle Studio Service Not Running**
   - **Issue**: Drizzle Studio was configured in Traefik but not accessible at https://dbdev-pressograph.infra4.dev (502 Bad Gateway)
   - **Root Cause**: drizzle-studio process was not running in PM2
