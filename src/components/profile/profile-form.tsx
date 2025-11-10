@@ -12,11 +12,13 @@
  * - Loading states
  * - Toast notifications
  * - Error handling
+ * - Comprehensive i18n support
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +40,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ user }: ProfileFormProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: user.name || '',
@@ -49,17 +52,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name?.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('profile.nameRequired');
     } else if (formData.name.length > 255) {
-      newErrors.name = 'Name is too long (max 255 characters)';
+      newErrors.name = t('profile.nameTooLong');
     }
 
     if (!formData.email?.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('profile.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = t('profile.invalidEmailFormat');
     } else if (formData.email.length > 255) {
-      newErrors.email = 'Email is too long (max 255 characters)';
+      newErrors.email = t('profile.emailTooLong');
     }
 
     setErrors(newErrors);
@@ -85,13 +88,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to update profile');
+        throw new Error(data.error || t('profile.failedToUpdateProfile'));
       }
 
-      toast.success('Profile updated successfully');
+      toast.success(t('profile.profileUpdatedSuccess'));
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update profile';
+      const message = error instanceof Error ? error.message : t('profile.failedToUpdateProfile');
       toast.error(message);
     } finally {
       setLoading(false);
@@ -103,12 +106,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
+      <h2 className="text-xl font-semibold mb-4">{t('profile.profileInformation')}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Username (read-only) */}
         <div>
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">{t('profile.username')}</Label>
           <Input
             id="username"
             value={user.username}
@@ -116,14 +119,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
             className="bg-muted cursor-not-allowed"
           />
           <p className="text-sm text-muted-foreground mt-1">
-            Username cannot be changed
+            {t('profile.usernameCannotChange')}
           </p>
         </div>
 
         {/* Name */}
         <div>
           <Label htmlFor="name">
-            Name <span className="text-destructive">*</span>
+            {t('profile.name')} <span className="text-destructive">*</span>
           </Label>
           <Input
             id="name"
@@ -134,7 +137,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 setErrors({ ...errors, name: '' });
               }
             }}
-            placeholder="Enter your name"
+            placeholder={t('profile.enterYourName')}
             disabled={loading}
             aria-invalid={!!errors.name}
             aria-describedby={errors.name ? 'name-error' : undefined}
@@ -149,7 +152,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         {/* Email */}
         <div>
           <Label htmlFor="email">
-            Email <span className="text-destructive">*</span>
+            {t('profile.email')} <span className="text-destructive">*</span>
           </Label>
           <Input
             id="email"
@@ -161,7 +164,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 setErrors({ ...errors, email: '' });
               }
             }}
-            placeholder="Enter your email"
+            placeholder={t('profile.enterYourEmail')}
             disabled={loading}
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'email-error' : undefined}
@@ -175,7 +178,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
         {/* Role (read-only) */}
         <div>
-          <Label htmlFor="role">Role</Label>
+          <Label htmlFor="role">{t('profile.role')}</Label>
           <Input
             id="role"
             value={user.role}
@@ -187,14 +190,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
         {/* Account Information */}
         <div className="pt-4 border-t space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Account created:</span>
+            <span className="text-muted-foreground">{t('profile.accountCreated')}</span>
             <span className="font-medium">
               {formatDate(user.createdAt)}
             </span>
           </div>
           {user.lastLoginAt && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Last login:</span>
+              <span className="text-muted-foreground">{t('profile.lastLogin')}</span>
               <span className="font-medium">
                 {formatDateTime(user.lastLoginAt)}
               </span>
@@ -208,10 +211,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
             {loading ? (
               <>
                 <Spinner className="mr-2 h-4 w-4" />
-                Saving...
+                {t('profile.saving')}
               </>
             ) : (
-              'Save Changes'
+              t('profile.saveChanges')
             )}
           </Button>
         </div>

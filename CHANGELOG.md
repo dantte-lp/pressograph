@@ -85,6 +85,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Story Points: 8 SP (100% Complete)
   - Priority: P1 - High
 
+- **[Issue #113] Profile Page - shadcn/ui Integration Refactoring (COMPLETE)**
+  - **Objective**: Apply shadcn/ui Integration Strategy and add comprehensive i18n support to Profile Page
+  - **Scope**: Full refactoring of profile page with 100% translation coverage for user profile management and password change functionality
+
+  **Implementation Details - COMPLETED 2025-11-10**:
+    1. **Translation System Enhancement**:
+       - Added 23 new translation keys to `profile` section
+       - Extended from 24 to 47 keys in both language files
+       - Added to `src/i18n/locales/en/common.json`
+       - Added to `src/i18n/locales/ru/common.json`
+       - Translation categories:
+         * Basic profile fields (username, name, email, role)
+         * Form validation messages (nameRequired, emailRequired, etc.)
+         * Password change fields and validation
+         * Password strength requirements (minLength, uppercase, lowercase, number)
+         * User action feedback (showPassword, hidePassword)
+    2. **Server/Client Architecture Pattern**:
+       - Implemented wrapper pattern for server-side auth + client-side i18n
+       - `src/app/(dashboard)/profile/page.tsx`: Server component with `requireAuth()`
+       - Created new `src/components/profile/profile-page-client.tsx`: Client wrapper with `useTranslation()`
+       - Clean separation of concerns maintaining type safety
+       - Passes user data from server to client component
+    3. **Profile Form Component i18n**:
+       - `src/components/profile/profile-form.tsx`: Complete i18n implementation
+       - All form labels translated (username, name, email, role)
+       - All placeholders using translation keys
+       - All validation error messages localized
+       - Account information section translated (accountCreated, lastLogin)
+       - Button states translated (saveChanges, saving)
+       - Toast notifications using i18n
+    4. **Password Change Form Component i18n**:
+       - `src/components/profile/password-change-form.tsx`: Complete i18n implementation
+       - All password field labels translated
+       - Password visibility toggle with localized aria-labels
+       - Password strength requirements with dynamic translation
+       - Real-time validation error messages in selected language
+       - Success/error toast messages fully localized
+    5. **Code Quality**:
+       - Zero TypeScript errors (verified with `pnpm run type-check`)
+       - No unused imports
+       - Proper type safety maintained throughout
+       - Clean, maintainable code structure
+    6. **shadcn/ui Components Used**:
+       - ✅ Card (for form sections)
+       - ✅ Input, Label (all form fields)
+       - ✅ Button (with loading states and i18n)
+       - ✅ Spinner (loading indicators)
+       - Icons: UserIcon, EyeIcon, EyeOffIcon, CheckCircle2Icon, XCircleIcon
+
+  - **Status**: ✅ COMPLETE (100% - 5 SP)
+  - **Files Modified**:
+    - `src/i18n/locales/en/common.json` (+23 keys in profile section)
+    - `src/i18n/locales/ru/common.json` (+23 keys in profile section)
+    - `src/app/(dashboard)/profile/page.tsx` (refactored to server/client pattern)
+    - `src/components/profile/profile-page-client.tsx` (NEW: client wrapper with i18n)
+    - `src/components/profile/profile-form.tsx` (100% i18n)
+    - `src/components/profile/password-change-form.tsx` (100% i18n)
+  - Date Started: 2025-11-10
+  - Date Completed: 2025-11-10
+  - Issue: #113
+  - Story Points: 5 SP (100% Complete)
+  - Priority: P1 - High
+
 - **Comprehensive Translation Expansion - Phase 2**
   - **Objective**: Achieve 100% translation coverage across entire application
   - **Scope**: Add 100+ missing translation keys for pages, settings, profile, and admin system

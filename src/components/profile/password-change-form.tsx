@@ -15,10 +15,12 @@
  * - Loading states
  * - Toast notifications
  * - Security requirements display
+ * - Comprehensive i18n support
  */
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +30,7 @@ import { EyeIcon, EyeOffIcon, CheckCircle2Icon, XCircleIcon } from 'lucide-react
 import { cn } from '@/lib/utils';
 
 export function PasswordChangeForm() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
@@ -44,19 +47,19 @@ export function PasswordChangeForm() {
   // Password strength validation
   const passwordRequirements = [
     {
-      label: 'At least 8 characters',
+      label: t('profile.passwordRequirement.minLength'),
       test: (pwd: string) => pwd.length >= 8,
     },
     {
-      label: 'Contains uppercase letter',
+      label: t('profile.passwordRequirement.uppercase'),
       test: (pwd: string) => /[A-Z]/.test(pwd),
     },
     {
-      label: 'Contains lowercase letter',
+      label: t('profile.passwordRequirement.lowercase'),
       test: (pwd: string) => /[a-z]/.test(pwd),
     },
     {
-      label: 'Contains number',
+      label: t('profile.passwordRequirement.number'),
       test: (pwd: string) => /\d/.test(pwd),
     },
   ];
@@ -65,22 +68,21 @@ export function PasswordChangeForm() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
+      newErrors.currentPassword = t('profile.currentPasswordRequired');
     }
 
     if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required';
+      newErrors.newPassword = t('profile.newPasswordRequired');
     } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
+      newErrors.newPassword = t('profile.passwordTooShort');
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.newPassword)) {
-      newErrors.newPassword =
-        'Password must contain uppercase, lowercase, and number';
+      newErrors.newPassword = t('profile.passwordRequirements');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your new password';
+      newErrors.confirmPassword = t('profile.confirmPasswordRequired');
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('profile.passwordsDoNotMatch');
     }
 
     setErrors(newErrors);
@@ -106,10 +108,10 @@ export function PasswordChangeForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to change password');
+        throw new Error(data.error || t('profile.failedToChangePassword'));
       }
 
-      toast.success('Password changed successfully');
+      toast.success(t('profile.passwordChangedSuccess'));
 
       // Reset form
       setFormData({
@@ -120,7 +122,7 @@ export function PasswordChangeForm() {
       setErrors({});
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to change password';
+        error instanceof Error ? error.message : t('profile.failedToChangePassword');
       toast.error(message);
     } finally {
       setLoading(false);
@@ -133,13 +135,13 @@ export function PasswordChangeForm() {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+      <h2 className="text-xl font-semibold mb-4">{t('profile.changePassword')}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Current Password */}
         <div>
           <Label htmlFor="currentPassword">
-            Current Password <span className="text-destructive">*</span>
+            {t('profile.currentPassword')} <span className="text-destructive">*</span>
           </Label>
           <div className="relative">
             <Input
@@ -152,7 +154,7 @@ export function PasswordChangeForm() {
                   setErrors({ ...errors, currentPassword: '' });
                 }
               }}
-              placeholder="Enter current password"
+              placeholder={t('profile.enterCurrentPassword')}
               disabled={loading}
               aria-invalid={!!errors.currentPassword}
               aria-describedby={
@@ -164,7 +166,7 @@ export function PasswordChangeForm() {
               type="button"
               onClick={() => toggleShowPassword('current')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPasswords.current ? 'Hide password' : 'Show password'}
+              aria-label={showPasswords.current ? t('profile.hidePassword') : t('profile.showPassword')}
             >
               {showPasswords.current ? (
                 <EyeOffIcon className="h-4 w-4" />
@@ -186,7 +188,7 @@ export function PasswordChangeForm() {
         {/* New Password */}
         <div>
           <Label htmlFor="newPassword">
-            New Password <span className="text-destructive">*</span>
+            {t('profile.newPassword')} <span className="text-destructive">*</span>
           </Label>
           <div className="relative">
             <Input
@@ -199,7 +201,7 @@ export function PasswordChangeForm() {
                   setErrors({ ...errors, newPassword: '' });
                 }
               }}
-              placeholder="Enter new password"
+              placeholder={t('profile.enterNewPassword')}
               disabled={loading}
               aria-invalid={!!errors.newPassword}
               aria-describedby={
@@ -211,7 +213,7 @@ export function PasswordChangeForm() {
               type="button"
               onClick={() => toggleShowPassword('new')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPasswords.new ? 'Hide password' : 'Show password'}
+              aria-label={showPasswords.new ? t('profile.hidePassword') : t('profile.showPassword')}
             >
               {showPasswords.new ? (
                 <EyeOffIcon className="h-4 w-4" />
@@ -255,7 +257,7 @@ export function PasswordChangeForm() {
         {/* Confirm Password */}
         <div>
           <Label htmlFor="confirmPassword">
-            Confirm New Password <span className="text-destructive">*</span>
+            {t('profile.confirmPassword')} <span className="text-destructive">*</span>
           </Label>
           <div className="relative">
             <Input
@@ -268,7 +270,7 @@ export function PasswordChangeForm() {
                   setErrors({ ...errors, confirmPassword: '' });
                 }
               }}
-              placeholder="Confirm new password"
+              placeholder={t('profile.confirmNewPassword')}
               disabled={loading}
               aria-invalid={!!errors.confirmPassword}
               aria-describedby={
@@ -280,7 +282,7 @@ export function PasswordChangeForm() {
               type="button"
               onClick={() => toggleShowPassword('confirm')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPasswords.confirm ? 'Hide password' : 'Show password'}
+              aria-label={showPasswords.confirm ? t('profile.hidePassword') : t('profile.showPassword')}
             >
               {showPasswords.confirm ? (
                 <EyeOffIcon className="h-4 w-4" />
@@ -305,10 +307,10 @@ export function PasswordChangeForm() {
             {loading ? (
               <>
                 <Spinner className="mr-2 h-4 w-4" />
-                Changing Password...
+                {t('profile.changingPassword')}
               </>
             ) : (
-              'Change Password'
+              t('profile.changePassword')
             )}
           </Button>
         </div>
