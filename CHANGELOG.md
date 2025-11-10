@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[Critical] Audit Log Schema Field Names in Organization Actions**
+  - **Issue**: TypeScript build errors in `src/server/actions/organizations.ts`
+  - **Symptoms**:
+    * Build failing with error: "Property 'errors' does not exist on type 'ZodError'"
+    * TypeScript errors for unknown properties: `entityType`, `entityId`, `details`
+    * Organization settings and branding updates would fail
+  - **Root Cause**:
+    * Code using old Zod API: `error.errors` instead of `error.issues`
+    * Audit log schema changed but code not updated
+    * Schema fields: `resource`, `resourceId`, `metadata` (not `entityType`, `entityId`, `details`)
+  - **Solution**:
+    * Updated Zod error access: `validation.error.issues[0]` with fallback
+    * Fixed audit log field names to match schema
+    * Added missing `userEmail` field
+    * Updated action naming convention: `organization.update_settings`
+  - **Files Modified**:
+    * `src/server/actions/organizations.ts`:
+      - Line 108: Fixed Zod error.issues access
+      - Lines 122-133: Fixed updateOrganizationSettings audit log
+      - Lines 189-200: Fixed updateOrganizationBranding audit log
+  - **Impact**:
+    * TypeScript compilation now passes
+    * Audit logs properly recorded for organization changes
+    * Organization settings and branding updates functional
+  - **Commit**: 99bf1451
+
 - **[Critical] User Management Dialog Update Button Non-Responsive**
   - **Issue**: In user edit mode, the "Update User" button does not respond to clicks and settings are not saved
   - **User Report**: "В окне изменения пользователя не работает кнопка обновления - нет реакции на нажатие, настройки не сохраняются"
