@@ -198,7 +198,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           {user.lastLoginAt && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{t('profile.lastLogin')}</span>
-              <span className="font-medium">
+              <span className="font-medium" suppressHydrationWarning>
                 {formatDateTime(user.lastLoginAt)}
               </span>
             </div>

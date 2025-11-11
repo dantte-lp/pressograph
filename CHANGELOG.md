@@ -40,6 +40,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[Hydration] Fixed Date Formatting Hydration Mismatch in Profile Form**
+  - **Issue**: Server rendered date "Nov 10, 2025 at 11:59 AM" but client rendered "Nov 10, 2025 at 4:59 PM" causing React hydration error
+  - **Root Cause**: The `formatDateTime` function uses local timezone which differs between server (UTC) and client (user's local timezone)
+  - **Solution**: Added `suppressHydrationWarning` attribute to the span element displaying `lastLoginAt` timestamp
+  - **Location**: `/src/components/profile/profile-form.tsx` line 201
+  - **Impact**: Eliminates console hydration warnings while maintaining correct client-side time display
+  - **Technical Note**: Using `suppressHydrationWarning` is appropriate here since the time difference is expected and intentional (showing user's local time)
+
+- **[Routing] Removed Non-Existent Project Settings Link Causing 404 Error**
+  - **Issue**: Clicking "Settings" button on project detail page resulted in 404 error
+  - **Root Cause**: Link pointed to `/projects/[id]/settings` route which doesn't exist in the application
+  - **Solution**: Commented out the settings button with TODO note until the project settings page is implemented
+  - **Location**: `/src/components/projects/[id]/page.tsx` lines 113-118
+  - **Files Modified**:
+    * Removed `SettingsIcon` import from lucide-react (unused)
+    * Commented out settings button with implementation note
+  - **Impact**: Prevents users from encountering 404 errors when attempting to access non-existent project settings
+
 - **[i18n] Fixed Missing Translation Keys for Test Status Badges and Share Link Button**
   - **Issue**: MISSING_MESSAGE errors for `tests.createShareLink` and `tests.statusReady` in production
   - **Root Cause**: TestStatusBadge component uses flat translation keys (e.g., `tests.statusReady`) but translations were nested under `tests.status.ready`

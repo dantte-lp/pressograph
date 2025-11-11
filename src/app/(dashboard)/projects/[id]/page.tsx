@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   FolderIcon,
   PlusIcon,
-  SettingsIcon,
   ArchiveIcon,
   CalendarIcon,
   UserIcon,
@@ -109,12 +108,13 @@ export default async function ProjectDetailPage({
               {t('createTest')}
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          {/* TODO: Project settings page not implemented yet */}
+          {/* <Button variant="outline" asChild>
             <Link href={`/projects/${project.id}/settings` as any}>
               <SettingsIcon className="mr-2 h-4 w-4" />
               {tCommon('settings')}
             </Link>
-          </Button>
+          </Button> */}
         </div>
       </div>
 
