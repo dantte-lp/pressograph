@@ -328,7 +328,14 @@
     "detailQuickActions": "Быстрые действия",
     "detailDescription": "Описание",
     "detailTestParameters": "Параметры испытания",
-    "detailTestParametersDescription": "Полная конфигурация испытания на давление и метаданные"
+    "detailTestParametersDescription": "Полная конфигурация испытания на давление и метаданные",
+    "createShareLink": "Создать ссылку для общего доступа",
+    "statusDraft": "Черновик",
+    "statusReady": "Готов",
+    "statusRunning": "Выполняется",
+    "statusCompleted": "Завершен",
+    "statusFailed": "Неудачный",
+    "statusCancelled": "Отменен"
   },
   "testForm": {
     "basicInfo": "Основная информация",

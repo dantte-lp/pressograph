@@ -328,7 +328,14 @@
     "detailQuickActions": "Quick Actions",
     "detailDescription": "Description",
     "detailTestParameters": "Test Parameters",
-    "detailTestParametersDescription": "Complete pressure test configuration and metadata"
+    "detailTestParametersDescription": "Complete pressure test configuration and metadata",
+    "createShareLink": "Create Share Link",
+    "statusDraft": "Draft",
+    "statusReady": "Ready",
+    "statusRunning": "Running",
+    "statusCompleted": "Completed",
+    "statusFailed": "Failed",
+    "statusCancelled": "Cancelled"
   },
   "testForm": {
     "basicInfo": "Basic Information",
