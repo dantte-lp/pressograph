@@ -23,7 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { FileImageIcon, FileCodeIcon, FileTextIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/i18n/client';
+import { useTranslation } from '@/hooks/use-translation';
 
 type GraphFormat = 'PNG' | 'SVG' | 'PDF';
 

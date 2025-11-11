@@ -19,7 +19,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { useTranslation } from '@/i18n/client';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface NotificationPreferences {
   emailNotifications: boolean;

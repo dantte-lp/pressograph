@@ -31,8 +31,8 @@ import {
 } from '@/components/ui/select';
 import { SunIcon, MoonIcon, MonitorIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import i18next from '@/i18n/client';
-import { useTranslation } from '@/i18n/client';
+import { useTranslation } from '@/hooks/use-translation';
+import i18next from 'i18next';
 
 type Theme = 'light' | 'dark' | 'system';
 type Language = 'en' | 'ru';
