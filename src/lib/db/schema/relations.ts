@@ -21,6 +21,7 @@ import { auditLogs } from "./audit-logs";
 import { apiKeys } from "./api-keys";
 import { notifications } from "./notifications";
 import { userPreferences } from "./user-preferences";
+import { testComments } from "./test-comments";
 
 /**
  * Organization Relations
@@ -54,6 +55,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [userPreferences.userId],
   }),
+  comments: many(testComments, { relationName: "comment_author" }),
 }));
 
 /**
@@ -90,6 +92,7 @@ export const pressureTestsRelations = relations(pressureTests, ({ one, many }) =
     relationName: "test_creator",
   }),
   shareLinks: many(shareLinks),
+  comments: many(testComments),
 }));
 
 /**
@@ -175,6 +178,21 @@ export const testTemplatesRelations = relations(testTemplates, ({ one }) => ({
     fields: [testTemplates.createdBy],
     references: [users.id],
     relationName: "template_creator",
+  }),
+}));
+
+/**
+ * Test Comment Relations
+ */
+export const testCommentsRelations = relations(testComments, ({ one }) => ({
+  pressureTest: one(pressureTests, {
+    fields: [testComments.pressureTestId],
+    references: [pressureTests.id],
+  }),
+  author: one(users, {
+    fields: [testComments.authorId],
+    references: [users.id],
+    relationName: "comment_author",
   }),
 }));
 
