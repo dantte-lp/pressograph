@@ -265,10 +265,13 @@
     "columnName": "Имя",
     "columnProject": "Проект",
     "columnStatus": "Статус",
+    "columnTags": "Теги",
     "columnRuns": "Запуски",
     "columnLastRun": "Последний запуск",
     "columnCreated": "Создан",
-    "columnActions": "Действия"
+    "columnActions": "Действия",
+    "filterTags": "Фильтр по тегам",
+    "assignTags": "Назначить теги"
   },
   "admin": {
     "title": "Администрирование",

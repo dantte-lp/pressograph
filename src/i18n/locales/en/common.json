@@ -265,10 +265,13 @@
     "columnName": "Name",
     "columnProject": "Project",
     "columnStatus": "Status",
+    "columnTags": "Tags",
     "columnRuns": "Runs",
     "columnLastRun": "Last Run",
     "columnCreated": "Created",
-    "columnActions": "Actions"
+    "columnActions": "Actions",
+    "filterTags": "Filter by Tags",
+    "assignTags": "Assign Tags"
   },
   "admin": {
     "title": "Administration",

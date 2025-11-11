@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Translation] Complete i18n Support for Tests Pages**
+  - **Missing Translation Keys Added**:
+    * Added `columnTags` - "Tags" / "Теги" for table headers
+    * Added `filterTags` - "Filter by Tags" / "Фильтр по тегам" for filter options
+    * Added `assignTags` - "Assign Tags" / "Назначить теги" for batch operations
+  - **Files Updated**:
+    * `src/i18n/locales/en/common.json` - Added 3 new English translation keys
+    * `src/i18n/locales/ru/common.json` - Added 3 new Russian translation keys
+  - **Translation Coverage**:
+    * Tests list page (`/tests`) - Fully translated (table, filters, pagination)
+    * Tests creation page (`/tests/new`) - Fully translated (form labels, validation)
+    * Tests detail page (`/tests/[id]`) - Already translated (previous work)
+  - **Components Updated**:
+    * `TestsTableClient` - All table headers and batch actions translated
+    * `TestsFilterBar` - All filter labels and options translated
+    * `TestsPageClient` - Page titles and descriptions translated
+    * `CreateTestPageClient` - Form labels and error messages translated
+
+### Added (Previous)
+
 - **[Sprint 5] Batch Download as ZIP Feature**
   - **Feature**: Download multiple test data files as a single ZIP archive with organized folder structure
   - **Backend Implementation**:
