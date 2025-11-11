@@ -330,5 +330,32 @@
     },
     "passwordChangedSuccess": "Пароль успешно изменен",
     "failedToChangePassword": "Не удалось изменить пароль"
+  },
+  "comments": {
+    "title": "Комментарии",
+    "addComment": "Добавить комментарий",
+    "editComment": "Редактировать комментарий",
+    "deleteComment": "Удалить комментарий",
+    "confirmDelete": "Вы уверены, что хотите удалить этот комментарий?",
+    "confirmDeleteDescription": "Это действие нельзя отменить.",
+    "noComments": "Комментариев пока нет",
+    "noCommentsDescription": "Будьте первым, кто прокомментирует это испытание",
+    "placeholder": "Напишите комментарий... (поддерживается Markdown)",
+    "save": "Сохранить комментарий",
+    "saving": "Сохранение...",
+    "cancel": "Отменить",
+    "edited": "Изменено",
+    "editedAt": "Изменено {time}",
+    "postedBy": "Опубликовал {author}",
+    "postedAt": "Опубликовано {time}",
+    "commentAdded": "Комментарий успешно добавлен",
+    "commentUpdated": "Комментарий успешно обновлен",
+    "commentDeleted": "Комментарий успешно удален",
+    "failedToAdd": "Не удалось добавить комментарий",
+    "failedToUpdate": "Не удалось обновить комментарий",
+    "failedToDelete": "Не удалось удалить комментарий",
+    "loadingComments": "Загрузка комментариев...",
+    "markdownSupport": "Поддерживается Markdown",
+    "markdownHint": "**жирный**, *курсив*, [ссылка](url), `код`"
   }
 }
