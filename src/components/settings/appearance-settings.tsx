@@ -32,6 +32,7 @@ import {
 import { SunIcon, MoonIcon, MonitorIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import i18next from '@/i18n/client';
+import { useTranslation } from '@/i18n/client';
 
 type Theme = 'light' | 'dark' | 'system';
 type Language = 'en' | 'ru';
@@ -42,6 +43,7 @@ interface Preferences {
 }
 
 export function AppearanceSettings() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,7 +68,7 @@ export function AppearanceSettings() {
         languagePreference: data.languagePreference,
       });
     } catch (error) {
-      toast.error('Failed to load preferences');
+      toast.error(t('settings.failedToLoadPreferences'));
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export function AppearanceSettings() {
       if (!res.ok) throw new Error('Failed to update preferences');
 
       setPreferences((prev) => ({ ...prev, ...updates }));
-      toast.success('Preferences updated successfully');
+      toast.success(t('settings.preferencesUpdated'));
 
       // Apply theme change immediately
       if (updates.themePreference) {
@@ -97,7 +99,7 @@ export function AppearanceSettings() {
         await applyLanguage(updates.languagePreference);
       }
     } catch (error) {
-      toast.error('Failed to update preferences');
+      toast.error(t('settings.failedToUpdatePreferences'));
     } finally {
       setSaving(false);
     }
@@ -151,34 +153,38 @@ export function AppearanceSettings() {
   const themeOptions = [
     {
       value: 'light' as Theme,
-      label: 'Light',
+      label: t('settings.light'),
       icon: SunIcon,
-      description: 'Light theme',
+      description: t('settings.lightTheme'),
     },
     {
       value: 'dark' as Theme,
-      label: 'Dark',
+      label: t('settings.dark'),
       icon: MoonIcon,
-      description: 'Dark theme',
+      description: t('settings.darkTheme'),
     },
     {
       value: 'system' as Theme,
-      label: 'System',
+      label: t('settings.system'),
       icon: MonitorIcon,
-      description: 'Follow system preference',
+      description: t('settings.followSystemPreference'),
     },
   ];
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-6">Appearance</h2>
+      <h2 className="text-xl font-semibold mb-6">
+        {t('settings.appearanceSettings.title')}
+      </h2>
 
       <div className="space-y-6">
         {/* Theme Selection */}
         <div>
-          <Label className="text-base mb-3 block">Theme</Label>
+          <Label className="text-base mb-3 block">
+            {t('settings.appearanceSettings.themeLabel')}
+          </Label>
           <p className="text-sm text-muted-foreground mb-4">
-            Select your preferred theme for the interface
+            {t('settings.appearanceSettings.themeDescription')}
           </p>
 
           <div className="grid grid-cols-3 gap-3">
@@ -223,10 +229,10 @@ export function AppearanceSettings() {
         {/* Language Selection */}
         <div>
           <Label htmlFor="language" className="text-base mb-3 block">
-            Language
+            {t('settings.appearanceSettings.languageLabel')}
           </Label>
           <p className="text-sm text-muted-foreground mb-4">
-            Select your preferred language for the interface
+            {t('settings.appearanceSettings.languageDescription')}
           </p>
 
           <div className="max-w-xs">
@@ -240,11 +246,11 @@ export function AppearanceSettings() {
               disabled={saving}
             >
               <SelectTrigger id="language">
-                <SelectValue placeholder="Select language" />
+                <SelectValue placeholder={t('settings.selectLanguage')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="ru">Русский (Russian)</SelectItem>
+                <SelectItem value="en">{t('settings.english')}</SelectItem>
+                <SelectItem value="ru">{t('settings.russian')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -254,7 +260,7 @@ export function AppearanceSettings() {
         {saving && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Spinner className="h-4 w-4" />
-            <span>Saving preferences...</span>
+            <span>{t('settings.savingPreferences')}</span>
           </div>
         )}
       </div>
