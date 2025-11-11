@@ -39,6 +39,7 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/client';
 
 // Placeholder types until actions are properly imported
 type OrganizationSettingsUpdate = any;
@@ -48,7 +49,7 @@ async function getOrganizationSettings(_orgId: string) {
   // TODO: Import from @/server/actions/organizations when path is resolved
   return {
     success: false,
-    error: 'Organization settings not yet implemented',
+    error: 'settings.organizationSettings.notYetImplemented',
     data: null,
   };
 }
@@ -57,11 +58,12 @@ async function updateOrganizationSettings(_orgId: string, _settings: any) {
   // TODO: Import from @/server/actions/organizations when path is resolved
   return {
     success: false,
-    error: 'Update not yet implemented',
+    error: 'settings.organizationSettings.updateNotImplemented',
   };
 }
 
 export function OrganizationSettings() {
+  const { t } = useTranslation();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,7 +74,7 @@ export function OrganizationSettings() {
   useEffect(() => {
     const loadSettings = async () => {
       if (status !== 'authenticated' || !session?.user?.organizationId) {
-        setError('No organization found for your account');
+        setError(t('settings.organizationSettings.noOrganizationFound'));
         setLoading(false);
         return;
       }
@@ -83,8 +85,8 @@ export function OrganizationSettings() {
       if (result.success && result.data) {
         setSettings(result.data);
       } else {
-        setError(result.error || 'Failed to load settings');
-        toast.error('Failed to load organization settings');
+        setError(t(result.error) || t('settings.organizationSettings.failedToLoadSettings'));
+        toast.error(t('settings.organizationSettings.failedToLoadSettings'));
       }
       setLoading(false);
     };
@@ -103,10 +105,10 @@ export function OrganizationSettings() {
     );
 
     if (result.success) {
-      toast.success('Settings saved successfully');
+      toast.success(t('settings.organizationSettings.settingsSaved'));
       setSettings({ ...settings, ...updates });
     } else {
-      toast.error(result.error || 'Failed to save settings');
+      toast.error(t(result.error) || t('settings.organizationSettings.failedToSaveSettings'));
     }
     setSaving(false);
   };
@@ -154,7 +156,7 @@ export function OrganizationSettings() {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>No organization settings found</AlertDescription>
+        <AlertDescription>{t('settings.organizationSettings.noSettingsFound')}</AlertDescription>
       </Alert>
     );
   }
@@ -169,9 +171,9 @@ export function OrganizationSettings() {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>Organization Settings</CardTitle>
+              <CardTitle>{t('settings.organizationSettings.title')}</CardTitle>
               <CardDescription>
-                Configure your organization preferences and policies
+                {t('settings.organizationSettings.description')}
               </CardDescription>
             </div>
           </div>
@@ -181,12 +183,12 @@ export function OrganizationSettings() {
       {/* Settings Tabs */}
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="w-full justify-start">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="data">Data Retention</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="general">{t('settings.organizationSettings.tabGeneral')}</TabsTrigger>
+          <TabsTrigger value="branding">{t('settings.organizationSettings.tabBranding')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('settings.organizationSettings.tabNotifications')}</TabsTrigger>
+          <TabsTrigger value="data">{t('settings.organizationSettings.tabDataRetention')}</TabsTrigger>
+          <TabsTrigger value="features">{t('settings.organizationSettings.tabFeatures')}</TabsTrigger>
+          <TabsTrigger value="security">{t('settings.organizationSettings.tabSecurity')}</TabsTrigger>
         </TabsList>
 
         {/* General Settings */}
