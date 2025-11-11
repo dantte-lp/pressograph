@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Sprint 5] Batch Tag Assignment for Multiple Tests**
+  - **Feature**: Bulk tag management allowing users to add/remove tags to/from multiple selected tests simultaneously
+  - **Backend Implementation**:
+    * Created `batchUpdateTags()` server action for bulk tag operations
+    * Verifies user ownership of all selected tests before updating
+    * Supports both adding and removing tags in single operation
+    * Updates each test's tags array individually with proper deduplication
+    * Returns success status with count of updated tests
+  - **Frontend Implementation**:
+    * New `BatchTagAssignmentDialog` component with rich interactive UI
+    * Two-panel interface: "Tags to Add" and "Tags to Remove"
+    * Add tags section with autocomplete suggestions from existing tags
+    * Remove tags section showing available tags as clickable badges
+    * Color-coded visual distinction (secondary badges for add, destructive for remove)
+    * Summary panel showing planned changes before applying
+    * Keyboard support (Enter key to add tags)
+    * "Assign Tags" button in batch operations toolbar
+  - **UI/UX Features**:
+    * Real-time autocomplete filtering (up to 5 suggestions)
+    * Visual feedback with color-coded badges
+    * Inline tag removal with × button
+    * Click-to-toggle tag removal selection
+    * Validation prevents duplicate tags and conflicts
+    * Loading states during update operation
+    * Success/error toast notifications
+    * Automatic page refresh to show updated tags
+    * Clears selection after successful operation
+  - **Translation Support**:
+    * Added 18 new translation keys (English + Russian):
+      - `batchTagAssignment` - "Batch Tag Assignment" / "Массовное назначение тегов"
+      - `tagsToAdd`, `tagsToRemove` - Tag management UI labels
+      - `suggestions`, `typeTagName` - Autocomplete interface
+      - `tagAlreadyInList`, `tagInRemoveList` - Validation messages
+      - `tagsUpdatedSuccess`, `tagsUpdatedError` - Operation feedback
+      - `willAddTags`, `willRemoveTags`, `testsAffected` - Summary text
+    * Full i18n support for entire dialog
+  - **Performance**: Efficient batch processing with ownership verification
+  - **Related**: Implements Sprint 5 batch tag assignment requirements (2 SP)
+  - **Issue**: #120
+  - **Files Changed**:
+    * `src/lib/actions/tests.ts` - batchUpdateTags() action
+    * `src/components/tests/batch-tag-assignment-dialog.tsx` - New dialog component
+    * `src/components/tests/tests-table-client.tsx` - Button integration
+    * `src/components/tests/tests-page-client.tsx` - Props passing
+    * `messages/en.json` - English translations
+    * `messages/ru.json` - Russian translations
+
 - **[Sprint 5] Comprehensive Tags System for Pressure Tests**
   - **Feature**: Complete tags filtering and display system for pressure tests
   - **Backend Implementation**:
