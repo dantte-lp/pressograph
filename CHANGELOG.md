@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Sprint 5] Comprehensive Tags System for Pressure Tests**
+  - **Feature**: Complete tags filtering and display system for pressure tests
+  - **Backend Implementation**:
+    * Added `tags: string[]` field to `TestListItem` interface
+    * Added `tags?: string[]` filter to `TestFilters` interface
+    * Implemented tags filtering in `getTests()` action using PostgreSQL JSONB overlap query (`@>` operator)
+    * Created `getAllTags()` server action to fetch all unique tags for autocomplete
+    * Tags are now included in all test list queries with proper typing
+  - **Frontend Implementation**:
+    * Tags column added to tests table showing up to 3 tags with overflow count badge
+    * Tag filter added to TestsFilterBar with multi-select checkbox UI
+    * Active tag filters displayed as removable badges
+    * Real-time tag filtering via URL query parameters
+    * Tests page fetches and passes available tags to filter bar
+    * TestsPageClient and TestsFilterBar updated to handle tags prop
+  - **Translation Support**:
+    * Added comprehensive test table translations (English + Russian):
+      - `columnTags` - "Tags" / "Теги"
+      - `filterTags` - "Filter by Tags" / "Фильтр по тегам"
+      - `selectTags` - "Select tags to filter" / "Выберите теги для фильтрации"
+      - All missing column headers (testNumber, name, project, status, runs, lastRun, created, actions)
+      - All filter and sort translations
+    * Full i18n support for tag filtering UI
+  - **User Experience**:
+    * Tags display in compact badge format in table rows
+    * Overflow indicator (+N) when more than 3 tags
+    * Tag filter syncs with URL for bookmarkable filtered views
+    * Tag badges in active filters can be clicked to remove filter
+    * Empty state handling when no tags exist
+    * Max-height scrollable tag list in filter popover for many tags
+  - **Database**: Leverages existing JSONB `tags` field in `pressure_tests` table
+  - **Performance**: Efficient PostgreSQL JSONB queries with proper indexing
+  - **Related**: Implements Sprint 5 tags system requirements (3 SP)
+  - **Issue**: #119
+  - **Files Changed**:
+    * `src/lib/actions/tests.ts` - Backend logic and types
+    * `src/app/(dashboard)/tests/page.tsx` - Server-side data fetching
+    * `src/components/tests/tests-page-client.tsx` - Props passing
+    * `src/components/tests/tests-table-client.tsx` - Tags column display
+    * `src/components/tests/tests-filter-bar.tsx` - Tags filter UI
+    * `messages/en.json` - English translations
+    * `messages/ru.json` - Russian translations
+
 - **[High] Backend Integration for Organization Settings**
   - **Feature**: Fully functional organization settings with real backend persistence
   - **Implementation**:
