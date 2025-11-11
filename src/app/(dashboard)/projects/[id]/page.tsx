@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,9 @@ export default async function ProjectDetailPage({
   const { id } = await params;
   const searchParamsResolved = await searchParams;
 
+  const t = await getTranslations('projects');
+  const tCommon = await getTranslations('common');
+
   const project = await getProjectById(id);
 
   if (!project) {
@@ -76,7 +80,7 @@ export default async function ProjectDetailPage({
       {/* Breadcrumb */}
       <nav className="text-muted-foreground flex items-center gap-2 text-sm">
         <Link href="/projects" className="hover:text-foreground">
-          Projects
+          {t('title')}
         </Link>
         <span>/</span>
         <span className="text-foreground">{project.name}</span>
@@ -90,7 +94,7 @@ export default async function ProjectDetailPage({
             {project.isArchived && (
               <Badge variant="outline">
                 <ArchiveIcon className="mr-1 h-3 w-3" />
-                Archived
+                {t('archived')}
               </Badge>
             )}
           </div>
@@ -102,13 +106,13 @@ export default async function ProjectDetailPage({
           <Button asChild>
             <Link href={`/tests/new?project=${project.id}` as any}>
               <PlusIcon className="mr-2 h-4 w-4" />
-              Create Test
+              {t('createTest')}
             </Link>
           </Button>
           <Button variant="outline" asChild>
             <Link href={`/projects/${project.id}/settings` as any}>
               <SettingsIcon className="mr-2 h-4 w-4" />
-              Settings
+              {tCommon('settings')}
             </Link>
           </Button>
         </div>
@@ -118,18 +122,18 @@ export default async function ProjectDetailPage({
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Owner</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('owner')}</CardTitle>
             <UserIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{project.ownerName}</div>
-            <p className="text-muted-foreground text-xs">Project owner</p>
+            <p className="text-muted-foreground text-xs">{t('projectOwner')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Created</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('created')}</CardTitle>
             <CalendarIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -144,7 +148,7 @@ export default async function ProjectDetailPage({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Test Number Prefix</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('testNumberPrefix')}</CardTitle>
             <FolderIcon className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -152,7 +156,7 @@ export default async function ProjectDetailPage({
               {project.settings?.testNumberPrefix || 'PT-'}
             </div>
             <p className="text-muted-foreground text-xs">
-              Auto-numbering: {project.settings?.autoNumberTests ? 'Enabled' : 'Disabled'}
+              {t('autoNumbering')}: {project.settings?.autoNumberTests ? t('enabled') : t('disabled')}
             </p>
           </CardContent>
         </Card>
@@ -161,9 +165,9 @@ export default async function ProjectDetailPage({
       {/* Tests in Project */}
       <Card>
         <CardHeader>
-          <CardTitle>Tests in this Project</CardTitle>
+          <CardTitle>{t('testsInProject')}</CardTitle>
           <CardDescription>
-            All pressure tests associated with {project.name}
+            {t('testsInProjectDescription', { projectName: project.name })}
           </CardDescription>
         </CardHeader>
         <CardContent>

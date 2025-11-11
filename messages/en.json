@@ -114,6 +114,8 @@
     "sortNameDesc": "Name (Z-A)",
     "sortLastRun": "Last Run",
     "sortRunCount": "Run Count",
+    "showing": "Showing {from} to {to} of {total} tests",
+    "page": "Page {current} of {total}",
     "batchTagAssignment": "Batch Tag Assignment",
     "batchTagAssignmentDescription": "Add or remove tags for {count} selected test(s)",
     "tagsToAdd": "Tags to Add",
@@ -287,7 +289,16 @@
     "createFirst": "Create your first project to organize your tests",
     "organizeYourTests": "Organize your tests into projects",
     "archivedProjects": "Archived Projects",
-    "viewAndRestoreArchived": "View and restore archived projects"
+    "viewAndRestoreArchived": "View and restore archived projects",
+    "archived": "Archived",
+    "createTest": "Create Test",
+    "projectOwner": "Project owner",
+    "testNumberPrefix": "Test Number Prefix",
+    "autoNumbering": "Auto-numbering",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "testsInProject": "Tests in this Project",
+    "testsInProjectDescription": "All pressure tests associated with {projectName}"
   },
   "auth": {
     "login": "Login",

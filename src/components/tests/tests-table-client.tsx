@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useTranslation } from '@/hooks/use-translation';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Table,
@@ -62,7 +62,7 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export function TestsTableClient({ data, filters, pagination, availableTags }: TestsTableClientProps) {
-  const { t } = useTranslation();
+  const t = useTranslations('tests');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [batchTagDialogOpen, setBatchTagDialogOpen] = useState(false);

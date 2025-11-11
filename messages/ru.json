@@ -114,6 +114,8 @@
     "sortNameDesc": "Название (Я-А)",
     "sortLastRun": "Последний запуск",
     "sortRunCount": "Количество запусков",
+    "showing": "Показано {from} - {to} из {total} испытаний",
+    "page": "Страница {current} из {total}",
     "batchTagAssignment": "Массовое назначение тегов",
     "batchTagAssignmentDescription": "Добавить или удалить теги для {count} выбранных испытаний",
     "tagsToAdd": "Теги для добавления",
@@ -287,7 +289,16 @@
     "createFirst": "Создайте первый проект для организации испытаний",
     "organizeYourTests": "Организуйте испытания в проекты",
     "archivedProjects": "Архивные проекты",
-    "viewAndRestoreArchived": "Просмотр и восстановление архивных проектов"
+    "viewAndRestoreArchived": "Просмотр и восстановление архивных проектов",
+    "archived": "Архивный",
+    "createTest": "Создать испытание",
+    "projectOwner": "Владелец проекта",
+    "testNumberPrefix": "Префикс номера испытания",
+    "autoNumbering": "Автонумерация",
+    "enabled": "Включено",
+    "disabled": "Отключено",
+    "testsInProject": "Испытания в этом проекте",
+    "testsInProjectDescription": "Все испытания на давление, связанные с {projectName}"
   },
   "auth": {
     "login": "Вход",
