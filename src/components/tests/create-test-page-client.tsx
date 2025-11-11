@@ -11,15 +11,15 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CreateTestForm } from '@/components/tests/create-test-form';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
+import type { Project } from '@/lib/db/schema/projects';
 
 interface CreateTestPageClientProps {
-  projects: Array<{ id: string; name: string }>;
-  projectsError?: string;
+  projects: Project[];
+  projectsError?: string | null;
   sourceTest?: any;
   userId: string;
-  organizationId: string;
+  organizationId?: string;
 }
 
 export function CreateTestPageClient({
@@ -105,7 +105,7 @@ export function CreateTestPageClient({
       )}
 
       {/* Create Test Form */}
-      {!projectsError && projects.length > 0 && (
+      {!projectsError && projects.length > 0 && organizationId && (
         <CreateTestForm
           projects={projects}
           sourceTest={sourceTest}

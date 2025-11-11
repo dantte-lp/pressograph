@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { getProjectById } from '@/lib/actions/projects';
-import { getTests } from '@/lib/actions/tests';
+import { getTests, getAllTags } from '@/lib/actions/tests';
 import type { TestFilters, PaginationParams } from '@/lib/actions/tests';
 import { TestsTableClient } from '@/components/tests/tests-table-client';
 import { formatDate, formatRelativeTime } from '@/lib/utils/format';
@@ -67,6 +67,9 @@ export default async function ProjectDetailPage({
 
   // Fetch tests data on server
   const testsData = await getTests(filters, paginationParams);
+
+  // Fetch available tags
+  const availableTags = await getAllTags();
 
   return (
     <div className="container mx-auto space-y-8 p-6 lg:p-8">
@@ -168,6 +171,7 @@ export default async function ProjectDetailPage({
             data={testsData}
             filters={filters}
             pagination={paginationParams}
+            availableTags={availableTags}
           />
         </CardContent>
       </Card>

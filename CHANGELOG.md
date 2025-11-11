@@ -9,6 +9,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Sprint 5] Batch Download as ZIP Feature**
+  - **Feature**: Download multiple test data files as a single ZIP archive with organized folder structure
+  - **Backend Implementation**:
+    * Created `src/lib/actions/batch-download.ts` with server actions:
+      - `createBatchDownload()` - Generate ZIP archive with test data
+      - `getTestCountForDownload()` - Validate test count before download
+    * Supports CSV and JSON export formats for test data
+    * Automatic folder organization: `ProjectName/TestNumber_TestName.ext`
+    * Generates emulated test data from test configuration
+    * DEFLATE compression (level 6) for optimal file size
+    * Authorization: Only organization members can download their tests
+  - **Frontend Implementation**:
+    * Added "Download as ZIP" button to batch operations toolbar
+    * Progress toast notifications during ZIP creation
+    * Loading state with disabled button during download
+    * Automatic file download with proper MIME type
+    * Selection cleared after successful download
+  - **Data Export**:
+    * CSV format includes:
+      - Test metadata header (number, name, equipment, pressures, duration)
+      - Time-series data (Time, Pressure) with proper units
+    * JSON format includes:
+      - Structured metadata object with all test parameters
+      - Array of data points with time and pressure values
+      - Export timestamp for tracking
+  - **Translation Support**:
+    * Added 9 new translation keys (English + Russian):
+      - `batchDownload` - "Download as ZIP" / "Скачать как ZIP"
+      - `batchDownloadPreparing` - "Preparing download..." / "Подготовка загрузки..."
+      - `batchDownloadSuccess` - Success message with count
+      - `batchDownloadFailed` - Error message
+      - `batchDownloadNoTests` - No tests selected warning
+      - `batchDownloadFormat`, `batchDownloadFormatCSV`, `batchDownloadFormatJSON` - Format options
+      - `batchTagAssignment`, `batchTagsUpdated`, `batchTagsFailed` - Tag operation messages
+  - **Dependencies**:
+    * Added `jszip@3.10.1` - ZIP file creation
+  - **Error Handling**:
+    * Validates test selection before processing
+    * Checks organization membership for all tests
+    * Graceful handling of individual test processing errors
+    * User-friendly error messages via toast notifications
+  - **Performance**:
+    * Efficient database queries with proper indexing
+    * Streams ZIP data directly to browser without server storage
+    * Compression reduces file sizes significantly
+  - **Related**: Completes Sprint 5 batch operations requirements (3 SP)
+  - **Files Changed**:
+    * `src/lib/actions/batch-download.ts` - New batch download server actions
+    * `src/components/tests/tests-table-client.tsx` - Added download button and handler
+    * `src/i18n/locales/en/common.json` - English translations
+    * `src/i18n/locales/ru/common.json` - Russian translations
+    * `package.json` - Added jszip dependency
+
 - **[Sprint 5] Comment System with Markdown Support**
   - **Feature**: Complete commenting system for pressure tests with Markdown formatting and edit history
   - **Database Schema**:
@@ -359,6 +412,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * Easy navigation back to dashboard or previous page
 
 ### Fixed
+
+- **[Critical] Missing useTranslation Export in i18n Client**
+  - **Issue**: Build failure due to missing `useTranslation` export from `@/i18n/client`
+  - **Symptoms**:
+    * TypeScript errors: "Export useTranslation doesn't exist in target module"
+    * Build failures in multiple components using translations
+    * Affected files: date-time-settings.tsx, organization-settings.tsx, template-settings.tsx
+  - **Root Cause**:
+    * Previous i18next RSC fix removed the `useTranslation` hook export
+    * Components still importing `useTranslation` from the client module
+  - **Solution**:
+    * Re-exported `useTranslation` from `react-i18next` in `src/i18n/client.ts`
+    * Maintained custom `initI18next` function for initialization
+    * Preserved server-side rendering compatibility
+  - **Impact**: Restores translation functionality across all components
+  - **Related**: Follow-up fix for commit 2f853655
+  - **Files Changed**:
+    * `src/i18n/client.ts` - Added useTranslation re-export
+
+- **[Medium] TypeScript Type Errors in Project and Test Pages**
+  - **Issue**: Multiple type mismatches causing build failures
+  - **Symptoms**:
+    * Missing `availableTags` prop in TestsTableClient
+    * Type mismatch: `string | null` not assignable to `string | undefined`
+    * Type mismatch: Project type incompatibility
+    * Unused Spinner import warning
+  - **Root Cause**:
+    * TestsTableClient interface updated with new availableTags prop
+    * Session organizationId type inconsistency (null vs undefined)
+    * CreateTestPageClient expecting full Project type instead of simplified interface
+  - **Solution**:
+    * Added `getAllTags()` import and call in projects/[id]/page.tsx
+    * Changed `organizationId || ''` to `organizationId || undefined`
+    * Updated CreateTestPageClient interface to accept `Project[]` type
+    * Updated organizationId prop type to optional in CreateTestPageClient
+    * Added null check for organizationId before rendering form
+    * Removed unused Spinner import
+  - **Impact**: Fixes all TypeScript compilation errors
+  - **Files Changed**:
+    * `src/app/(dashboard)/projects/[id]/page.tsx` - Added getAllTags integration
+    * `src/app/(dashboard)/tests/new/page.tsx` - Fixed organizationId type
+    * `src/components/tests/create-test-page-client.tsx` - Updated types and imports
 
 - **[High] Hydration Mismatch Errors in Radix UI Components**
   - **Issue**: Console errors showing hydration mismatches in SelectTrigger, PopoverTrigger, and DropdownMenuTrigger components

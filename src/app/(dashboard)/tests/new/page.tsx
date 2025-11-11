@@ -44,7 +44,7 @@ export default async function CreateTestPage({ searchParams }: CreateTestPagePro
       projectsError={projectsError}
       sourceTest={sourceTest}
       userId={session.user.id}
-      organizationId={session.user.organizationId || ''}
+      organizationId={session.user.organizationId || undefined}
     />
   );
 }

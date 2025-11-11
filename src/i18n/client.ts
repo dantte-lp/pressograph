@@ -45,5 +45,10 @@ const initI18next = async (locale: Locale) => {
   }
 };
 
+// Re-export useTranslation from react-i18next
+export { useTranslation } from 'react-i18next';
+
+// Export our custom initialization function
 export { initI18next };
+
 export default i18next;

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -32,6 +33,7 @@ import {
   ChevronRightIcon,
   FileDownIcon,
   TagIcon,
+  PackageIcon,
   // ArrowUpDownIcon, // Unused - kept for future sorting UI
 } from 'lucide-react';
 import Link from 'next/link';
@@ -41,6 +43,7 @@ import { DeleteTestDialog } from './delete-test-dialog';
 import { BatchDeleteTestsDialog } from './batch-delete-tests-dialog';
 import { BatchTagAssignmentDialog } from './batch-tag-assignment-dialog';
 import { RelativeTime } from '@/components/ui/relative-time';
+import { createBatchDownload } from '@/lib/actions/batch-download';
 
 interface TestsTableClientProps {
   data: PaginatedTests;
@@ -65,6 +68,7 @@ export function TestsTableClient({ data, filters, pagination, availableTags }: T
   const [batchTagDialogOpen, setBatchTagDialogOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState<{ id: string; number: string; name?: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDownloading, startDownloadTransition] = useTransition();
 
   const handleDeleteClick = (testId: string, testNumber: string, testName?: string) => {
     setTestToDelete({ id: testId, number: testNumber, name: testName });
@@ -125,6 +129,50 @@ export function TestsTableClient({ data, filters, pagination, availableTags }: T
     link.href = URL.createObjectURL(blob);
     link.download = `tests-export-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+  };
+
+  const handleBatchDownload = async (format: 'csv' | 'json' = 'csv') => {
+    if (selectedIds.size === 0) {
+      toast.error(t('batchDownloadNoTests'));
+      return;
+    }
+
+    const toastId = toast.loading(t('batchDownloadPreparing'));
+
+    startDownloadTransition(async () => {
+      try {
+        const testIdsArray = Array.from(selectedIds);
+        const result = await createBatchDownload(testIdsArray, format);
+
+        if (result.success && result.zipData && result.filename) {
+          // Create blob and download
+          const blob = new Blob([result.zipData as BlobPart], { type: 'application/zip' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = result.filename;
+          link.click();
+
+          // Clean up
+          URL.revokeObjectURL(link.href);
+
+          toast.success(t('batchDownloadSuccess', { count: result.processedCount || 0 }), {
+            id: toastId,
+          });
+
+          // Clear selection after successful download
+          setSelectedIds(new Set());
+        } else {
+          toast.error(result.error || t('batchDownloadFailed'), {
+            id: toastId,
+          });
+        }
+      } catch (error) {
+        console.error('Batch download error:', error);
+        toast.error(t('batchDownloadFailed'), {
+          id: toastId,
+        });
+      }
+    });
   };
 
   const buildPageUrl = (newPage: number) => {
@@ -188,6 +236,15 @@ export function TestsTableClient({ data, filters, pagination, availableTags }: T
             >
               <FileDownIcon className="mr-2 h-4 w-4" />
               {t('exportCSV')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleBatchDownload('csv')}
+              disabled={isDownloading}
+            >
+              <PackageIcon className="mr-2 h-4 w-4" />
+              {t('batchDownload')}
             </Button>
             <Button
               variant="destructive"
