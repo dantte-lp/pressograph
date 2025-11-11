@@ -195,15 +195,15 @@ export function OrganizationSettings() {
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">General Settings</CardTitle>
+              <CardTitle className="text-lg">{t('settings.organizationSettings.generalSettings')}</CardTitle>
               <CardDescription>
-                Basic organization configuration and preferences
+                {t('settings.organizationSettings.generalDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Default Language */}
               <div className="space-y-2">
-                <Label htmlFor="defaultLanguage">Default Language</Label>
+                <Label htmlFor="defaultLanguage">{t('settings.organizationSettings.defaultLanguageLabel')}</Label>
                 <Select
                   value={settings.defaultLanguage}
                   onValueChange={(value) => updateSetting('defaultLanguage', value)}
@@ -218,7 +218,7 @@ export function OrganizationSettings() {
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
-                  Default language for new users and system messages
+                  {t('settings.organizationSettings.defaultLanguageDescription')}
                 </p>
               </div>
 
@@ -226,7 +226,7 @@ export function OrganizationSettings() {
 
               {/* Max Test Duration */}
               <div className="space-y-2">
-                <Label htmlFor="maxTestDuration">Maximum Test Duration (hours)</Label>
+                <Label htmlFor="maxTestDuration">{t('settings.organizationSettings.maxTestDurationLabel')}</Label>
                 <Input
                   id="maxTestDuration"
                   type="number"
@@ -237,7 +237,7 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Maximum duration allowed for pressure tests (1-168 hours)
+                  {t('settings.organizationSettings.maxTestDurationDescription')}
                 </p>
               </div>
 
@@ -247,9 +247,9 @@ export function OrganizationSettings() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Allow Public Sharing</Label>
+                    <Label>{t('settings.organizationSettings.allowPublicSharingLabel')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Enable users to create public share links for tests
+                      {t('settings.organizationSettings.allowPublicSharingDescription')}
                     </p>
                   </div>
                   <Switch
@@ -261,9 +261,9 @@ export function OrganizationSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Require Approval for Tests</Label>
+                    <Label>{t('settings.organizationSettings.requireApprovalLabel')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Require admin approval before running new tests
+                      {t('settings.organizationSettings.requireApprovalDescription')}
                     </p>
                   </div>
                   <Switch
@@ -283,16 +283,16 @@ export function OrganizationSettings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                <CardTitle className="text-lg">Branding</CardTitle>
+                <CardTitle className="text-lg">{t('settings.organizationSettings.brandingSettings')}</CardTitle>
               </div>
               <CardDescription>
-                Customize your organization's visual identity
+                {t('settings.organizationSettings.brandingDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Logo URL */}
               <div className="space-y-2">
-                <Label htmlFor="brandingLogo">Logo URL</Label>
+                <Label htmlFor="brandingLogo">{t('settings.organizationSettings.logoUrlLabel')}</Label>
                 <Input
                   id="brandingLogo"
                   type="url"
@@ -302,13 +302,13 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  URL to your organization logo (or base64 data URL)
+                  {t('settings.organizationSettings.logoUrlDescription')}
                 </p>
               </div>
 
               {/* Primary Color */}
               <div className="space-y-2">
-                <Label htmlFor="primaryColor">Primary Color</Label>
+                <Label htmlFor="primaryColor">{t('settings.organizationSettings.primaryColorLabel')}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="primaryColor"
@@ -330,7 +330,7 @@ export function OrganizationSettings() {
 
               {/* Secondary Color */}
               <div className="space-y-2">
-                <Label htmlFor="secondaryColor">Secondary Color</Label>
+                <Label htmlFor="secondaryColor">{t('settings.organizationSettings.secondaryColorLabel')}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="secondaryColor"
@@ -359,19 +359,19 @@ export function OrganizationSettings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                <CardTitle className="text-lg">Notifications</CardTitle>
+                <CardTitle className="text-lg">{t('settings.organizationSettings.notificationSettings')}</CardTitle>
               </div>
               <CardDescription>
-                Configure notification channels and preferences
+                {t('settings.organizationSettings.notificationDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Email Notifications */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
+                  <Label>{t('settings.organizationSettings.emailNotificationsLabel')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Send email notifications for important events
+                    {t('settings.organizationSettings.emailNotificationsDescription')}
                   </p>
                 </div>
                 <Switch
@@ -385,7 +385,7 @@ export function OrganizationSettings() {
 
               {/* Digest Frequency */}
               <div className="space-y-2">
-                <Label htmlFor="digestFrequency">Digest Frequency</Label>
+                <Label htmlFor="digestFrequency">{t('settings.organizationSettings.digestFrequencyLabel')}</Label>
                 <Select
                   value={settings.notifications?.digestFrequency || 'weekly'}
                   onValueChange={(value) => updateSetting('notifications.digestFrequency', value)}
@@ -395,9 +395,9 @@ export function OrganizationSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="never">Never</SelectItem>
+                    <SelectItem value="daily">{t('settings.organizationSettings.digestDaily')}</SelectItem>
+                    <SelectItem value="weekly">{t('settings.organizationSettings.digestWeekly')}</SelectItem>
+                    <SelectItem value="never">{t('settings.organizationSettings.digestNever')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -406,7 +406,7 @@ export function OrganizationSettings() {
 
               {/* Slack Webhook */}
               <div className="space-y-2">
-                <Label htmlFor="slackWebhook">Slack Webhook URL</Label>
+                <Label htmlFor="slackWebhook">{t('settings.organizationSettings.slackWebhookLabel')}</Label>
                 <Input
                   id="slackWebhook"
                   type="url"
@@ -416,13 +416,13 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Optional: Send notifications to Slack channel
+                  {t('settings.organizationSettings.slackWebhookDescription')}
                 </p>
               </div>
 
               {/* Discord Webhook */}
               <div className="space-y-2">
-                <Label htmlFor="discordWebhook">Discord Webhook URL</Label>
+                <Label htmlFor="discordWebhook">{t('settings.organizationSettings.discordWebhookLabel')}</Label>
                 <Input
                   id="discordWebhook"
                   type="url"
@@ -432,7 +432,7 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Optional: Send notifications to Discord channel
+                  {t('settings.organizationSettings.discordWebhookDescription')}
                 </p>
               </div>
             </CardContent>
@@ -445,16 +445,16 @@ export function OrganizationSettings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Database className="h-5 w-5" />
-                <CardTitle className="text-lg">Data Retention</CardTitle>
+                <CardTitle className="text-lg">{t('settings.organizationSettings.dataRetentionSettings')}</CardTitle>
               </div>
               <CardDescription>
-                Configure data retention policies for GDPR compliance
+                {t('settings.organizationSettings.dataRetentionDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Test Data Retention */}
               <div className="space-y-2">
-                <Label htmlFor="testDataDays">Test Data Retention (days)</Label>
+                <Label htmlFor="testDataDays">{t('settings.organizationSettings.testDataRetentionLabel')}</Label>
                 <Input
                   id="testDataDays"
                   type="number"
@@ -465,13 +465,13 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  How long to keep test data (30-3650 days)
+                  {t('settings.organizationSettings.testDataRetentionDescription')}
                 </p>
               </div>
 
               {/* Audit Log Retention */}
               <div className="space-y-2">
-                <Label htmlFor="auditLogDays">Audit Log Retention (days)</Label>
+                <Label htmlFor="auditLogDays">{t('settings.organizationSettings.auditLogRetentionLabel')}</Label>
                 <Input
                   id="auditLogDays"
                   type="number"
@@ -482,7 +482,7 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  How long to keep audit logs (365-3650 days)
+                  {t('settings.organizationSettings.auditLogRetentionDescription')}
                 </p>
               </div>
 
@@ -491,9 +491,9 @@ export function OrganizationSettings() {
               {/* Auto Delete */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Automatic Deletion</Label>
+                  <Label>{t('settings.organizationSettings.autoDeleteLabel')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Automatically delete data after retention period expires
+                    {t('settings.organizationSettings.autoDeleteDescription')}
                   </p>
                 </div>
                 <Switch
@@ -512,10 +512,10 @@ export function OrganizationSettings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Zap className="h-5 w-5" />
-                <CardTitle className="text-lg">Feature Flags</CardTitle>
+                <CardTitle className="text-lg">{t('settings.organizationSettings.featureFlagsSettings')}</CardTitle>
               </div>
               <CardDescription>
-                Enable or disable specific features for your organization
+                {t('settings.organizationSettings.featureFlagsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -523,9 +523,9 @@ export function OrganizationSettings() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>API Access</Label>
+                    <Label>{t('settings.organizationSettings.apiAccessLabel')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Enable REST API access for integrations
+                      {t('settings.organizationSettings.apiAccessDescription')}
                     </p>
                   </div>
                   <Switch
@@ -537,9 +537,9 @@ export function OrganizationSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Public Sharing</Label>
+                    <Label>{t('settings.organizationSettings.publicSharingLabel')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Allow public share links for test results
+                      {t('settings.organizationSettings.publicSharingDescription')}
                     </p>
                   </div>
                   <Switch
@@ -551,9 +551,9 @@ export function OrganizationSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Advanced Analytics</Label>
+                    <Label>{t('settings.organizationSettings.advancedAnalyticsLabel')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Enable advanced analytics and reporting features
+                      {t('settings.organizationSettings.advancedAnalyticsDescription')}
                     </p>
                   </div>
                   <Switch
@@ -568,7 +568,7 @@ export function OrganizationSettings() {
 
               {/* Rate Limiting */}
               <div className="space-y-2">
-                <Label htmlFor="maxTestsPerMonth">Maximum Tests Per Month</Label>
+                <Label htmlFor="maxTestsPerMonth">{t('settings.organizationSettings.maxTestsPerMonthLabel')}</Label>
                 <Input
                   id="maxTestsPerMonth"
                   type="number"
@@ -579,7 +579,7 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Rate limit for test creation (1-100,000 per month)
+                  {t('settings.organizationSettings.maxTestsPerMonthDescription')}
                 </p>
               </div>
             </CardContent>
@@ -592,19 +592,19 @@ export function OrganizationSettings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                <CardTitle className="text-lg">Security Policies</CardTitle>
+                <CardTitle className="text-lg">{t('settings.organizationSettings.securitySettings')}</CardTitle>
               </div>
               <CardDescription>
-                Configure security policies and password requirements
+                {t('settings.organizationSettings.securityDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* MFA Required */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Require Multi-Factor Authentication</Label>
+                  <Label>{t('settings.organizationSettings.mfaRequiredLabel')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Enforce MFA for all organization users
+                    {t('settings.organizationSettings.mfaRequiredDescription')}
                   </p>
                 </div>
                 <Switch
@@ -618,7 +618,7 @@ export function OrganizationSettings() {
 
               {/* Session Timeout */}
               <div className="space-y-2">
-                <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
+                <Label htmlFor="sessionTimeout">{t('settings.organizationSettings.sessionTimeoutLabel')}</Label>
                 <Input
                   id="sessionTimeout"
                   type="number"
@@ -629,7 +629,7 @@ export function OrganizationSettings() {
                   disabled={saving}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Automatically log out inactive users (5-1440 minutes)
+                  {t('settings.organizationSettings.sessionTimeoutDescription')}
                 </p>
               </div>
 
@@ -637,10 +637,10 @@ export function OrganizationSettings() {
 
               {/* Password Policy */}
               <div className="space-y-4">
-                <Label>Password Policy</Label>
+                <Label>{t('settings.organizationSettings.passwordPolicyLabel')}</Label>
 
                 <div className="space-y-2">
-                  <Label htmlFor="minPasswordLength">Minimum Length</Label>
+                  <Label htmlFor="minPasswordLength">{t('settings.organizationSettings.minPasswordLengthLabel')}</Label>
                   <Input
                     id="minPasswordLength"
                     type="number"
@@ -653,7 +653,7 @@ export function OrganizationSettings() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label>Require Special Characters</Label>
+                  <Label>{t('settings.organizationSettings.requireSpecialCharsLabel')}</Label>
                   <Switch
                     checked={settings.security?.passwordPolicy?.requireSpecialChars ?? true}
                     onCheckedChange={(checked) => updateSetting('security.passwordPolicy.requireSpecialChars', checked)}
@@ -662,7 +662,7 @@ export function OrganizationSettings() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label>Require Numbers</Label>
+                  <Label>{t('settings.organizationSettings.requireNumbersLabel')}</Label>
                   <Switch
                     checked={settings.security?.passwordPolicy?.requireNumbers ?? true}
                     onCheckedChange={(checked) => updateSetting('security.passwordPolicy.requireNumbers', checked)}
@@ -671,7 +671,7 @@ export function OrganizationSettings() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label>Require Uppercase Letters</Label>
+                  <Label>{t('settings.organizationSettings.requireUppercaseLabel')}</Label>
                   <Switch
                     checked={settings.security?.passwordPolicy?.requireUppercase ?? true}
                     onCheckedChange={(checked) => updateSetting('security.passwordPolicy.requireUppercase', checked)}
@@ -688,7 +688,7 @@ export function OrganizationSettings() {
       {saving && (
         <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Saving...</span>
+          <span>{t('settings.organizationSettings.saving')}</span>
         </div>
       )}
     </div>
