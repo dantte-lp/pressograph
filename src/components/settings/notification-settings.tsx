@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { useTranslation } from '@/i18n/client';
 
 interface NotificationPreferences {
   emailNotifications: boolean;
@@ -26,6 +27,7 @@ interface NotificationPreferences {
 }
 
 export function NotificationSettings() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
@@ -49,7 +51,7 @@ export function NotificationSettings() {
         inAppNotifications: data.inAppNotifications,
       });
     } catch (error) {
-      toast.error('Failed to load preferences');
+      toast.error(t('settings.failedToLoadPreferences'));
     } finally {
       setLoading(false);
     }
@@ -70,9 +72,9 @@ export function NotificationSettings() {
       if (!res.ok) throw new Error('Failed to update preferences');
 
       setPreferences((prev) => ({ ...prev, ...updates }));
-      toast.success('Notification preferences updated');
+      toast.success(t('settings.notificationSettings.notificationPreferencesUpdated'));
     } catch (error) {
-      toast.error('Failed to update preferences');
+      toast.error(t('settings.failedToUpdatePreferences'));
     } finally {
       setSaving(false);
     }
@@ -90,18 +92,19 @@ export function NotificationSettings() {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-6">Notifications</h2>
+      <h2 className="text-xl font-semibold mb-6">
+        {t('settings.notificationSettings.title')}
+      </h2>
 
       <div className="space-y-6">
         {/* Email Notifications */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <Label htmlFor="emailNotifications" className="text-base">
-              Email Notifications
+              {t('settings.notificationSettings.emailLabel')}
             </Label>
             <p className="text-sm text-muted-foreground mt-1">
-              Receive notifications about test results, project updates, and
-              important alerts via email
+              {t('settings.notificationSettings.emailDescription')}
             </p>
           </div>
 
@@ -121,11 +124,10 @@ export function NotificationSettings() {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <Label htmlFor="inAppNotifications" className="text-base">
-              In-App Notifications
+              {t('settings.notificationSettings.inAppLabel')}
             </Label>
             <p className="text-sm text-muted-foreground mt-1">
-              Show notifications within the application for real-time updates
-              and alerts
+              {t('settings.notificationSettings.inAppDescription')}
             </p>
           </div>
 
@@ -145,7 +147,7 @@ export function NotificationSettings() {
         {saving && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
             <Spinner className="h-4 w-4" />
-            <span>Saving preferences...</span>
+            <span>{t('settings.savingPreferences')}</span>
           </div>
         )}
       </div>
