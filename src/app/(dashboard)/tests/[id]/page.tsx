@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { EditIcon, Share2Icon, CopyIcon } from 'lucide-react';
+import { EditIcon, Share2Icon, CopyIcon, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,8 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { getTestById } from '@/lib/actions/tests';
+import { getTestComments } from '@/lib/actions/comments';
+import { getCurrentUserId } from '@/lib/auth/server-auth';
 import { TestStatusBadge } from '@/components/tests/test-status-badge';
 import { TestConfigDisplay } from '@/components/tests/test-config-display';
 import { TestActionsDropdown } from '@/components/tests/test-actions-dropdown';
@@ -22,6 +24,7 @@ import { PressureTestPreview } from '@/components/tests/pressure-test-preview';
 import { EmulationExportDialog } from '@/components/tests/emulation-export-dialog';
 import { EChartsExportDialog } from '@/components/tests/echarts-export-dialog';
 import { ExportConfigButton } from '@/components/tests/export-config-button';
+import { TestCommentsSection } from '@/components/tests/test-comments-section';
 import { formatDate, formatDateTime } from '@/lib/utils/format';
 
 /**
@@ -43,11 +46,19 @@ interface TestDetailPageProps {
 export default async function TestDetailPage({ params }: TestDetailPageProps) {
   const { id } = await params;
 
-  // Fetch test details
-  const test = await getTestById(id);
+  // Fetch test details and comments in parallel
+  const [test, comments, currentUserId] = await Promise.all([
+    getTestById(id),
+    getTestComments(id).catch(() => []), // Gracefully handle errors
+    getCurrentUserId(),
+  ]);
 
   if (!test) {
     notFound();
+  }
+
+  if (!currentUserId) {
+    notFound(); // Should not happen on protected route
   }
 
   return (
@@ -118,10 +129,14 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4" aria-label="Test information sections">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5" aria-label="Test information sections">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="graph">Graph Preview</TabsTrigger>
+          <TabsTrigger value="comments">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Comments ({comments.length})
+          </TabsTrigger>
           <TabsTrigger value="sharing">Sharing</TabsTrigger>
         </TabsList>
 
@@ -389,6 +404,25 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   endDateTime={test.config.endDateTime || undefined}
                 />
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Comments Tab */}
+        <TabsContent value="comments" role="tabpanel" aria-label="Test comments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Comments</CardTitle>
+              <CardDescription>
+                Discuss this test with your team. Markdown formatting is supported.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TestCommentsSection
+                testId={test.id}
+                initialComments={comments}
+                currentUserId={currentUserId}
+              />
             </CardContent>
           </Card>
         </TabsContent>
