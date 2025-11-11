@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { EditIcon, Share2Icon, CopyIcon, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,9 @@ interface TestDetailPageProps {
 export default async function TestDetailPage({ params }: TestDetailPageProps) {
   const { id } = await params;
 
+  const t = await getTranslations('tests');
+  const tCommon = await getTranslations('common');
+
   // Fetch test details and comments in parallel
   const [test, comments, currentUserId] = await Promise.all([
     getTestById(id),
@@ -68,7 +72,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/tests">Tests</Link>
+              <Link href="/tests">{t('title')}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -97,7 +101,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             </Link>
             <span aria-hidden="true">•</span>
             <time dateTime={test.createdAt.toString()} aria-label="Creation date">
-              Created {formatDate(test.createdAt)}
+              {t('detailCreated', { date: formatDate(test.createdAt) })}
             </time>
           </div>
         </div>
@@ -107,7 +111,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
           <Button variant="outline" size="sm" asChild>
             <Link href={`/tests/${test.id}/edit` as any} aria-label="Edit test configuration">
               <EditIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-              Edit
+              {tCommon('edit')}
             </Link>
           </Button>
           <TestActionsDropdown test={test} />
@@ -130,14 +134,14 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-5" aria-label="Test information sections">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="graph">Graph Preview</TabsTrigger>
+          <TabsTrigger value="overview">{t('detailTabOverview')}</TabsTrigger>
+          <TabsTrigger value="configuration">{t('detailTabConfiguration')}</TabsTrigger>
+          <TabsTrigger value="graph">{t('detailTabGraph')}</TabsTrigger>
           <TabsTrigger value="comments">
             <MessageSquare className="mr-2 h-4 w-4" />
-            Comments ({comments.length})
+            {t('detailTabComments', { count: comments.length })}
           </TabsTrigger>
-          <TabsTrigger value="sharing">Sharing</TabsTrigger>
+          <TabsTrigger value="sharing">{t('detailTabSharing')}</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -146,28 +150,28 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             {/* Configuration Status Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Configuration</CardTitle>
+                <CardTitle className="text-base">{t('detailConfiguration')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <dt className="text-sm text-muted-foreground">Status</dt>
+                    <dt className="text-sm text-muted-foreground">{t('columnStatus')}</dt>
                     <dd>
                       <Badge variant={test.status === 'ready' ? 'default' : 'secondary'}>
-                        {test.status === 'ready' ? 'Finalized' : 'Draft'}
+                        {test.status === 'ready' ? t('detailFinalized') : t('detailDraft')}
                       </Badge>
                     </dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <dt className="text-sm text-muted-foreground">Template</dt>
+                    <dt className="text-sm text-muted-foreground">{t('detailTemplate')}</dt>
                     <dd>
                       <Badge variant="outline">
-                        {test.templateType || 'Custom'}
+                        {test.templateType || t('detailCustom')}
                       </Badge>
                     </dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <dt className="text-sm text-muted-foreground">Last Updated</dt>
+                    <dt className="text-sm text-muted-foreground">{t('detailLastUpdated')}</dt>
                     <dd>
                       <time dateTime={test.updatedAt.toString()} className="text-sm">
                         {formatDate(test.updatedAt)}
@@ -181,20 +185,20 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             {/* Test Information Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Test Information</CardTitle>
+                <CardTitle className="text-base">{t('detailTestInformation')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <dt className="text-sm text-muted-foreground">Test Number</dt>
+                    <dt className="text-sm text-muted-foreground">{t('columnTestNumber')}</dt>
                     <dd className="text-sm font-medium">{test.testNumber}</dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <dt className="text-sm text-muted-foreground">Created By</dt>
+                    <dt className="text-sm text-muted-foreground">{t('detailCreatedBy')}</dt>
                     <dd className="text-sm">{test.createdByName}</dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <dt className="text-sm text-muted-foreground">Created</dt>
+                    <dt className="text-sm text-muted-foreground">{t('detailCreatedLabel')}</dt>
                     <dd>
                       <time dateTime={test.createdAt.toString()} className="text-sm">
                         {formatDate(test.createdAt)}
@@ -203,7 +207,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   </div>
                   {test.config.startDateTime && (
                     <div className="flex items-center justify-between">
-                      <dt className="text-sm text-muted-foreground">Scheduled</dt>
+                      <dt className="text-sm text-muted-foreground">{t('detailScheduled')}</dt>
                       <dd>
                         <time dateTime={test.config.startDateTime} className="text-sm">
                           {formatDateTime(test.config.startDateTime)}
@@ -218,7 +222,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
             {/* Quick Actions Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Quick Actions</CardTitle>
+                <CardTitle className="text-base">{t('detailQuickActions')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <nav aria-label="Quick actions menu">
@@ -243,12 +247,12 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
                   />
                   <Button variant="outline" size="sm" className="w-full justify-start" disabled aria-disabled="true">
                     <Share2Icon className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Create Share Link
+                    {t('createShareLink')}
                   </Button>
                   <Button variant="outline" size="sm" className="w-full justify-start" asChild>
                     <Link href={`/tests/new?duplicate=${test.id}` as any} aria-label="Duplicate this test">
                       <CopyIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Duplicate Test
+                      {t('duplicateTest')}
                     </Link>
                   </Button>
                 </nav>
@@ -260,7 +264,7 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
           {test.description && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Description</CardTitle>
+                <CardTitle className="text-base">{t('detailDescription')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -273,9 +277,9 @@ export default async function TestDetailPage({ params }: TestDetailPageProps) {
           {/* Comprehensive Test Parameters */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Test Parameters</CardTitle>
+              <CardTitle className="text-base">{t('detailTestParameters')}</CardTitle>
               <CardDescription>
-                Complete pressure test configuration and metadata
+                {t('detailTestParametersDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>

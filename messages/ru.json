@@ -210,7 +210,27 @@
       "completed": "Завершен",
       "failed": "Неудачный",
       "cancelled": "Отменен"
-    }
+    },
+    "detailCreated": "Создано {date}",
+    "detailTabOverview": "Обзор",
+    "detailTabConfiguration": "Конфигурация",
+    "detailTabGraph": "Предпросмотр графика",
+    "detailTabComments": "Комментарии ({count})",
+    "detailTabSharing": "Совместный доступ",
+    "detailConfiguration": "Конфигурация",
+    "detailFinalized": "Завершено",
+    "detailDraft": "Черновик",
+    "detailTemplate": "Шаблон",
+    "detailCustom": "Пользовательский",
+    "detailLastUpdated": "Последнее обновление",
+    "detailTestInformation": "Информация об испытании",
+    "detailCreatedBy": "Создал",
+    "detailCreatedLabel": "Создано",
+    "detailScheduled": "Запланировано",
+    "detailQuickActions": "Быстрые действия",
+    "detailDescription": "Описание",
+    "detailTestParameters": "Параметры испытания",
+    "detailTestParametersDescription": "Полная конфигурация испытания на давление и метаданные"
   },
   "testForm": {
     "basicInfo": "Основная информация",

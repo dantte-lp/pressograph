@@ -210,7 +210,27 @@
       "completed": "Completed",
       "failed": "Failed",
       "cancelled": "Cancelled"
-    }
+    },
+    "detailCreated": "Created {date}",
+    "detailTabOverview": "Overview",
+    "detailTabConfiguration": "Configuration",
+    "detailTabGraph": "Graph Preview",
+    "detailTabComments": "Comments ({count})",
+    "detailTabSharing": "Sharing",
+    "detailConfiguration": "Configuration",
+    "detailFinalized": "Finalized",
+    "detailDraft": "Draft",
+    "detailTemplate": "Template",
+    "detailCustom": "Custom",
+    "detailLastUpdated": "Last Updated",
+    "detailTestInformation": "Test Information",
+    "detailCreatedBy": "Created By",
+    "detailCreatedLabel": "Created",
+    "detailScheduled": "Scheduled",
+    "detailQuickActions": "Quick Actions",
+    "detailDescription": "Description",
+    "detailTestParameters": "Test Parameters",
+    "detailTestParametersDescription": "Complete pressure test configuration and metadata"
   },
   "testForm": {
     "basicInfo": "Basic Information",
