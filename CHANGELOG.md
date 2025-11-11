@@ -9,6 +9,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Sprint 5] Comment System with Markdown Support**
+  - **Feature**: Complete commenting system for pressure tests with Markdown formatting and edit history
+  - **Database Schema**:
+    * Created `test_comments` table with Drizzle ORM
+    * Fields: id, pressureTestId, authorId, content (text), isEdited, editedAt, createdAt, updatedAt
+    * Foreign keys to `pressure_tests` and `users` tables with cascade delete
+    * Indexed on pressureTestId, authorId, and createdAt for optimal query performance
+    * Relations added to users and pressure tests for relational queries
+  - **Backend Implementation**:
+    * Created `src/lib/actions/comments.ts` with 5 server actions:
+      - `getTestComments()` - Fetch comments with author information
+      - `createComment()` - Add new comment with validation (max 10,000 chars)
+      - `updateComment()` - Edit existing comment (author-only with edit tracking)
+      - `deleteComment()` - Remove comment (author-only with authorization check)
+      - `getCommentCount()` - Get total comments for a test
+    * Authorization: Only comment authors can edit/delete their own comments
+    * Validation: Content length limits, empty content checks, access control
+    * Automatic edit timestamp tracking when comments are updated
+  - **Frontend Components**:
+    * `TestCommentsList` - Display comments with Markdown rendering using react-markdown + remark-gfm
+    * `AddCommentForm` - Comment creation with character counter and validation
+    * `EditCommentDialog` - Modal dialog for editing comments with Markdown preview
+    * `DeleteCommentDialog` - Confirmation dialog for deleting comments
+    * `TestCommentsSection` - Client wrapper with state management and auto-refresh
+  - **UI/UX Features**:
+    * Full Markdown support: **bold**, *italic*, [links](url), `code`, lists, tables (GFM)
+    * Author avatars with initials fallback
+    * Relative timestamps for comments (e.g., "2 hours ago")
+    * "Edited" badge for modified comments
+    * Real-time character counter (0/10,000) with visual feedback
+    * Empty state with helpful message when no comments exist
+    * Optimistic UI updates after add/edit/delete operations
+    * Author-only edit/delete buttons (icon-only for compact display)
+  - **Integration**:
+    * Added "Comments" tab to test detail page with comment count badge
+    * Tab shows total comment count: "Comments (5)"
+    * Parallel data fetching for test details and comments (optimal performance)
+    * Auto-refresh on comment add/edit/delete actions
+  - **Translation Support**:
+    * Added 24 new translation keys (English + Russian):
+      - `comments.title` - "Comments" / "Комментарии"
+      - `comments.addComment`, `editComment`, `deleteComment` - Action labels
+      - `comments.placeholder` - Form placeholder with Markdown hint
+      - `comments.noComments`, `noCommentsDescription` - Empty state
+      - `comments.edited`, `editedAt` - Edit indicators
+      - `comments.commentAdded`, `commentUpdated`, `commentDeleted` - Success messages
+      - `comments.failedToAdd`, `failedToUpdate`, `failedToDelete` - Error messages
+      - `comments.markdownSupport`, `markdownHint` - Formatting help
+    * Full i18n support for entire comment system
+  - **Dependencies**:
+    * Added `react-markdown@10.1.0` - Markdown rendering
+    * Added `remark-gfm@4.0.1` - GitHub Flavored Markdown support
+  - **Performance**:
+    * Server-side rendering with initial data hydration
+    * Efficient JSONB queries for comment content
+    * Indexed database queries for fast comment retrieval
+  - **Accessibility**:
+    * Semantic HTML with proper ARIA labels
+    * Keyboard navigation support
+    * Screen reader friendly UI
+  - **Related**: Implements Sprint 5 comment system requirements (2 SP)
+  - **Issue**: #121 (manual creation required - gh CLI not authenticated)
+  - **Files Changed**:
+    * `src/lib/db/schema/test-comments.ts` - New comment schema
+    * `src/lib/db/schema/relations.ts` - Comment relations
+    * `src/lib/db/schema/index.ts` - Schema exports
+    * `src/lib/actions/comments.ts` - Comment server actions
+    * `src/components/tests/test-comments-list.tsx` - Comment list with Markdown
+    * `src/components/tests/add-comment-form.tsx` - Comment creation form
+    * `src/components/tests/edit-comment-dialog.tsx` - Edit dialog
+    * `src/components/tests/delete-comment-dialog.tsx` - Delete confirmation
+    * `src/components/tests/test-comments-section.tsx` - Client wrapper
+    * `src/app/(dashboard)/tests/[id]/page.tsx` - Comments tab integration
+    * `messages/en.json` - English translations
+    * `messages/ru.json` - Russian translations
+    * `package.json` - Added react-markdown and remark-gfm dependencies
+    * Database migration: `drizzle/migrations/20251111083939_thankful_grey_gargoyle.sql`
+
 - **[Sprint 5] Batch Tag Assignment for Multiple Tests**
   - **Feature**: Bulk tag management allowing users to add/remove tags to/from multiple selected tests simultaneously
   - **Backend Implementation**:
