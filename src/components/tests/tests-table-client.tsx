@@ -31,6 +31,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   FileDownIcon,
+  TagIcon,
   // ArrowUpDownIcon, // Unused - kept for future sorting UI
 } from 'lucide-react';
 import Link from 'next/link';
@@ -38,12 +39,14 @@ import { formatBytes } from '@/lib/utils/format';
 import type { PaginatedTests, TestFilters, PaginationParams } from '@/lib/actions/tests';
 import { DeleteTestDialog } from './delete-test-dialog';
 import { BatchDeleteTestsDialog } from './batch-delete-tests-dialog';
+import { BatchTagAssignmentDialog } from './batch-tag-assignment-dialog';
 import { RelativeTime } from '@/components/ui/relative-time';
 
 interface TestsTableClientProps {
   data: PaginatedTests;
   filters: TestFilters;
   pagination: PaginationParams;
+  availableTags: string[];
 }
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -55,10 +58,11 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
   cancelled: 'outline',
 };
 
-export function TestsTableClient({ data, filters, pagination }: TestsTableClientProps) {
+export function TestsTableClient({ data, filters, pagination, availableTags }: TestsTableClientProps) {
   const { t } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
+  const [batchTagDialogOpen, setBatchTagDialogOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState<{ id: string; number: string; name?: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -169,6 +173,14 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
             </Button>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBatchTagDialogOpen(true)}
+            >
+              <TagIcon className="mr-2 h-4 w-4" />
+              {t('assignTags')}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -390,6 +402,15 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
         open={batchDeleteDialogOpen}
         onOpenChange={setBatchDeleteDialogOpen}
         onSuccess={handleBatchDeleteSuccess}
+      />
+
+      {/* Batch Tag Assignment Dialog */}
+      <BatchTagAssignmentDialog
+        selectedIds={Array.from(selectedIds)}
+        availableTags={availableTags}
+        open={batchTagDialogOpen}
+        onOpenChange={setBatchTagDialogOpen}
+        onSuccess={() => setSelectedIds(new Set())}
       />
     </div>
   );

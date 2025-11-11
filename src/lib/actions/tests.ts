@@ -648,3 +648,73 @@ export async function getAllTags(): Promise<string[]> {
   }
 }
 
+/**
+ * Batch update tags for multiple tests
+ *
+ * @param testIds - Array of test IDs to update
+ * @param tagsToAdd - Tags to add to all selected tests
+ * @param tagsToRemove - Tags to remove from all selected tests
+ * @returns Result object with success status and update count
+ */
+export async function batchUpdateTags(
+  testIds: string[],
+  tagsToAdd: string[],
+  tagsToRemove: string[]
+): Promise<{ success: boolean; updated: number; error?: string }> {
+  try {
+    const session = await requireAuth();
+    const userId = session.user.id;
+
+    if (testIds.length === 0) {
+      return { success: false, updated: 0, error: 'No tests selected' };
+    }
+
+    // Verify ownership of all tests
+    const ownedTests = await db
+      .select({ id: pressureTests.id, tags: pressureTests.tags })
+      .from(pressureTests)
+      .where(
+        and(
+          inArray(pressureTests.id, testIds),
+          eq(pressureTests.createdBy, userId)
+        )
+      );
+
+    if (ownedTests.length === 0) {
+      return { success: false, updated: 0, error: 'No tests found or access denied' };
+    }
+
+    // Update tags for each test
+    let updatedCount = 0;
+    for (const test of ownedTests) {
+      const currentTags = (test.tags as string[]) || [];
+
+      // Remove tags first, then add new tags
+      let newTags = currentTags.filter(tag => !tagsToRemove.includes(tag));
+
+      // Add new tags (avoid duplicates)
+      for (const tag of tagsToAdd) {
+        if (!newTags.includes(tag)) {
+          newTags.push(tag);
+        }
+      }
+
+      // Update the test
+      await db
+        .update(pressureTests)
+        .set({
+          tags: newTags,
+          updatedAt: new Date()
+        })
+        .where(eq(pressureTests.id, test.id));
+
+      updatedCount++;
+    }
+
+    return { success: true, updated: updatedCount };
+  } catch (error) {
+    console.error('Error batch updating tags:', error);
+    return { success: false, updated: 0, error: 'Failed to update tags' };
+  }
+}
+

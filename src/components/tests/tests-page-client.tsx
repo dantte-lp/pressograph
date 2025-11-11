@@ -75,6 +75,7 @@ export function TestsPageClient({
             data={initialData}
             filters={filters}
             pagination={pagination}
+            availableTags={availableTags}
           />
         </CardContent>
       </Card>
