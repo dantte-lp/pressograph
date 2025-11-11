@@ -159,38 +159,135 @@
     "goToProjects": "Go to Projects",
     "create": {
       "title": "Create Pressure Test",
-      "basicInfo": "Basic Information",
-      "coreParams": "Core Parameters",
-      "intermediateStages": "Intermediate Stages",
-      "reviewCreate": "Review & Create",
-      "testName": "Test Name",
-      "testNumber": "Test Number",
-      "description": "Description",
-      "project": "Project",
-      "selectProject": "Select a project",
-      "workingPressure": "Working Pressure",
-      "maxPressure": "Max Pressure",
-      "testDuration": "Test Duration",
-      "hours": "hours",
-      "pressureUnit": "Pressure Unit",
-      "temperature": "Temperature",
-      "allowableDrop": "Allowable Pressure Drop",
-      "addStage": "Add Stage",
-      "stageTime": "Stage Time",
-      "stagePressure": "Stage Pressure",
-      "stageDuration": "Stage Duration",
-      "minutes": "minutes",
-      "removeStage": "Remove Stage",
-      "preview": "Preview",
-      "recalculate": "Recalculate",
-      "graphSettings": "Graph Settings",
-      "autoScaleYAxis": "Auto Scale Y-Axis",
-      "yAxisMin": "Y-Axis Min",
-      "yAxisMax": "Y-Axis Max",
-      "autoScaleXAxis": "Auto Scale X-Axis",
-      "xAxisMax": "X-Axis Max (minutes)",
-      "success": "Test created successfully",
-      "error": "Failed to create test"
+      "sections": {
+        "basicInfo": "Basic Information",
+        "basicInfoDescription": "Provide test name, project, and optional details",
+        "coreParams": "Core Parameters",
+        "coreParamsDescription": "Configure pressure, temperature, and duration settings",
+        "intermediateStages": "Intermediate Stages (Optional)",
+        "intermediateStagesDescription": "Add optional pressure steps during the test",
+        "testSchedule": "Test Schedule (Optional)",
+        "actions": "Actions"
+      },
+      "fields": {
+        "testName": {
+          "label": "Test Name",
+          "placeholder": "e.g., Daily Pressure Test - Pipeline A",
+          "required": "Test name is required",
+          "tooLong": "Name too long"
+        },
+        "testNumber": {
+          "label": "Test Number (optional)",
+          "placeholder": "e.g., PT-2025-001 (auto-generated if left empty)",
+          "hint": "Leave empty to auto-generate. Must be unique within your organization.",
+          "minLength": "Test number must be at least 3 characters",
+          "tooLong": "Test number too long"
+        },
+        "project": {
+          "label": "Project",
+          "placeholder": "Select a project",
+          "required": "Please select a project"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Optional description of the test"
+        },
+        "tags": {
+          "label": "Tags",
+          "placeholder": "Add tag and press Enter",
+          "addButton": "Add"
+        },
+        "templateType": {
+          "label": "Template Type",
+          "daily": "Daily Test",
+          "extended": "Extended Test",
+          "custom": "Custom Test"
+        },
+        "workingPressure": {
+          "label": "Working Pressure",
+          "required": "Working pressure must be positive"
+        },
+        "maxPressure": {
+          "label": "Max Pressure",
+          "required": "Max pressure must be positive"
+        },
+        "testDuration": {
+          "label": "Test Duration (hours)",
+          "required": "Duration must be at least 0.1 hours"
+        },
+        "temperature": {
+          "label": "Temperature",
+          "required": "Temperature is required"
+        },
+        "allowablePressureDrop": {
+          "label": "Allowable Pressure Drop",
+          "required": "Allowable drop must be positive"
+        },
+        "startDateTime": {
+          "label": "Start Date & Time",
+          "hint": "When the test should begin"
+        },
+        "endDateTime": {
+          "label": "End Date & Time (Auto-calculated)",
+          "hint": "Calculated from start + duration, or set manually"
+        },
+        "equipmentId": {
+          "label": "Equipment ID",
+          "placeholder": "e.g., PUMP-001"
+        },
+        "operatorName": {
+          "label": "Operator Name",
+          "placeholder": "e.g., John Doe"
+        },
+        "notes": {
+          "label": "Notes",
+          "placeholder": "Additional notes"
+        }
+      },
+      "intermediateStages": {
+        "noStages": "No intermediate stages added yet.",
+        "noStagesHint": "Click \"Add Stage\" to create pressure steps.",
+        "tableHeaders": {
+          "number": "#",
+          "time": "Time (min)",
+          "timeTooltip": "Minutes AFTER previous stage's hold duration ends",
+          "cumulative": "Cumulative",
+          "cumulativeTooltip": "Cumulative time from test start",
+          "pressure": "Pressure ({unit})",
+          "hold": "Hold (min)",
+          "actions": "Actions"
+        },
+        "pressureWarning": "Pressure must be >= {value} {unit}",
+        "totalStages": "Total Stages: {count}",
+        "validation": {
+          "time": "Time must be positive",
+          "pressure": "Pressure must be positive",
+          "duration": "Duration must be positive",
+          "belowWorking": "Intermediate stage pressure cannot be below working pressure"
+        }
+      },
+      "buttons": {
+        "addStage": "Add Stage",
+        "importConfig": "Import Config",
+        "loadTemplate": "Load Template",
+        "saveAsTemplate": "Save as Template",
+        "cancel": "Cancel",
+        "create": "Create Test",
+        "creating": "Creating Test...",
+        "preview": "Preview"
+      },
+      "livePreview": {
+        "title": "Live Preview",
+        "description": "Real-time pressure profile visualization"
+      },
+      "messages": {
+        "creating": "Creating test...",
+        "success": "Test created successfully",
+        "error": "Failed to create test",
+        "unexpectedError": "An unexpected error occurred",
+        "unsavedChanges": "You have unsaved changes. Are you sure you want to cancel? Your draft will be deleted.",
+        "copyName": "{name} (Copy)"
+      }
     },
     "list": {
       "title": "All Tests",

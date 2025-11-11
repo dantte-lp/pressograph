@@ -6,6 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import {
   PlusIcon,
   TrashIcon,
@@ -35,57 +36,59 @@ import type { Project } from '@/lib/db/schema/projects';
 import type { PressureTestConfig } from '@/lib/db/schema/pressure-tests';
 
 /**
- * Form validation schema
+ * Form validation schema factory - creates schema with translated error messages
  */
-const intermediateStageSchema = z.object({
-  time: z.number().min(0, 'Time must be positive'), // MINUTES AFTER previous stage's hold ends (relative time)
-  pressure: z.number().min(0, 'Pressure must be positive'), // Target pressure in configured unit (MPa/Bar/PSI)
-  duration: z.number().min(0, 'Duration must be positive'), // Hold duration in MINUTES
-});
+const createValidationSchema = (t: (key: string) => string) => {
+  const intermediateStageSchema = z.object({
+    time: z.number().min(0, t('tests.create.intermediateStages.validation.time')),
+    pressure: z.number().min(0, t('tests.create.intermediateStages.validation.pressure')),
+    duration: z.number().min(0, t('tests.create.intermediateStages.validation.duration')),
+  });
 
-const testFormSchema = z.object({
-  // Basic Information
-  name: z.string().min(1, 'Test name is required').max(255, 'Name too long'),
-  projectId: z.string().uuid('Please select a project'),
-  testNumber: z.string().min(3, 'Test number must be at least 3 characters').max(100, 'Test number too long').optional().or(z.literal('')),
-  description: z.string().optional(),
-  tags: z.array(z.string()).default([]),
+  return z.object({
+    // Basic Information
+    name: z.string().min(1, t('tests.create.fields.testName.required')).max(255, t('tests.create.fields.testName.tooLong')),
+    projectId: z.string().uuid(t('tests.create.fields.project.required')),
+    testNumber: z.string().min(3, t('tests.create.fields.testNumber.minLength')).max(100, t('tests.create.fields.testNumber.tooLong')).optional().or(z.literal('')),
+    description: z.string().optional(),
+    tags: z.array(z.string()).default([]),
 
-  // Core Parameters
-  workingPressure: z.number().min(0, 'Working pressure must be positive'),
-  maxPressure: z.number().min(0, 'Max pressure must be positive'),
-  testDuration: z.number().min(0.1, 'Duration must be at least 0.1 hours'),
-  temperature: z.number(),
-  allowablePressureDrop: z.number().min(0, 'Allowable drop must be positive'),
-  pressureUnit: z.enum(['MPa', 'Bar', 'PSI']).default('MPa'),
-  temperatureUnit: z.enum(['C', 'F']).default('C'),
-  equipmentId: z.string().optional(),
-  operatorName: z.string().optional(),
-  notes: z.string().optional(),
+    // Core Parameters
+    workingPressure: z.number().min(0, t('tests.create.fields.workingPressure.required')),
+    maxPressure: z.number().min(0, t('tests.create.fields.maxPressure.required')),
+    testDuration: z.number().min(0.1, t('tests.create.fields.testDuration.required')),
+    temperature: z.number(),
+    allowablePressureDrop: z.number().min(0, t('tests.create.fields.allowablePressureDrop.required')),
+    pressureUnit: z.enum(['MPa', 'Bar', 'PSI']).default('MPa'),
+    temperatureUnit: z.enum(['C', 'F']).default('C'),
+    equipmentId: z.string().optional(),
+    operatorName: z.string().optional(),
+    notes: z.string().optional(),
 
-  // Test schedule
-  startDateTime: z.string().optional(),
-  endDateTime: z.string().optional(),
+    // Test schedule
+    startDateTime: z.string().optional(),
+    endDateTime: z.string().optional(),
 
-  // Intermediate Stages
-  intermediateStages: z.array(intermediateStageSchema).default([]),
+    // Intermediate Stages
+    intermediateStages: z.array(intermediateStageSchema).default([]),
 
-  // Template
-  templateType: z.enum(['daily', 'extended', 'custom']).default('custom'),
-}).refine(
-  (data) => {
-    // Validate that all intermediate stage pressures are >= working pressure
-    return data.intermediateStages.every(
-      (stage) => stage.pressure >= data.workingPressure
-    );
-  },
-  {
-    message: 'Intermediate stage pressure cannot be below working pressure',
-    path: ['intermediateStages'],
-  }
-);
+    // Template
+    templateType: z.enum(['daily', 'extended', 'custom']).default('custom'),
+  }).refine(
+    (data) => {
+      // Validate that all intermediate stage pressures are >= working pressure
+      return data.intermediateStages.every(
+        (stage) => stage.pressure >= data.workingPressure
+      );
+    },
+    {
+      message: t('tests.create.intermediateStages.validation.belowWorking'),
+      path: ['intermediateStages'],
+    }
+  );
+};
 
-type TestFormData = z.infer<typeof testFormSchema>;
+type TestFormData = z.infer<ReturnType<typeof createValidationSchema>>;
 
 interface CreateTestFormProps {
   projects: Project[];
@@ -97,11 +100,12 @@ interface CreateTestFormProps {
 export function CreateTestForm({ projects, sourceTest, userId, organizationId }: CreateTestFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations();
 
   // Initialize form with source test data if duplicating
   const defaultValues: Partial<TestFormData> = sourceTest
     ? {
-        name: `${sourceTest.name} (Copy)`,
+        name: t('tests.create.messages.copyName', { name: sourceTest.name }),
         projectId: sourceTest.projectId,
         testNumber: '', // Don't copy test number (must be unique)
         description: sourceTest.description || '',
@@ -142,7 +146,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
       };
 
   const form = useForm<TestFormData>({
-    resolver: zodResolver(testFormSchema) as any,
+    resolver: zodResolver(createValidationSchema(t)) as any,
     defaultValues,
   });
 
@@ -282,9 +286,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
   const handleCancel = () => {
     // Check if there are unsaved changes
     if (isDirty) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to cancel? Your draft will be deleted.'
-      );
+      const confirmed = window.confirm(t('tests.create.messages.unsavedChanges'));
 
       if (!confirmed) {
         return; // User chose to stay
@@ -331,14 +333,14 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
         if (result.success && result.test) {
           clearCache();
-          toast.success('Test created successfully');
+          toast.success(t('tests.create.messages.success'));
           router.push(`/tests/${result.test.id}`);
         } else {
-          toast.error(result.error || 'Failed to create test');
+          toast.error(result.error || t('tests.create.messages.error'));
         }
       } catch (error) {
         console.error('Error creating test:', error);
-        toast.error('An unexpected error occurred');
+        toast.error(t('tests.create.messages.unexpectedError'));
       }
     });
   };
@@ -353,9 +355,9 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div className="space-y-1">
-                  <CardTitle>Basic Information</CardTitle>
+                  <CardTitle>{t('tests.create.sections.basicInfo')}</CardTitle>
                   <CardDescription>
-                    Provide test name, project, and optional details
+                    {t('tests.create.sections.basicInfoDescription')}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -370,11 +372,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Test Name <span className="text-destructive">*</span>
+                        {t('tests.create.fields.testName.label')} <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g., Daily Pressure Test - Pipeline A"
+                          placeholder={t('tests.create.fields.testName.placeholder')}
                           {...field}
                         />
                       </FormControl>
@@ -389,12 +391,12 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Project <span className="text-destructive">*</span>
+                        {t('tests.create.fields.project.label')} <span className="text-destructive">*</span>
                       </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a project" />
+                            <SelectValue placeholder={t('tests.create.fields.project.placeholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -415,15 +417,15 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                   name="testNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Test Number (optional)</FormLabel>
+                      <FormLabel>{t('tests.create.fields.testNumber.label')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g., PT-2025-001 (auto-generated if left empty)"
+                          placeholder={t('tests.create.fields.testNumber.placeholder')}
                           {...field}
                         />
                       </FormControl>
                       <p className="text-sm text-muted-foreground">
-                        Leave empty to auto-generate. Must be unique within your organization.
+                        {t('tests.create.fields.testNumber.hint')}
                       </p>
                       <FormMessage />
                     </FormItem>
@@ -431,10 +433,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 />
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('tests.create.fields.description.label')}</Label>
                   <Textarea
                     id="description"
-                    placeholder="Optional description of the test"
+                    placeholder={t('tests.create.fields.description.placeholder')}
                     rows={3}
                     {...register('description')}
                   />
@@ -442,11 +444,11 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tags">Tags</Label>
+                  <Label htmlFor="tags">{t('tests.create.fields.tags.label')}</Label>
                   <div className="flex gap-2">
                     <Input
                       id="tags"
-                      placeholder="Add tag and press Enter"
+                      placeholder={t('tests.create.fields.tags.placeholder')}
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -457,7 +459,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       }}
                     />
                     <Button type="button" variant="outline" onClick={handleAddTag}>
-                      Add
+                      {t('tests.create.fields.tags.addButton')}
                     </Button>
                   </div>
                   {watchedTags.length > 0 && (
@@ -479,7 +481,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="templateType">Template Type</Label>
+                  <Label htmlFor="templateType">{t('tests.create.fields.templateType.label')}</Label>
                   <Controller
                     name="templateType"
                     control={control}
@@ -489,9 +491,9 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="daily">Daily Test</SelectItem>
-                          <SelectItem value="extended">Extended Test</SelectItem>
-                          <SelectItem value="custom">Custom Test</SelectItem>
+                          <SelectItem value="daily">{t('tests.create.fields.templateType.daily')}</SelectItem>
+                          <SelectItem value="extended">{t('tests.create.fields.templateType.extended')}</SelectItem>
+                          <SelectItem value="custom">{t('tests.create.fields.templateType.custom')}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -503,9 +505,9 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             {/* Core Parameters */}
             <Card>
               <CardHeader>
-                <CardTitle>Core Parameters</CardTitle>
+                <CardTitle>{t('tests.create.sections.coreParams')}</CardTitle>
                 <CardDescription>
-                  Configure pressure, temperature, and duration settings
+                  {t('tests.create.sections.coreParamsDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -516,7 +518,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Working Pressure <span className="text-destructive">*</span>
+                          {t('tests.create.fields.workingPressure.label')} <span className="text-destructive">*</span>
                         </FormLabel>
                         <div className="flex gap-2">
                           <FormControl>
@@ -560,7 +562,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Max Pressure <span className="text-destructive">*</span>
+                          {t('tests.create.fields.maxPressure.label')} <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -578,7 +580,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
                   <div className="space-y-2">
                     <Label htmlFor="testDuration">
-                      Test Duration (hours) <span className="text-destructive">*</span>
+                      {t('tests.create.fields.testDuration.label')} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="testDuration"
@@ -593,7 +595,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
                   <div className="space-y-2">
                     <Label htmlFor="temperature">
-                      Temperature <span className="text-destructive">*</span>
+                      {t('tests.create.fields.temperature.label')} <span className="text-destructive">*</span>
                     </Label>
                     <div className="flex gap-2">
                       <Input
@@ -624,7 +626,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
                   <div className="space-y-2">
                     <Label htmlFor="allowablePressureDrop">
-                      Allowable Pressure Drop <span className="text-destructive">*</span>
+                      {t('tests.create.fields.allowablePressureDrop.label')} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="allowablePressureDrop"
@@ -642,10 +644,10 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 <Separator />
 
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium">Test Schedule (Optional)</h4>
+                  <h4 className="text-sm font-medium">{t('tests.create.sections.testSchedule')}</h4>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="startDateTime">Start Date & Time</Label>
+                      <Label htmlFor="startDateTime">{t('tests.create.fields.startDateTime.label')}</Label>
                       <Input
                         id="startDateTime"
                         type="datetime-local"
@@ -654,12 +656,12 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                         className="text-sm"
                       />
                       <p className="text-xs text-muted-foreground">
-                        When the test should begin
+                        {t('tests.create.fields.startDateTime.hint')}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="endDateTime">End Date & Time (Auto-calculated)</Label>
+                      <Label htmlFor="endDateTime">{t('tests.create.fields.endDateTime.label')}</Label>
                       <Input
                         id="endDateTime"
                         type="datetime-local"
@@ -667,7 +669,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                         className="text-sm"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Calculated from start + duration, or set manually
+                        {t('tests.create.fields.endDateTime.hint')}
                       </p>
                     </div>
                   </div>
@@ -677,19 +679,19 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
 
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="equipmentId">Equipment ID</Label>
-                    <Input id="equipmentId" placeholder="e.g., PUMP-001" {...register('equipmentId')} />
+                    <Label htmlFor="equipmentId">{t('tests.create.fields.equipmentId.label')}</Label>
+                    <Input id="equipmentId" placeholder={t('tests.create.fields.equipmentId.placeholder')} {...register('equipmentId')} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="operatorName">Operator Name</Label>
-                    <Input id="operatorName" placeholder="e.g., John Doe" {...register('operatorName')} />
+                    <Label htmlFor="operatorName">{t('tests.create.fields.operatorName.label')}</Label>
+                    <Input id="operatorName" placeholder={t('tests.create.fields.operatorName.placeholder')} {...register('operatorName')} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea id="notes" placeholder="Additional notes" rows={3} {...register('notes')} />
+                  <Label htmlFor="notes">{t('tests.create.fields.notes.label')}</Label>
+                  <Textarea id="notes" placeholder={t('tests.create.fields.notes.placeholder')} rows={3} {...register('notes')} />
                 </div>
               </CardContent>
             </Card>
@@ -697,16 +699,16 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
             {/* Intermediate Stages */}
             <Card>
               <CardHeader>
-                <CardTitle>Intermediate Stages (Optional)</CardTitle>
+                <CardTitle>{t('tests.create.sections.intermediateStages')}</CardTitle>
                 <CardDescription>
-                  Add optional pressure steps during the test
+                  {t('tests.create.sections.intermediateStagesDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {watchedStages.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>No intermediate stages added yet.</p>
-                    <p className="text-sm mt-1">Click "Add Stage" to create pressure steps.</p>
+                    <p>{t('tests.create.intermediateStages.noStages')}</p>
+                    <p className="text-sm mt-1">{t('tests.create.intermediateStages.noStagesHint')}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -714,16 +716,16 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                       <table className="w-full text-sm border rounded-lg">
                         <thead className="bg-muted/50">
                           <tr>
-                            <th className="px-3 py-2 text-left font-medium">#</th>
-                            <th className="px-3 py-2 text-left font-medium" title="Minutes AFTER previous stage's hold duration ends">
-                              Time (min)
+                            <th className="px-3 py-2 text-left font-medium">{t('tests.create.intermediateStages.tableHeaders.number')}</th>
+                            <th className="px-3 py-2 text-left font-medium" title={t('tests.create.intermediateStages.tableHeaders.timeTooltip')}>
+                              {t('tests.create.intermediateStages.tableHeaders.time')}
                             </th>
-                            <th className="px-3 py-2 text-left font-medium" title="Cumulative time from test start">
-                              Cumulative
+                            <th className="px-3 py-2 text-left font-medium" title={t('tests.create.intermediateStages.tableHeaders.cumulativeTooltip')}>
+                              {t('tests.create.intermediateStages.tableHeaders.cumulative')}
                             </th>
-                            <th className="px-3 py-2 text-left font-medium">Pressure ({pressureUnit})</th>
-                            <th className="px-3 py-2 text-left font-medium">Hold (min)</th>
-                            <th className="px-3 py-2 text-center font-medium">Actions</th>
+                            <th className="px-3 py-2 text-left font-medium">{t('tests.create.intermediateStages.tableHeaders.pressure', { unit: pressureUnit })}</th>
+                            <th className="px-3 py-2 text-left font-medium">{t('tests.create.intermediateStages.tableHeaders.hold')}</th>
+                            <th className="px-3 py-2 text-center font-medium">{t('tests.create.intermediateStages.tableHeaders.actions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -757,7 +759,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                     className="h-8 w-20 text-xs"
                                     value={watchedStages[index]?.time || 0}
                                     onChange={(e) => handleUpdateStageField(index, 'time', parseFloat(e.target.value) || 0)}
-                                    title="Minutes AFTER previous stage's hold duration ends"
+                                    title={t('tests.create.intermediateStages.tableHeaders.timeTooltip')}
                                   />
                                 </td>
                                 <td className="px-3 py-2 text-xs text-muted-foreground font-mono">
@@ -771,7 +773,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                                     className={`h-8 w-20 text-xs ${isPressureBelowWorking ? 'border-destructive focus:ring-destructive' : ''}`}
                                     value={watchedStages[index]?.pressure || 0}
                                     onChange={(e) => handleUpdateStageField(index, 'pressure', parseFloat(e.target.value) || 0)}
-                                    title={isPressureBelowWorking ? `Pressure must be >= ${workingPressure} ${pressureUnit}` : ''}
+                                    title={isPressureBelowWorking ? t('tests.create.intermediateStages.pressureWarning', { value: workingPressure, unit: pressureUnit }) : ''}
                                     aria-invalid={isPressureBelowWorking}
                                   />
                                 </td>
@@ -804,18 +806,18 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                     </div>
 
                     <div className="flex justify-between items-center text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded">
-                      <span>Total Stages: {watchedStages.length}</span>
+                      <span>{t('tests.create.intermediateStages.totalStages', { count: watchedStages.length })}</span>
                     </div>
                   </div>
                 )}
 
                 <Button type="button" variant="outline" onClick={handleAddStage} className="w-full">
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Add Stage
+                  {t('tests.create.buttons.addStage')}
                 </Button>
 
                 {errors.intermediateStages && (
-                  <FormError error={errors.intermediateStages.message || 'Invalid intermediate stages configuration'} />
+                  <FormError error={errors.intermediateStages.message || t('testForm.invalidStagesConfiguration')} />
                 )}
               </CardContent>
             </Card>
@@ -825,7 +827,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               <CardFooter className="flex justify-between pt-6">
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" onClick={handleCancel} disabled={isPending}>
-                    Cancel
+                    {t('tests.create.buttons.cancel')}
                   </Button>
                   <SaveAsTemplateButton
                     config={{
@@ -847,7 +849,7 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
                 </div>
                 <Button type="submit" disabled={isPending}>
                   <SaveIcon className="mr-2 h-4 w-4" />
-                  {isPending ? 'Creating Test...' : 'Create Test'}
+                  {isPending ? t('tests.create.buttons.creating') : t('tests.create.buttons.create')}
                 </Button>
               </CardFooter>
             </Card>
@@ -859,9 +861,9 @@ export function CreateTestForm({ projects, sourceTest, userId, organizationId }:
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Live Preview</CardTitle>
+                    <CardTitle>{t('tests.create.livePreview.title')}</CardTitle>
                     <CardDescription>
-                      Real-time pressure profile visualization
+                      {t('tests.create.livePreview.description')}
                     </CardDescription>
                   </div>
                   <PreviewDialog

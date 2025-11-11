@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **[i18n] Complete Translation Support for Test Creation Form**
+  - **Feature**: Fully translated test creation form (/tests/new) with comprehensive i18n support
+  - **Implementation**:
+    * Added 60+ translation keys for test creation form under `tests.create` namespace
+    * Translated all form sections: Basic Information, Core Parameters, Intermediate Stages
+    * Translated all field labels, placeholders, help text, and validation messages
+    * Translated all buttons, toast messages, and error states
+  - **Translation Keys Added**:
+    * `tests.create.sections` - 6 keys (basicInfo, coreParams, intermediateStages, testSchedule, actions)
+    * `tests.create.fields` - 12 field groups with labels, placeholders, hints, and validation (testName, testNumber, project, description, tags, templateType, workingPressure, maxPressure, testDuration, temperature, allowablePressureDrop, startDateTime, endDateTime, equipmentId, operatorName, notes)
+    * `tests.create.intermediateStages` - 9 keys (noStages, noStagesHint, tableHeaders, pressureWarning, totalStages, validation)
+    * `tests.create.buttons` - 8 keys (addStage, importConfig, loadTemplate, saveAsTemplate, cancel, create, creating, preview)
+    * `tests.create.livePreview` - 2 keys (title, description)
+    * `tests.create.messages` - 5 keys (creating, success, error, unexpectedError, unsavedChanges, copyName)
+  - **Validation Schema Enhancement**:
+    * Converted static Zod schema to factory function that accepts translation function
+    * All validation error messages now use translations
+    * Supports dynamic error messages with variable interpolation (e.g., pressure warnings with units)
+  - **Russian Translations**:
+    * Complete parity with English translations using formal Russian language (вы form)
+    * Context-aware translations for technical terms (давление, этапы, удержание)
+    * Proper pluralization and grammatical cases
+  - **Files Modified**:
+    * `src/components/tests/create-test-form.tsx` - Added useTranslations hook, refactored validation schema, translated all UI strings
+    * `messages/en.json` - Added 60+ new keys under tests.create namespace
+    * `messages/ru.json` - Added 60+ corresponding Russian translations
+  - **Testing**: Form renders correctly with no MISSING_MESSAGE errors in both locales
+  - **Commit**: feat(i18n): complete translation of test creation form
+
 ### Fixed
 
 - **[i18n] Fixed Translation Key Resolution Errors and Missing Translations**
