@@ -68,8 +68,10 @@ import {
   deleteTestTemplate,
   type TestTemplateListItem,
 } from '@/lib/actions/test-templates';
+import { useTranslation } from '@/i18n/client';
 
 export function TemplateSettings() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<TestTemplateListItem[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<TestTemplateListItem[]>([]);
@@ -102,7 +104,7 @@ export function TemplateSettings() {
       const data = await getTestTemplates();
       setTemplates(data);
     } catch (error) {
-      toast.error('Failed to load templates');
+      toast.error(t('settings.templateSettings.failedToLoadTemplates'));
     } finally {
       setLoading(false);
     }
@@ -118,7 +120,7 @@ export function TemplateSettings() {
 
   const handleCreateTemplate = async () => {
     if (!formData.name.trim()) {
-      toast.error('Template name is required');
+      toast.error(t('settings.templateSettings.templateNameRequired'));
       return;
     }
 
@@ -132,12 +134,12 @@ export function TemplateSettings() {
         isPublic: formData.isPublic,
       });
 
-      toast.success('Template created successfully');
+      toast.success(t('settings.templateSettings.templateCreatedSuccess'));
       setShowCreateDialog(false);
       resetForm();
       await loadTemplates();
     } catch (error) {
-      toast.error('Failed to create template');
+      toast.error(t('settings.templateSettings.failedToCreateTemplate'));
     } finally {
       setSaving(false);
     }
@@ -157,13 +159,13 @@ export function TemplateSettings() {
         isPublic: formData.isPublic,
       });
 
-      toast.success('Template updated successfully');
+      toast.success(t('settings.templateSettings.templateUpdatedSuccess'));
       setShowEditDialog(false);
       setSelectedTemplate(null);
       resetForm();
       await loadTemplates();
     } catch (error) {
-      toast.error('Failed to update template');
+      toast.error(t('settings.templateSettings.failedToUpdateTemplate'));
     } finally {
       setSaving(false);
     }
@@ -175,12 +177,12 @@ export function TemplateSettings() {
     setSaving(true);
     try {
       await deleteTestTemplate(selectedTemplate.id);
-      toast.success('Template deleted successfully');
+      toast.success(t('settings.templateSettings.templateDeletedSuccess'));
       setShowDeleteDialog(false);
       setSelectedTemplate(null);
       await loadTemplates();
     } catch (error) {
-      toast.error('Failed to delete template');
+      toast.error(t('settings.templateSettings.failedToDeleteTemplate'));
     } finally {
       setSaving(false);
     }
@@ -230,7 +232,7 @@ export function TemplateSettings() {
   };
 
   const formatDate = (date: Date | null) => {
-    if (!date) return 'Never';
+    if (!date) return t('settings.templateSettings.never');
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -242,8 +244,8 @@ export function TemplateSettings() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Test Templates</CardTitle>
-          <CardDescription>Loading templates...</CardDescription>
+          <CardTitle>{t('settings.templateSettings.title')}</CardTitle>
+          <CardDescription>{t('settings.templateSettings.loadingTemplates')}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center py-8">
           <Spinner className="h-8 w-8" />
@@ -258,14 +260,14 @@ export function TemplateSettings() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Test Templates</CardTitle>
+              <CardTitle>{t('settings.templateSettings.title')}</CardTitle>
               <CardDescription>
-                Create and manage reusable test configuration templates
+                {t('settings.templateSettings.description')}
               </CardDescription>
             </div>
             <Button onClick={openCreateDialog}>
               <PlusIcon className="h-4 w-4 mr-2" />
-              New Template
+              {t('settings.templateSettings.newTemplate')}
             </Button>
           </div>
         </CardHeader>
@@ -273,18 +275,18 @@ export function TemplateSettings() {
           {/* Category Filter */}
           <div className="mb-6">
             <Label htmlFor="category-filter" className="mb-2 block">
-              Filter by Category
+              {t('settings.templateSettings.filterByCategory')}
             </Label>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger id="category-filter" className="w-full md:w-64">
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder={t('settings.templateSettings.allCategories')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="daily">Daily Tests</SelectItem>
-                <SelectItem value="extended">Extended Tests</SelectItem>
-                <SelectItem value="regulatory">Regulatory Tests</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
+                <SelectItem value="all">{t('settings.templateSettings.allCategories')}</SelectItem>
+                <SelectItem value="daily">{t('settings.templateSettings.categoryDaily')}</SelectItem>
+                <SelectItem value="extended">{t('settings.templateSettings.categoryExtended')}</SelectItem>
+                <SelectItem value="regulatory">{t('settings.templateSettings.categoryRegulatory')}</SelectItem>
+                <SelectItem value="custom">{t('settings.templateSettings.categoryCustom')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -292,11 +294,11 @@ export function TemplateSettings() {
           {/* Templates List */}
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg mb-2">No templates found</p>
+              <p className="text-lg mb-2">{t('settings.templateSettings.noTemplatesFound')}</p>
               <p className="text-sm">
                 {categoryFilter === 'all'
-                  ? 'Create your first template to get started'
-                  : 'No templates in this category'}
+                  ? t('settings.templateSettings.createFirstTemplate')
+                  : t('settings.templateSettings.noTemplatesInCategory')}
               </p>
             </div>
           ) : (
@@ -311,18 +313,18 @@ export function TemplateSettings() {
                           {template.isSystemTemplate && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
                               <StarIcon className="h-3 w-3 mr-1" />
-                              System
+                              {t('settings.templateSettings.badgeSystem')}
                             </Badge>
                           )}
                           {template.isPublic ? (
                             <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
                               <GlobeIcon className="h-3 w-3 mr-1" />
-                              Public
+                              {t('settings.templateSettings.badgePublic')}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="bg-gray-500/10 text-gray-600 border-gray-500/20">
                               <LockIcon className="h-3 w-3 mr-1" />
-                              Private
+                              {t('settings.templateSettings.badgePrivate')}
                             </Badge>
                           )}
                           <Badge className={getCategoryBadgeColor(template.category)}>
@@ -335,11 +337,11 @@ export function TemplateSettings() {
                         )}
 
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>By {template.creatorName}</span>
+                          <span>{t('settings.templateSettings.createdBy', { creator: template.creatorName })}</span>
                           <span>•</span>
-                          <span>Used {template.usageCount} times</span>
+                          <span>{t('settings.templateSettings.usedTimes', { count: template.usageCount })}</span>
                           <span>•</span>
-                          <span>Last used: {formatDate(template.lastUsedAt)}</span>
+                          <span>{t('settings.templateSettings.lastUsed', { date: formatDate(template.lastUsedAt) })}</span>
                         </div>
                       </div>
 
@@ -375,45 +377,45 @@ export function TemplateSettings() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Create Template</DialogTitle>
+            <DialogTitle>{t('settings.templateSettings.createTemplateTitle')}</DialogTitle>
             <DialogDescription>
-              Create a new test configuration template
+              {t('settings.templateSettings.createTemplateDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Template Name *</Label>
+              <Label htmlFor="name">{t('settings.templateSettings.templateNameLabel')}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Standard Daily Test"
+                placeholder={t('settings.templateSettings.templateNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('settings.templateSettings.templateDescriptionLabel')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Optional description..."
+                placeholder={t('settings.templateSettings.templateDescriptionPlaceholder')}
                 rows={3}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{t('settings.templateSettings.templateCategoryLabel')}</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({ ...formData, category: value })}
               >
                 <SelectTrigger id="category">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t('settings.templateSettings.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">Daily Tests</SelectItem>
-                  <SelectItem value="extended">Extended Tests</SelectItem>
-                  <SelectItem value="regulatory">Regulatory Tests</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="daily">{t('settings.templateSettings.categoryDaily')}</SelectItem>
+                  <SelectItem value="extended">{t('settings.templateSettings.categoryExtended')}</SelectItem>
+                  <SelectItem value="regulatory">{t('settings.templateSettings.categoryRegulatory')}</SelectItem>
+                  <SelectItem value="custom">{t('settings.templateSettings.categoryCustom')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -424,7 +426,7 @@ export function TemplateSettings() {
                 onCheckedChange={(checked) => setFormData({ ...formData, isPublic: checked })}
               />
               <Label htmlFor="is-public" className="cursor-pointer">
-                Make template public (visible to organization)
+                {t('settings.templateSettings.makePublicLabel')}
               </Label>
             </div>
           </div>
@@ -434,11 +436,11 @@ export function TemplateSettings() {
               onClick={() => setShowCreateDialog(false)}
               disabled={saving}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleCreateTemplate} disabled={saving}>
               {saving ? <Spinner className="h-4 w-4 mr-2" /> : null}
-              Create Template
+              {t('settings.templateSettings.createTemplateTitle')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -448,43 +450,43 @@ export function TemplateSettings() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit Template</DialogTitle>
-            <DialogDescription>Update template details</DialogDescription>
+            <DialogTitle>{t('settings.templateSettings.editTemplateTitle')}</DialogTitle>
+            <DialogDescription>{t('settings.templateSettings.editTemplateDescription')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Template Name *</Label>
+              <Label htmlFor="edit-name">{t('settings.templateSettings.templateNameLabel')}</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Standard Daily Test"
+                placeholder={t('settings.templateSettings.templateNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-description">{t('settings.templateSettings.templateDescriptionLabel')}</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Optional description..."
+                placeholder={t('settings.templateSettings.templateDescriptionPlaceholder')}
                 rows={3}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-category">Category</Label>
+              <Label htmlFor="edit-category">{t('settings.templateSettings.templateCategoryLabel')}</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({ ...formData, category: value })}
               >
                 <SelectTrigger id="edit-category">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t('settings.templateSettings.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">Daily Tests</SelectItem>
-                  <SelectItem value="extended">Extended Tests</SelectItem>
-                  <SelectItem value="regulatory">Regulatory Tests</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="daily">{t('settings.templateSettings.categoryDaily')}</SelectItem>
+                  <SelectItem value="extended">{t('settings.templateSettings.categoryExtended')}</SelectItem>
+                  <SelectItem value="regulatory">{t('settings.templateSettings.categoryRegulatory')}</SelectItem>
+                  <SelectItem value="custom">{t('settings.templateSettings.categoryCustom')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -495,7 +497,7 @@ export function TemplateSettings() {
                 onCheckedChange={(checked) => setFormData({ ...formData, isPublic: checked })}
               />
               <Label htmlFor="edit-is-public" className="cursor-pointer">
-                Make template public (visible to organization)
+                {t('settings.templateSettings.makePublicLabel')}
               </Label>
             </div>
           </div>
@@ -505,11 +507,11 @@ export function TemplateSettings() {
               onClick={() => setShowEditDialog(false)}
               disabled={saving}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleEditTemplate} disabled={saving}>
               {saving ? <Spinner className="h-4 w-4 mr-2" /> : null}
-              Save Changes
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -519,21 +521,20 @@ export function TemplateSettings() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogTitle>{t('settings.templateSettings.deleteTemplateTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedTemplate?.name}"? This action cannot be
-              undone.
+              {t('settings.templateSettings.deleteTemplateConfirm', { name: selectedTemplate?.name || '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={saving}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteTemplate}
               disabled={saving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {saving ? <Spinner className="h-4 w-4 mr-2" /> : null}
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
