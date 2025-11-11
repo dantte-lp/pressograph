@@ -18,7 +18,7 @@
  * - Toast notifications
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -40,40 +40,35 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/client';
-
-// Placeholder types until actions are properly imported
-type OrganizationSettingsUpdate = any;
-
-// Placeholder functions (will be replaced with actual server actions)
-async function getOrganizationSettings(_orgId: string) {
-  // TODO: Import from @/server/actions/organizations when path is resolved
-  return {
-    success: false,
-    error: 'settings.organizationSettings.notYetImplemented',
-    data: null,
-  };
-}
-
-async function updateOrganizationSettings(_orgId: string, _settings: any) {
-  // TODO: Import from @/server/actions/organizations when path is resolved
-  return {
-    success: false,
-    error: 'settings.organizationSettings.updateNotImplemented',
-  };
-}
+import {
+  getOrganizationSettings,
+  updateOrganizationSettings,
+} from '@/server/actions/organizations';
+import type { OrganizationSettingsUpdate } from '@/lib/validation/organization-settings';
 
 export function OrganizationSettings() {
   const { t } = useTranslation();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<OrganizationSettingsUpdate | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load settings on mount
   useEffect(() => {
     const loadSettings = async () => {
-      if (status !== 'authenticated' || !session?.user?.organizationId) {
+      if (status === 'loading') {
+        return;
+      }
+
+      if (status !== 'authenticated' || !session?.user) {
+        setError(t('settings.organizationSettings.noOrganizationFound'));
+        setLoading(false);
+        return;
+      }
+
+      if (!session.user.organizationId) {
         setError(t('settings.organizationSettings.noOrganizationFound'));
         setLoading(false);
         return;
@@ -84,40 +79,58 @@ export function OrganizationSettings() {
 
       if (result.success && result.data) {
         setSettings(result.data);
+        setError(null);
       } else {
-        setError(t(result.error) || t('settings.organizationSettings.failedToLoadSettings'));
-        toast.error(t('settings.organizationSettings.failedToLoadSettings'));
+        const errorMessage = result.error || 'settings.organizationSettings.failedToLoadSettings';
+        setError(t(errorMessage));
+        toast.error(t(errorMessage));
       }
       setLoading(false);
     };
 
     loadSettings();
-  }, [session, status]);
+  }, [session, status, t]);
 
   // Save settings
-  const handleSave = async (updates: OrganizationSettingsUpdate) => {
+  const handleSave = useCallback(async (updates: OrganizationSettingsUpdate) => {
     if (!session?.user?.organizationId) return;
 
     setSaving(true);
-    const result = await updateOrganizationSettings(
-      session.user.organizationId,
-      updates
-    );
+    try {
+      const result = await updateOrganizationSettings(
+        session.user.organizationId,
+        updates
+      );
 
-    if (result.success) {
-      toast.success(t('settings.organizationSettings.settingsSaved'));
-      setSettings({ ...settings, ...updates });
-    } else {
-      toast.error(t(result.error) || t('settings.organizationSettings.failedToSaveSettings'));
+      if (result.success) {
+        toast.success(t('settings.organizationSettings.settingsSaved'));
+        // Optimistically update local state
+        setSettings((prev) => ({ ...prev, ...updates }));
+      } else {
+        const errorMessage = result.error || 'settings.organizationSettings.failedToSaveSettings';
+        toast.error(t(errorMessage));
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error(t('settings.organizationSettings.failedToSaveSettings'));
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-  };
+  }, [session?.user?.organizationId, t]);
 
-  // Update individual setting
-  const updateSetting = (path: string, value: any) => {
+  // Update individual setting with debounced auto-save
+  const updateSetting = useCallback((path: string, value: any) => {
+    if (!settings) return;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Update local state immediately for responsive UI
     const keys = path.split('.');
     const updated = { ...settings };
-    let current = updated;
+    let current: any = updated;
 
     for (let i = 0; i < keys.length - 1; i++) {
       if (!current[keys[i]]) current[keys[i]] = {};
@@ -127,11 +140,20 @@ export function OrganizationSettings() {
     current[keys[keys.length - 1]] = value;
     setSettings(updated);
 
-    // Auto-save after 1 second
-    setTimeout(() => {
+    // Debounce save - only save after 1 second of no changes
+    saveTimeoutRef.current = setTimeout(() => {
       handleSave(updated);
     }, 1000);
-  };
+  }, [settings, handleSave]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
