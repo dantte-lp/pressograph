@@ -340,6 +340,11 @@
   },
   "settings": {
     "title": "Настройки",
+    "pageDescription": "Управление настройками приложения и отображением",
+    "pageTabDisplay": "Отображение",
+    "pageTabDateTime": "Дата и время",
+    "pageTabTemplates": "Шаблоны",
+    "pageTabOrganization": "Организация",
     "general": "Общие",
     "appearance": "Внешний вид",
     "language": "Язык",

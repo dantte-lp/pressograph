@@ -16,6 +16,7 @@
  */
 
 import { requireAuth } from '@/lib/auth/server-auth';
+import { getTranslations } from 'next-intl/server';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppearanceSettings } from '@/components/settings/appearance-settings';
 import { NotificationSettings } from '@/components/settings/notification-settings';
@@ -34,6 +35,8 @@ export default async function SettingsPage() {
   // Ensure user is authenticated
   await requireAuth();
 
+  const t = await getTranslations('settings');
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6 lg:px-8 lg:py-8">
       {/* Page Header */}
@@ -42,10 +45,10 @@ export default async function SettingsPage() {
           <div className="bg-primary text-primary-foreground p-2 rounded-lg">
             <SettingsIcon className="h-6 w-6" />
           </div>
-          <h1 className="text-3xl font-bold">Settings</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
         </div>
         <p className="text-muted-foreground">
-          Manage your application preferences and display settings
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -53,22 +56,22 @@ export default async function SettingsPage() {
       <Tabs defaultValue="appearance" className="w-full">
         <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="appearance" className="px-6">
-            Appearance
+            {t('appearance')}
           </TabsTrigger>
           <TabsTrigger value="notifications" className="px-6">
-            Notifications
+            {t('notifications')}
           </TabsTrigger>
           <TabsTrigger value="display" className="px-6">
-            Display
+            {t('pageTabDisplay')}
           </TabsTrigger>
           <TabsTrigger value="datetime" className="px-6">
-            Date & Time
+            {t('pageTabDateTime')}
           </TabsTrigger>
           <TabsTrigger value="templates" className="px-6">
-            Templates
+            {t('pageTabTemplates')}
           </TabsTrigger>
           <TabsTrigger value="organization" className="px-6">
-            Organization
+            {t('pageTabOrganization')}
           </TabsTrigger>
         </TabsList>
 

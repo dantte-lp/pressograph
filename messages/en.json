@@ -340,6 +340,11 @@
   },
   "settings": {
     "title": "Settings",
+    "pageDescription": "Manage your application preferences and display settings",
+    "pageTabDisplay": "Display",
+    "pageTabDateTime": "Date & Time",
+    "pageTabTemplates": "Templates",
+    "pageTabOrganization": "Organization",
     "general": "General",
     "appearance": "Appearance",
     "language": "Language",
