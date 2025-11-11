@@ -23,6 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { FileImageIcon, FileCodeIcon, FileTextIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n/client';
 
 type GraphFormat = 'PNG' | 'SVG' | 'PDF';
 
@@ -33,6 +34,7 @@ interface DisplayPreferences {
 }
 
 export function DisplaySettings() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<DisplayPreferences>({
@@ -58,7 +60,7 @@ export function DisplaySettings() {
         sidebarCollapsed: data.sidebarCollapsed,
       });
     } catch (error) {
-      toast.error('Failed to load preferences');
+      toast.error(t('settings.failedToLoadPreferences'));
     } finally {
       setLoading(false);
     }
@@ -77,9 +79,9 @@ export function DisplaySettings() {
       if (!res.ok) throw new Error('Failed to update preferences');
 
       setPreferences((prev) => ({ ...prev, ...updates }));
-      toast.success('Display preferences updated');
+      toast.success(t('settings.displaySettings.displayPreferencesUpdated'));
     } catch (error) {
-      toast.error('Failed to update preferences');
+      toast.error(t('settings.failedToUpdatePreferences'));
     } finally {
       setSaving(false);
     }
@@ -98,36 +100,38 @@ export function DisplaySettings() {
   const formatOptions = [
     {
       value: 'PNG' as GraphFormat,
-      label: 'PNG',
+      label: t('settings.displaySettings.formatPNG'),
       icon: FileImageIcon,
-      description: 'Raster image format',
+      description: t('settings.displaySettings.formatPNGDescription'),
     },
     {
       value: 'SVG' as GraphFormat,
-      label: 'SVG',
+      label: t('settings.displaySettings.formatSVG'),
       icon: FileCodeIcon,
-      description: 'Vector graphics format',
+      description: t('settings.displaySettings.formatSVGDescription'),
     },
     {
       value: 'PDF' as GraphFormat,
-      label: 'PDF',
+      label: t('settings.displaySettings.formatPDF'),
       icon: FileTextIcon,
-      description: 'Portable document format',
+      description: t('settings.displaySettings.formatPDFDescription'),
     },
   ];
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-6">Display Preferences</h2>
+      <h2 className="text-xl font-semibold mb-6">
+        {t('settings.displaySettings.title')}
+      </h2>
 
       <div className="space-y-6">
         {/* Graph Default Format */}
         <div>
           <Label className="text-base mb-3 block">
-            Default Graph Export Format
+            {t('settings.displaySettings.graphFormatLabel')}
           </Label>
           <p className="text-sm text-muted-foreground mb-4">
-            Choose the default file format when exporting pressure test graphs
+            {t('settings.displaySettings.graphFormatDescription')}
           </p>
 
           <div className="grid grid-cols-3 gap-3">
@@ -173,10 +177,10 @@ export function DisplaySettings() {
         {/* Graph Default Resolution */}
         <div>
           <Label htmlFor="resolution" className="text-base mb-3 block">
-            Default Graph Resolution
+            {t('settings.displaySettings.graphResolutionLabel')}
           </Label>
           <p className="text-sm text-muted-foreground mb-4">
-            Higher resolution produces larger files but better quality (1x - 4x)
+            {t('settings.displaySettings.graphResolutionDescription')}
           </p>
 
           <div className="space-y-3">
@@ -197,11 +201,15 @@ export function DisplaySettings() {
             />
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">1x (Standard)</span>
+              <span className="text-muted-foreground">
+                {t('settings.displaySettings.resolutionStandard')}
+              </span>
               <span className="font-medium text-primary">
                 {preferences.graphDefaultResolution}x
               </span>
-              <span className="text-muted-foreground">4x (Ultra HD)</span>
+              <span className="text-muted-foreground">
+                {t('settings.displaySettings.resolutionUltraHD')}
+              </span>
             </div>
           </div>
         </div>
@@ -210,10 +218,10 @@ export function DisplaySettings() {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <Label htmlFor="sidebarCollapsed" className="text-base">
-              Collapse Sidebar by Default
+              {t('settings.displaySettings.sidebarCollapsedLabel')}
             </Label>
             <p className="text-sm text-muted-foreground mt-1">
-              Start with the sidebar collapsed to maximize content area
+              {t('settings.displaySettings.sidebarCollapsedDescription')}
             </p>
           </div>
 
@@ -233,7 +241,7 @@ export function DisplaySettings() {
         {saving && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
             <Spinner className="h-4 w-4" />
-            <span>Saving preferences...</span>
+            <span>{t('settings.savingPreferences')}</span>
           </div>
         )}
       </div>
