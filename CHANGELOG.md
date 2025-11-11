@@ -40,6 +40,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[i18n] Fixed Missing Translation Keys for Test Status Badges and Share Link Button**
+  - **Issue**: MISSING_MESSAGE errors for `tests.createShareLink` and `tests.statusReady` in production
+  - **Root Cause**: TestStatusBadge component uses flat translation keys (e.g., `tests.statusReady`) but translations were nested under `tests.status.ready`
+  - **Solution**: Added flat translation keys to match component usage patterns
+  - **Translation Keys Added**:
+    * `tests.createShareLink` - "Create Share Link" / "Создать ссылку для общего доступа"
+    * `tests.statusDraft` - "Draft" / "Черновик"
+    * `tests.statusReady` - "Ready" / "Готов"
+    * `tests.statusRunning` - "Running" / "Выполняется"
+    * `tests.statusCompleted` - "Completed" / "Завершен"
+    * `tests.statusFailed` - "Failed" / "Неудачный"
+    * `tests.statusCancelled` - "Cancelled" / "Отменен"
+  - **Files Modified**:
+    * `messages/en.json` - Added 7 new translation keys under tests namespace
+    * `messages/ru.json` - Added 7 corresponding Russian translations
+  - **Impact**: Fixed MISSING_MESSAGE errors on test detail page and all pages displaying test status badges
+  - **Commit**: 3a98894e - fix(i18n): add missing translation keys for test status and sharing
+
 - **[i18n] Fixed Translation Key Resolution Errors and Missing Translations**
   - **Issue**: MISSING_MESSAGE errors for `selectAll` and other keys; hardcoded English strings throughout the application
   - **Root Cause**: Components using wrong translation hook patterns; many pages not using translations at all
