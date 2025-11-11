@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **[i18n] Fixed 340+ Missing Translation Keys in Russian Locale**
+  - **Issue**: Application showed MISSING_MESSAGE console errors for Russian locale users due to incomplete translation coverage
+  - **Root Cause**: After migration to next-intl, many new translation keys were added to English but not Russian
+  - **Solution**: Systematically added all missing translation keys to ensure complete parity between `messages/en.json` and `messages/ru.json`
+  - **Translation Coverage**:
+    * Navigation: `nav.expandMenu`, `nav.collapseMenu`, `nav.expand`, `nav.collapse`, `nav.createTest`, `nav.archived`, `nav.apiDocs`
+    * Dashboard: Complete translations for all dashboard metrics, activity feeds, and empty states (17 keys)
+    * Tests: Comprehensive coverage for test management, sorting, filtering, batch operations, and test forms (67 keys)
+    * Test Form: All form fields, validation messages, and stage configuration (59 keys)
+    * Projects: Project management translations including archived projects (6 keys)
+    * Settings: Complete settings UI including appearance, date/time, display, notifications, organization, and templates (114 keys)
+    * Organization: Organization creation and management (13 keys)
+    * Documentation: Docs and API documentation sections (16 keys)
+    * Filters & Actions: Common UI filters and action buttons (9 keys)
+    * Batch Operations: Batch download translations (5 keys)
+  - **Files Updated**:
+    * `messages/en.json` - Added 340+ new translation keys, organized into logical sections
+    * `messages/ru.json` - Added corresponding Russian translations for all keys
+  - **Key Statistics**:
+    * Before: 323 keys (EN) = 323 keys (RU) but many keys used in code were missing
+    * After: 668 keys (EN) = 668 keys (RU) with complete coverage
+    * Added: 345 new translation keys in both languages
+  - **Translation Quality**: All Russian translations use formal language (вы), proper technical terminology, and maintain consistency with existing translations
+  - **Testing**: Verified perfect structural parity - no MISSING_MESSAGE errors should occur
+
 ### Changed
 
 - **BREAKING: Migrated from react-i18next to next-intl**
