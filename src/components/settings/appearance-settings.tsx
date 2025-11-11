@@ -32,7 +32,6 @@ import {
 import { SunIcon, MoonIcon, MonitorIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
-import i18next from 'i18next';
 
 type Theme = 'light' | 'dark' | 'system';
 type Language = 'en' | 'ru';
@@ -126,13 +125,11 @@ export function AppearanceSettings() {
 
   const applyLanguage = async (language: Language) => {
     try {
-      // Update i18next language immediately for client-side re-render
-      await i18next.changeLanguage(language);
-
-      // Update locale cookie for SSR
+      // Update locale cookie for next-intl
       document.cookie = `locale=${language}; path=/; max-age=31536000`;
 
-      // Refresh the router to update server-rendered content
+      // Refresh the router to reload with new locale
+      // next-intl will automatically pick up the new locale from the cookie
       router.refresh();
     } catch (error) {
       console.error('Failed to change language:', error);

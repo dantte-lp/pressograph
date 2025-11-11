@@ -1,22 +1,26 @@
 /**
  * useTranslation Hook
  *
- * Custom hook for using i18next translations in Client Components
- * Re-exports react-i18next's useTranslation hook with proper typing
+ * Custom hook for using next-intl translations in Client Components
+ * Re-exports next-intl's useTranslations hook with compatibility layer
  *
- * Note: This hook must be used within the I18nProvider context
+ * Note: This hook must be used within the NextIntlClientProvider context
  */
 
 'use client';
 
-import { useTranslation as useI18nextTranslation } from 'react-i18next';
+import { useTranslations } from 'next-intl';
 
 /**
- * Hook for translations
+ * Hook for translations with next-intl
  *
- * @param namespace - Translation namespace (default: 'common')
- * @returns Translation object with t function and other utilities
+ * Provides compatibility with previous react-i18next usage patterns
+ * All translation keys use dot notation (e.g., 'nav.dashboard', 'common.save')
+ *
+ * @returns Translation object with t function
  */
-export function useTranslation(namespace: string = 'common') {
-  return useI18nextTranslation(namespace);
+export function useTranslation() {
+  const t = useTranslations();
+
+  return { t };
 }

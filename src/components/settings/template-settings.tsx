@@ -68,7 +68,7 @@ import {
   deleteTestTemplate,
   type TestTemplateListItem,
 } from '@/lib/actions/test-templates';
-import { useTranslation } from '@/i18n/client';
+import { useTranslation } from '@/hooks/use-translation';
 
 export function TemplateSettings() {
   const { t } = useTranslation();

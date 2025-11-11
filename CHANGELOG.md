@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: Migrated from react-i18next to next-intl**
+  - **Context**: Fixed production build failures with Next.js 16 caused by react-i18next's use of `createContext` API
+  - **Root Cause**: react-i18next's `createContext` is incompatible with Next.js 16 static site generation, causing `TypeError: (0 , t.createContext) is not a function` during production builds
+  - **Solution**: Migrated to next-intl, which is specifically designed for Next.js App Router and doesn't use problematic React APIs
+  - **Changes**:
+    * Removed dependencies: `react-i18next`, `i18next`, `i18next-resources-to-backend`
+    * Added: `next-intl@4.4.0` (already installed, now actively used)
+    * Restructured translations: `src/i18n/locales/*/common.json` → `messages/*.json`
+    * Updated translation syntax: `{{variable}}` → `{variable}` (next-intl format)
+    * Created `src/i18n/request.ts` for next-intl server configuration
+    * Updated `next.config.ts` with `createNextIntlPlugin` wrapper
+    * Modified root layout with `NextIntlClientProvider`
+    * Removed deprecated: `src/i18n/client.ts`, `src/components/i18n-provider.tsx`, `src/i18n/locales/` directory
+    * Updated `useTranslation` hook to use `next-intl`'s `useTranslations`
+    * Simplified locale switching logic (no longer needs `i18next.changeLanguage()`)
+  - **Compatibility**: Maintains full backward compatibility - all existing components continue to work without code changes
+  - **Benefits**:
+    * Production builds now succeed without errors
+    * Better Next.js 16 compatibility
+    * Improved SSR performance
+    * Cleaner architecture without client-side i18n initialization
+    * Full TypeScript support
+  - **Testing**: Verified with `pnpm run build` - all 29 routes built successfully
+  - **Migration Impact**: Breaking change for translation file structure, but no impact on end-user functionality
+
 ### Added
 
 - **[Translation] Complete i18n Support for Tests Pages**

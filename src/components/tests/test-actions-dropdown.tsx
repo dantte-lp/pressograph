@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/hooks/use-translation';
 import { MoreVerticalIcon, DownloadIcon, Share2Icon, CopyIcon, Trash2Icon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

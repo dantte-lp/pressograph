@@ -1,8 +1,8 @@
 /**
  * i18n Configuration
  *
- * Configures i18next for client-side and server-side translations
- * Compatible with Next.js 16 App Router
+ * Configures internationalization for next-intl
+ * Compatible with Next.js 16 App Router and static site generation
  */
 
 export const defaultLocale = 'en' as const;

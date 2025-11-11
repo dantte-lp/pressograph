@@ -21,7 +21,7 @@ import {
   getUserPreferences,
 } from '@/lib/actions/user-preferences';
 import { toast } from 'sonner';
-import { useTranslation } from '@/i18n/client';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface DateTimeSettingsProps {
   initialTimezone?: string;

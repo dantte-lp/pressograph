@@ -39,7 +39,7 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
-import { useTranslation } from '@/i18n/client';
+import { useTranslation } from '@/hooks/use-translation';
 import {
   getOrganizationSettings,
   updateOrganizationSettings,

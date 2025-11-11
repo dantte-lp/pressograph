@@ -8,7 +8,7 @@
  */
 
 import { Plus } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { CreateProjectDialog } from '@/components/projects/create-project-dialog';
 import { ProjectListClient } from '@/components/projects/project-list-client';
