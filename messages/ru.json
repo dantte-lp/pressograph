@@ -47,6 +47,7 @@
     "expand": "Развернуть",
     "collapse": "Свернуть",
     "createTest": "Создать испытание",
+    "active": "Активные",
     "archived": "Архивные",
     "apiDocs": "API документация"
   },
@@ -318,7 +319,34 @@
     "enabled": "Включено",
     "disabled": "Отключено",
     "testsInProject": "Испытания в этом проекте",
-    "testsInProjectDescription": "Все испытания на давление, связанные с {projectName}"
+    "testsInProjectDescription": "Все испытания на давление, связанные с {projectName}",
+    "createDialog": {
+      "title": "Создать новый проект",
+      "description": "Создайте проект для организации испытаний на давление.",
+      "nameLabel": "Название проекта",
+      "nameRequired": "Название проекта обязательно",
+      "nameTooLong": "Название проекта слишком длинное",
+      "namePlaceholder": "Мой проект",
+      "descriptionLabel": "Описание",
+      "descriptionPlaceholder": "Краткое описание проекта...",
+      "settingsTitle": "Настройки проекта",
+      "autoNumberLabel": "Автонумерация испытаний",
+      "autoNumberDescription": "Автоматически присваивать последовательные номера испытаниям",
+      "prefixLabel": "Префикс номера испытания",
+      "prefixRequired": "Префикс обязателен",
+      "prefixTooLong": "Префикс слишком длинный",
+      "prefixInvalid": "Префикс должен содержать только заглавные буквы, цифры и дефисы",
+      "prefixPlaceholder": "PT",
+      "prefixDescription": "Префикс для номеров испытаний (например, PT-001, PT-002)",
+      "requireNotesLabel": "Требовать примечания",
+      "requireNotesDescription": "Требовать примечания при создании испытаний",
+      "creating": "Создание...",
+      "createButton": "Создать проект",
+      "cancel": "Отменить",
+      "successMessage": "Проект успешно создан",
+      "errorMessage": "Не удалось создать проект",
+      "unexpectedError": "Произошла непредвиденная ошибка"
+    }
   },
   "auth": {
     "login": "Вход",

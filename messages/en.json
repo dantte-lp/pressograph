@@ -47,6 +47,7 @@
     "expand": "Expand",
     "collapse": "Collapse",
     "createTest": "Create Test",
+    "active": "Active",
     "archived": "Archived",
     "apiDocs": "API Docs"
   },
@@ -318,7 +319,34 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "testsInProject": "Tests in this Project",
-    "testsInProjectDescription": "All pressure tests associated with {projectName}"
+    "testsInProjectDescription": "All pressure tests associated with {projectName}",
+    "createDialog": {
+      "title": "Create New Project",
+      "description": "Create a project to organize your pressure tests.",
+      "nameLabel": "Project Name",
+      "nameRequired": "Project name is required",
+      "nameTooLong": "Project name is too long",
+      "namePlaceholder": "My Project",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Brief description of the project...",
+      "settingsTitle": "Project Settings",
+      "autoNumberLabel": "Auto-number Tests",
+      "autoNumberDescription": "Automatically assign sequential numbers to tests",
+      "prefixLabel": "Test Number Prefix",
+      "prefixRequired": "Prefix is required",
+      "prefixTooLong": "Prefix is too long",
+      "prefixInvalid": "Prefix must contain only uppercase letters, numbers, and hyphens",
+      "prefixPlaceholder": "PT",
+      "prefixDescription": "Prefix for test numbers (e.g., PT-001, PT-002)",
+      "requireNotesLabel": "Require Notes",
+      "requireNotesDescription": "Require notes when creating tests",
+      "creating": "Creating...",
+      "createButton": "Create Project",
+      "cancel": "Cancel",
+      "successMessage": "Project created successfully",
+      "errorMessage": "Failed to create project",
+      "unexpectedError": "An unexpected error occurred"
+    }
   },
   "auth": {
     "login": "Login",

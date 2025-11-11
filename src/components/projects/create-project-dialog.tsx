@@ -35,23 +35,22 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { createProject } from '@/lib/actions/projects';
+import { useTranslation } from '@/hooks/use-translation';
 
-const formSchema = z.object({
+const createFormSchema = (t: (key: string) => string) => z.object({
   name: z
     .string()
-    .min(1, 'Project name is required')
-    .max(255, 'Project name is too long'),
+    .min(1, t('projects.createDialog.nameRequired'))
+    .max(255, t('projects.createDialog.nameTooLong')),
   description: z.string().optional(),
   autoNumberTests: z.boolean(),
   testNumberPrefix: z
     .string()
-    .min(1, 'Prefix is required')
-    .max(10, 'Prefix is too long')
-    .regex(/^[A-Z0-9-]+$/, 'Prefix must contain only uppercase letters, numbers, and hyphens'),
+    .min(1, t('projects.createDialog.prefixRequired'))
+    .max(10, t('projects.createDialog.prefixTooLong'))
+    .regex(/^[A-Z0-9-]+$/, t('projects.createDialog.prefixInvalid')),
   requireNotes: z.boolean(),
 });
-
-type FormValues = z.infer<typeof formSchema>;
 
 interface CreateProjectDialogProps {
   children: React.ReactNode;
@@ -59,8 +58,12 @@ interface CreateProjectDialogProps {
 
 export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formSchema = createFormSchema(t);
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -97,16 +100,16 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
       });
 
       if (error || !project) {
-        toast.error(error || 'Failed to create project');
+        toast.error(error || t('projects.createDialog.errorMessage'));
         return;
       }
 
-      toast.success('Project created successfully');
+      toast.success(t('projects.createDialog.successMessage'));
       setOpen(false);
       form.reset();
       router.refresh();
     } catch (error) {
-      toast.error('An unexpected error occurred');
+      toast.error(t('projects.createDialog.unexpectedError'));
       console.error('[CreateProjectDialog] Error:', error);
     } finally {
       setIsSubmitting(false);
@@ -118,9 +121,9 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>{t('projects.createDialog.title')}</DialogTitle>
           <DialogDescription>
-            Create a project to organize your pressure tests.
+            {t('projects.createDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -132,9 +135,9 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name *</FormLabel>
+                  <FormLabel>{t('projects.createDialog.nameLabel')} *</FormLabel>
                   <FormControl>
-                    <Input placeholder="My Project" {...field} />
+                    <Input placeholder={t('projects.createDialog.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -147,10 +150,10 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('projects.createDialog.descriptionLabel')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Brief description of the project..."
+                      placeholder={t('projects.createDialog.descriptionPlaceholder')}
                       className="resize-none"
                       rows={3}
                       {...field}
@@ -163,7 +166,7 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
 
             {/* Settings Section */}
             <div className="space-y-4 rounded-lg border p-4">
-              <h4 className="text-sm font-medium">Project Settings</h4>
+              <h4 className="text-sm font-medium">{t('projects.createDialog.settingsTitle')}</h4>
 
               {/* Auto-number Tests */}
               <FormField
@@ -172,9 +175,9 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between">
                     <div className="space-y-0.5">
-                      <FormLabel>Auto-number Tests</FormLabel>
+                      <FormLabel>{t('projects.createDialog.autoNumberLabel')}</FormLabel>
                       <FormDescription className="text-xs">
-                        Automatically assign sequential numbers to tests
+                        {t('projects.createDialog.autoNumberDescription')}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -193,12 +196,12 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
                 name="testNumberPrefix"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Test Number Prefix</FormLabel>
+                    <FormLabel>{t('projects.createDialog.prefixLabel')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="PT" {...field} />
+                      <Input placeholder={t('projects.createDialog.prefixPlaceholder')} {...field} />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Prefix for test numbers (e.g., PT-001, PT-002)
+                      {t('projects.createDialog.prefixDescription')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -212,9 +215,9 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between">
                     <div className="space-y-0.5">
-                      <FormLabel>Require Notes</FormLabel>
+                      <FormLabel>{t('projects.createDialog.requireNotesLabel')}</FormLabel>
                       <FormDescription className="text-xs">
-                        Require notes when creating tests
+                        {t('projects.createDialog.requireNotesDescription')}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -235,10 +238,10 @@ export function CreateProjectDialog({ children }: CreateProjectDialogProps) {
                 onClick={() => setOpen(false)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('projects.createDialog.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Project'}
+                {isSubmitting ? t('projects.createDialog.creating') : t('projects.createDialog.createButton')}
               </Button>
             </DialogFooter>
           </form>

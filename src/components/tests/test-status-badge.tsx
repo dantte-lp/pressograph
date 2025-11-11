@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslation } from '@/hooks/use-translation';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2Icon, CircleIcon, LoaderIcon, XCircleIcon, BanIcon } from 'lucide-react';
