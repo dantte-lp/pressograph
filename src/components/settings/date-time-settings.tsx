@@ -21,6 +21,7 @@ import {
   getUserPreferences,
 } from '@/lib/actions/user-preferences';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/client';
 
 interface DateTimeSettingsProps {
   initialTimezone?: string;
@@ -33,6 +34,7 @@ export function DateTimeSettings({
   initialDateFormat = 'YYYY-MM-DD',
   initialTimeFormat = '24h',
 }: DateTimeSettingsProps) {
+  const { t } = useTranslation();
   const [timezone, setTimezone] = useState(initialTimezone);
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
   const [timeFormat, setTimeFormat] = useState<TimeFormat>(initialTimeFormat);
@@ -58,9 +60,9 @@ export function DateTimeSettings({
     setIsLoading(false);
 
     if (result.success) {
-      toast.success('Timezone updated');
+      toast.success(t('settings.dateTimeSettings.timezoneUpdated'));
     } else {
-      toast.error(result.error || 'Failed to update timezone');
+      toast.error(result.error || t('settings.dateTimeSettings.failedToUpdateTimezone'));
       // Revert on error
       setTimezone(timezone);
     }
@@ -73,9 +75,9 @@ export function DateTimeSettings({
     setIsLoading(false);
 
     if (result.success) {
-      toast.success('Date format updated');
+      toast.success(t('settings.dateTimeSettings.dateFormatUpdated'));
     } else {
-      toast.error(result.error || 'Failed to update date format');
+      toast.error(result.error || t('settings.dateTimeSettings.failedToUpdateDateFormat'));
       setDateFormat(dateFormat);
     }
   };
@@ -87,9 +89,9 @@ export function DateTimeSettings({
     setIsLoading(false);
 
     if (result.success) {
-      toast.success('Time format updated');
+      toast.success(t('settings.dateTimeSettings.timeFormatUpdated'));
     } else {
-      toast.error(result.error || 'Failed to update time format');
+      toast.error(result.error || t('settings.dateTimeSettings.failedToUpdateTimeFormat'));
       setTimeFormat(timeFormat);
     }
   };
@@ -98,10 +100,10 @@ export function DateTimeSettings({
     <div className="space-y-6">
       {/* Timezone */}
       <div className="space-y-2">
-        <Label htmlFor="timezone">Timezone</Label>
+        <Label htmlFor="timezone">{t('settings.dateTimeSettings.timezoneLabel')}</Label>
         <Select value={timezone} onValueChange={handleTimezoneChange} disabled={isLoading}>
           <SelectTrigger id="timezone">
-            <SelectValue placeholder="Select timezone" />
+            <SelectValue placeholder={t('settings.dateTimeSettings.selectTimezone')} />
           </SelectTrigger>
           <SelectContent>
             {COMMON_TIMEZONES.map((tz) => (
@@ -112,21 +114,21 @@ export function DateTimeSettings({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          All dates and times will be displayed in this timezone
+          {t('settings.dateTimeSettings.timezoneDescription')}
         </p>
       </div>
 
       {/* Date Format */}
       <div className="space-y-2">
-        <Label htmlFor="date-format">Date Format</Label>
+        <Label htmlFor="date-format">{t('settings.dateTimeSettings.dateFormatLabel')}</Label>
         <Select value={dateFormat} onValueChange={handleDateFormatChange} disabled={isLoading}>
           <SelectTrigger id="date-format">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="MM/DD/YYYY">MM/DD/YYYY (US)</SelectItem>
-            <SelectItem value="DD.MM.YYYY">DD.MM.YYYY (EU/RU)</SelectItem>
-            <SelectItem value="YYYY-MM-DD">YYYY-MM-DD (ISO)</SelectItem>
+            <SelectItem value="MM/DD/YYYY">{t('settings.dateTimeSettings.dateFormatUS')}</SelectItem>
+            <SelectItem value="DD.MM.YYYY">{t('settings.dateTimeSettings.dateFormatEU')}</SelectItem>
+            <SelectItem value="YYYY-MM-DD">{t('settings.dateTimeSettings.dateFormatISO')}</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
@@ -140,14 +142,14 @@ export function DateTimeSettings({
 
       {/* Time Format */}
       <div className="space-y-2">
-        <Label htmlFor="time-format">Time Format</Label>
+        <Label htmlFor="time-format">{t('settings.dateTimeSettings.timeFormatLabel')}</Label>
         <Select value={timeFormat} onValueChange={handleTimeFormatChange} disabled={isLoading}>
           <SelectTrigger id="time-format">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
-            <SelectItem value="24h">24-hour</SelectItem>
+            <SelectItem value="12h">{t('settings.dateTimeSettings.timeFormat12h')}</SelectItem>
+            <SelectItem value="24h">{t('settings.dateTimeSettings.timeFormat24h')}</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
