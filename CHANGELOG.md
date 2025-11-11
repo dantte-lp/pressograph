@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **[i18n] Fixed Translation Key Resolution Errors and Missing Translations**
+  - **Issue**: MISSING_MESSAGE errors for `selectAll` and other keys; hardcoded English strings throughout the application
+  - **Root Cause**: Components using wrong translation hook patterns; many pages not using translations at all
+  - **Solution**:
+    * Fixed `tests-table-client.tsx` to use namespaced translations (`useTranslations('tests')` instead of global `useTranslation()`)
+    * Added server-side translations (`getTranslations`) to all RSC pages
+    * Replaced all hardcoded English strings with translation keys
+  - **Pages Updated**:
+    * `/projects/[id]` - Added 11 new translation keys (archived, createTest, projectOwner, testNumberPrefix, etc.)
+    * `/tests/[id]` - Added 21 new translation keys (tab names, card titles, status labels, etc.)
+    * `/settings` - Added 6 new translation keys (page description, tab labels)
+    * `tests-table-client` - Fixed namespace resolution, added pagination keys (showing, page)
+  - **Files Modified**:
+    * `src/components/tests/tests-table-client.tsx` - Fixed translation hook usage
+    * `src/app/(dashboard)/projects/[id]/page.tsx` - Full i18n support
+    * `src/app/(dashboard)/tests/[id]/page.tsx` - Full i18n support
+    * `src/app/(dashboard)/settings/page.tsx` - Full i18n support
+    * `messages/en.json` - Added 38 new translation keys
+    * `messages/ru.json` - Added 38 corresponding Russian translations
+  - **Key Statistics**:
+    * Before: 668 keys with resolution errors on several pages
+    * After: 706 keys (EN) = 706 keys (RU) with proper namespace resolution
+    * Fixed: selectAll resolution error
+    * Added: 38 new keys across projects, tests, and settings namespaces
+  - **Testing**: Verified all pages load without MISSING_MESSAGE errors
+  - **Commits**:
+    * 9a9e8ce0 - Fixed translation keys and namespace in tests table
+    * 4f9b412a - Added translations for test detail page
+    * 5d2da65c - Added translations for settings page
+
 - **[i18n] Fixed 340+ Missing Translation Keys in Russian Locale**
   - **Issue**: Application showed MISSING_MESSAGE console errors for Russian locale users due to incomplete translation coverage
   - **Root Cause**: After migration to next-intl, many new translation keys were added to English but not Russian
