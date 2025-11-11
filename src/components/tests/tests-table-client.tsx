@@ -205,6 +205,7 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
               <TableHead>{t('columnName')}</TableHead>
               <TableHead>{t('columnProject')}</TableHead>
               <TableHead>{t('columnStatus')}</TableHead>
+              <TableHead>{t('columnTags')}</TableHead>
               <TableHead>{t('columnRuns')}</TableHead>
               <TableHead>{t('columnLastRun')}</TableHead>
               <TableHead>{t('columnCreated')}</TableHead>
@@ -244,6 +245,24 @@ export function TestsTableClient({ data, filters, pagination }: TestsTableClient
                   <Badge variant={statusColors[test.status] ?? 'default'}>
                     {test.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {test.tags && test.tags.length > 0 ? (
+                      test.tags.slice(0, 3).map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                    {test.tags && test.tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{test.tags.length - 3}
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>0</TableCell>
                 <TableCell className="text-muted-foreground text-sm">

@@ -19,7 +19,7 @@
  */
 
 import { getProjects } from '@/lib/actions/projects';
-import { getTests } from '@/lib/actions/tests';
+import { getTests, getAllTags } from '@/lib/actions/tests';
 import type { TestFilters, PaginationParams } from '@/lib/actions/tests';
 import { TestsPageClient } from '@/components/tests/tests-page-client';
 
@@ -35,6 +35,7 @@ interface TestsPageProps {
     search?: string;
     project?: string;
     status?: string;
+    tags?: string;
     sortBy?: string;
   }>;
 }
@@ -54,17 +55,24 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
     status = status.filter(s => s !== 'active').concat(['running', 'ready']);
   }
 
+  // Parse tags filter
+  const tags = params.tags?.split(',').filter(Boolean);
+
   const sortBy = params.sortBy as 'newest' | 'oldest' | 'testNumber' | 'name' | undefined;
 
   // Fetch projects for filter dropdown
   const projectsResult = await getProjects({ limit: 100, offset: 0 });
   const projects = projectsResult.projects.map(p => ({ id: p.id, name: p.name }));
 
+  // Fetch all available tags
+  const availableTags = await getAllTags();
+
   // Build filters for tests query
   const filters: TestFilters = {
     search,
     projectId,
     status: status as any,
+    tags,
     sortBy,
   };
 
@@ -83,6 +91,7 @@ export default async function TestsPage({ searchParams }: TestsPageProps) {
       filters={filters}
       pagination={paginationParams}
       projects={projects}
+      availableTags={availableTags}
     />
   );
 }

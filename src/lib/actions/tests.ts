@@ -29,6 +29,7 @@ export interface TestListItem {
   createdByName: string;
   latestGraphFormat: string | null;
   latestGraphSize: number | null;
+  tags: string[];
 }
 
 /**
@@ -38,6 +39,7 @@ export interface TestFilters {
   search?: string;
   projectId?: string;
   status?: TestStatus[];
+  tags?: string[];
   dateFrom?: Date;
   dateTo?: Date;
   sortBy?: 'newest' | 'oldest' | 'testNumber' | 'name' | 'lastRun';
@@ -97,6 +99,15 @@ export async function getTests(
     );
   }
 
+  // Tags filter - filter tests that contain ANY of the specified tags
+  if (filters.tags && filters.tags.length > 0) {
+    // Use SQL to check if tags array overlaps with filter tags
+    const tagConditions = filters.tags.map(tag =>
+      sql`${pressureTests.tags}::jsonb @> ${JSON.stringify([tag])}::jsonb`
+    );
+    conditions.push(or(...tagConditions)!);
+  }
+
   // Date range filter
   if (filters.dateFrom) {
     conditions.push(gte(pressureTests.createdAt, filters.dateFrom));
@@ -147,6 +158,7 @@ export async function getTests(
       createdAt: pressureTests.createdAt,
       updatedAt: pressureTests.updatedAt,
       createdByName: users.name,
+      tags: pressureTests.tags,
     })
     .from(pressureTests)
     .innerJoin(projects, eq(pressureTests.projectId, projects.id))
@@ -196,6 +208,7 @@ export async function getTests(
       createdByName: test.createdByName ?? 'Unknown',
       latestGraphFormat: graphData?.fileType ?? null,
       latestGraphSize: graphData?.fileSize ?? null,
+      tags: (test.tags as string[]) || [],
     };
   });
 
@@ -600,6 +613,38 @@ export async function batchDeleteTests(testIds: string[]): Promise<{ success: bo
   } catch (error) {
     console.error('Error batch deleting tests:', error);
     return { success: false, deleted: 0, error: 'Failed to delete tests' };
+  }
+}
+
+/**
+ * Get all unique tags from user's tests
+ * Useful for autocomplete and filtering
+ */
+export async function getAllTags(): Promise<string[]> {
+  try {
+    const session = await requireAuth();
+    const userId = session.user.id;
+
+    // Get all tests for the user
+    const tests = await db
+      .select({
+        tags: pressureTests.tags,
+      })
+      .from(pressureTests)
+      .where(eq(pressureTests.createdBy, userId));
+
+    // Extract and flatten all tags
+    const allTags = new Set<string>();
+    for (const test of tests) {
+      const tags = (test.tags as string[]) || [];
+      tags.forEach(tag => allTags.add(tag));
+    }
+
+    // Return sorted unique tags
+    return Array.from(allTags).sort();
+  } catch (error) {
+    console.error('Error fetching tags:', error);
+    return [];
   }
 }
 

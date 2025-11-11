@@ -31,6 +31,7 @@ import { Separator } from '@/components/ui/separator';
 
 interface TestsFilterBarProps {
   projects?: Array<{ id: string; name: string }>;
+  availableTags?: string[];
   totalTests?: number;
 }
 
@@ -68,7 +69,7 @@ const TEST_STATUSES = [
  * - Clear all filters
  * - URL state management
  */
-export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBarProps) {
+export function TestsFilterBar({ projects = [], availableTags = [], totalTests = 0 }: TestsFilterBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
@@ -78,6 +79,9 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
   const [selectedProject, setSelectedProject] = useState(searchParams.get('project') || 'all');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
     searchParams.get('status')?.split(',').filter(Boolean) || []
+  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    searchParams.get('tags')?.split(',').filter(Boolean) || []
   );
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
   const [showFilters, setShowFilters] = useState(false);
@@ -102,6 +106,7 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
     if (params.search) url.set('search', params.search);
     if (params.project && params.project !== 'all') url.set('project', params.project);
     if (params.status && params.status.length > 0) url.set('status', params.status);
+    if (params.tags && params.tags.length > 0) url.set('tags', params.tags);
     if (params.sortBy && params.sortBy !== 'newest') url.set('sortBy', params.sortBy);
 
     return `/tests?${url.toString()}`;
@@ -113,11 +118,12 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
       search: newParams.search !== undefined ? newParams.search : searchValue,
       project: newParams.project !== undefined ? newParams.project : selectedProject,
       status: newParams.status !== undefined ? newParams.status : selectedStatuses.join(','),
+      tags: newParams.tags !== undefined ? newParams.tags : selectedTags.join(','),
       sortBy: newParams.sortBy !== undefined ? newParams.sortBy : sortBy,
     };
 
     router.push(buildURL(params) as any);
-  }, [searchValue, selectedProject, selectedStatuses, sortBy, buildURL, router]);
+  }, [searchValue, selectedProject, selectedStatuses, selectedTags, sortBy, buildURL, router]);
 
   // Handle status toggle
   const toggleStatus = (status: string) => {
@@ -127,6 +133,16 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
 
     setSelectedStatuses(newStatuses);
     updateURL({ status: newStatuses.join(',') || undefined });
+  };
+
+  // Handle tag toggle
+  const toggleTag = (tag: string) => {
+    const newTags = selectedTags.includes(tag)
+      ? selectedTags.filter(t => t !== tag)
+      : [...selectedTags, tag];
+
+    setSelectedTags(newTags);
+    updateURL({ tags: newTags.join(',') || undefined });
   };
 
   // Handle project change
@@ -146,6 +162,7 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
     setSearchValue('');
     setSelectedProject('all');
     setSelectedStatuses([]);
+    setSelectedTags([]);
     setSortBy('newest');
     router.push('/tests?page=1');
   };
@@ -155,6 +172,7 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
     searchValue ? 1 : 0,
     selectedProject !== 'all' ? 1 : 0,
     selectedStatuses.length > 0 ? 1 : 0,
+    selectedTags.length > 0 ? 1 : 0,
     sortBy !== 'newest' ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
@@ -271,6 +289,33 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
                     ))}
                   </div>
                 </div>
+
+                {/* Tags Filter */}
+                {availableTags.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label>{t('filterTags')}</Label>
+                      <div className="max-h-48 space-y-2 overflow-y-auto">
+                        {availableTags.map((tag) => (
+                          <div key={tag} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`tag-${tag}`}
+                              checked={selectedTags.includes(tag)}
+                              onCheckedChange={() => toggleTag(tag)}
+                            />
+                            <label
+                              htmlFor={`tag-${tag}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 truncate"
+                            >
+                              {tag}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </PopoverContent>
           </Popover>
@@ -326,6 +371,18 @@ export function TestsFilterBar({ projects = [], totalTests = 0 }: TestsFilterBar
               {t(`status${status.charAt(0).toUpperCase() + status.slice(1)}`)}
               <button
                 onClick={() => toggleStatus(status)}
+                className="ml-1 rounded-full hover:bg-muted"
+              >
+                <XIcon className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+
+          {selectedTags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="gap-1">
+              {tag}
+              <button
+                onClick={() => toggleTag(tag)}
                 className="ml-1 rounded-full hover:bg-muted"
               >
                 <XIcon className="h-3 w-3" />

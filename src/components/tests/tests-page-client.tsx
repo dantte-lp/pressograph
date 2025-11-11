@@ -28,6 +28,7 @@ interface TestsPageClientProps {
   filters: TestFilters;
   pagination: PaginationParams;
   projects: Array<{ id: string; name: string }>;
+  availableTags: string[];
 }
 
 export function TestsPageClient({
@@ -35,6 +36,7 @@ export function TestsPageClient({
   filters,
   pagination,
   projects,
+  availableTags,
 }: TestsPageClientProps) {
   const { t } = useTranslation();
 
@@ -66,7 +68,7 @@ export function TestsPageClient({
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Filter Bar */}
-          <TestsFilterBar projects={projects} />
+          <TestsFilterBar projects={projects} availableTags={availableTags} />
 
           {/* Table - directly use client component with server-fetched data */}
           <TestsTableClient
