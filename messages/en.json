@@ -79,7 +79,12 @@
   "tests": {
     "title": "Pressure Tests",
     "allTests": "Manage all pressure tests across all projects",
+    "all": "All",
+    "allProjects": "All Projects",
     "project": "Project",
+    "status": "Status",
+    "tags": "Tags",
+    "search": "Search",
     "sortBy": "Sort By",
     "createTest": "Create Test",
     "createNewTest": "Create New Test",
@@ -886,7 +891,8 @@
     "filterByStatus": "Filter by Status",
     "activeFilters": "{count} active filter(s)",
     "dateFrom": "Date From",
-    "dateTo": "Date To"
+    "dateTo": "Date To",
+    "all": "All"
   },
   "actions": {
     "viewDetails": "View Details",
