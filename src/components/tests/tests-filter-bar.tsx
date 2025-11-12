@@ -216,7 +216,7 @@ export function TestsFilterBar({ projects = [], availableTags = [], totalTests =
             <PopoverTrigger asChild>
               <Button variant="outline" className="relative">
                 <FilterIcon className="mr-2 h-4 w-4" />
-                {t('filters')}
+                {t('filtersLabel')}
                 {activeFiltersCount > 0 && (
                   <Badge
                     variant="destructive"
@@ -231,7 +231,7 @@ export function TestsFilterBar({ projects = [], availableTags = [], totalTests =
             <PopoverContent className="w-80" align="end">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-semibold">{t('filters')}</h4>
+                  <h4 className="font-semibold">{t('filtersLabel')}</h4>
                   {activeFiltersCount > 0 && (
                     <Button
                       variant="ghost"
