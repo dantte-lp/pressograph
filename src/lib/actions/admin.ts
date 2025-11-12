@@ -718,8 +718,8 @@ export async function getSystemMetrics() {
     try {
       // Get PostgreSQL version
       const versionResult = await db.execute(sql`SELECT version()`);
-      if (versionResult.rows[0]) {
-        const fullVersion = (versionResult.rows[0] as any).version as string;
+      if (versionResult && versionResult[0]) {
+        const fullVersion = (versionResult[0] as any).version as string;
         const match = fullVersion.match(/PostgreSQL ([\d.]+)/);
         if (match) {
           databaseVersion = match[1];
@@ -731,8 +731,8 @@ export async function getSystemMetrics() {
       const sizeResult = await db.execute(
         sql`SELECT pg_database_size(${dbName}) as size`
       );
-      if (sizeResult.rows[0]) {
-        databaseSizeBytes = Number((sizeResult.rows[0] as any).size) || 0;
+      if (sizeResult && sizeResult[0]) {
+        databaseSizeBytes = Number((sizeResult[0] as any).size) || 0;
       }
 
       // Get tables and indexes sizes
@@ -745,8 +745,8 @@ export async function getSystemMetrics() {
         FROM pg_tables
         WHERE schemaname = 'public'
       `);
-      if (tablesResult.rows[0]) {
-        const row = tablesResult.rows[0] as any;
+      if (tablesResult && tablesResult[0]) {
+        const row = tablesResult[0] as any;
         tablesSize = Number(row.tables_bytes) || 0;
         indexesSize = Number(row.indexes_bytes) || 0;
       }
@@ -759,8 +759,8 @@ export async function getSystemMetrics() {
         FROM pg_stat_activity
         WHERE datname = ${dbName}
       `);
-      if (connectionsResult.rows[0]) {
-        const row = connectionsResult.rows[0] as any;
+      if (connectionsResult && connectionsResult[0]) {
+        const row = connectionsResult[0] as any;
         activeConnections = Number(row.active) || 0;
         maxConnections = Number(row.max) || 100;
       }
