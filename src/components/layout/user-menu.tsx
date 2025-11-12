@@ -15,6 +15,7 @@
 
 import { UserIcon, LogOutIcon, SettingsIcon, KeyRound } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
+import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -60,6 +61,7 @@ function getUserInitials(name?: string | null): string {
  * ```
  */
 export function UserMenu() {
+  const { t } = useTranslation();
   const { data: session, status } = useSession({
     required: false,
   });
@@ -80,7 +82,7 @@ export function UserMenu() {
       <Button asChild variant="default" size="sm">
         <a href="/api/auth/signin">
           <KeyRound className="mr-2 h-4 w-4" />
-          Sign in
+          {t('common.signIn')}
         </a>
       </Button>
     );
@@ -111,7 +113,7 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-2">
             <p className="text-sm font-semibold leading-none">
-              {session.user?.name || 'User'}
+              {session.user?.name || t('common.user')}
             </p>
             <p className="text-muted-foreground text-xs leading-none">
               {session.user?.email}
@@ -125,7 +127,7 @@ export function UserMenu() {
             className="cursor-pointer transition-colors hover:bg-accent focus:bg-accent"
           >
             <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>{t('common.profile')}</span>
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -134,7 +136,7 @@ export function UserMenu() {
             className="cursor-pointer transition-colors hover:bg-accent focus:bg-accent"
           >
             <SettingsIcon className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>{t('common.settings')}</span>
           </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -143,7 +145,7 @@ export function UserMenu() {
           className="cursor-pointer text-destructive focus:text-destructive transition-colors"
         >
           <LogOutIcon className="mr-2 h-4 w-4" />
-          <span>Sign out</span>
+          <span>{t('common.signOut')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -57,7 +57,11 @@
     "register": "Register",
     "welcome": "Welcome",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "user": "User",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "profile": "Profile"
   },
   "nav": {
     "dashboard": "Dashboard",
