@@ -27,7 +27,6 @@ import {
   DownloadIcon,
   Share2Icon,
   CopyIcon,
-  PlayIcon,
   Trash2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -359,12 +358,6 @@ export function TestsTableClient({ data, filters, pagination, availableTags }: T
                         <Link href={`/tests/${test.id}` as any}>
                           <EyeIcon className="mr-2 h-4 w-4" />
                           {t('viewDetails')}
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/tests/${test.id}/runs` as any}>
-                          <PlayIcon className="mr-2 h-4 w-4" />
-                          {t('viewRuns')}
                         </Link>
                       </DropdownMenuItem>
                       {test.latestGraphSize && (

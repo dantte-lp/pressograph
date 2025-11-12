@@ -192,7 +192,6 @@
     "noProjectsAvailableDescription": "Please create a project first",
     "goToProjects": "Go to Projects",
     "viewDetails": "View Details",
-    "viewRuns": "View Runs",
     "duplicateAction": "Duplicate",
     "create": {
       "title": "Create Pressure Test",

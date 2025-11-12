@@ -192,7 +192,6 @@
     "noProjectsAvailableDescription": "Пожалуйста, сначала создайте проект",
     "goToProjects": "Перейти к проектам",
     "viewDetails": "Просмотр подробностей",
-    "viewRuns": "Просмотр запусков",
     "duplicateAction": "Дублировать",
     "create": {
       "title": "Создать испытание на давление",
