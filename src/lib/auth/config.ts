@@ -50,7 +50,21 @@ declare module 'next-auth/jwt' {
   }
 }
 
+// Validate NEXTAUTH_URL environment variable
+if (!process.env.NEXTAUTH_URL) {
+  console.warn('[NextAuth Warning] NEXTAUTH_URL is not set. Using default value.');
+}
+
+// Validate NEXTAUTH_SECRET environment variable
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('[NextAuth Error] NEXTAUTH_SECRET environment variable is required but not set.');
+}
+
 export const authOptions: NextAuthOptions = {
+  // Trust host header for NextAuth (fixes CLIENT_FETCH_ERROR in some environments)
+  // This is safe when NEXTAUTH_URL is properly configured
+  trustHost: true,
+
   // NOTE: Adapter is commented out because we're using JWT strategy
   // When using JWT strategy, database adapter is not needed for sessions
   // Uncomment if switching to database sessions (set strategy: 'database' below)
@@ -211,25 +225,23 @@ export const authOptions: NextAuthOptions = {
       // Use environment variable or fallback to baseUrl
       const BASE_URL = process.env.NEXTAUTH_URL || baseUrl;
 
-      console.log('[NextAuth Redirect]', {
-        url,
-        baseUrl,
-        nextAuthUrl: process.env.NEXTAUTH_URL,
-        nodeEnv: process.env.NODE_ENV,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NextAuth Redirect]', {
+          url,
+          baseUrl,
+          BASE_URL,
+          nodeEnv: process.env.NODE_ENV,
+        });
+      }
 
       // If starts with /, make it absolute with base URL
       if (url.startsWith('/')) {
-        const redirectTo = `${BASE_URL}${url}`;
-        console.log('[NextAuth Redirect] Relative path, returning:', redirectTo);
-        return redirectTo;
+        return `${BASE_URL}${url}`;
       }
 
       // If it's a relative URL (no protocol), treat as path
       if (!url.includes('://')) {
-        const redirectTo = `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-        console.log('[NextAuth Redirect] No protocol, treating as path:', redirectTo);
-        return redirectTo;
+        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
       }
 
       // Allow redirects to the same origin
@@ -238,17 +250,17 @@ export const authOptions: NextAuthOptions = {
         const baseUrlObj = new URL(BASE_URL);
 
         if (urlObj.origin === baseUrlObj.origin) {
-          console.log('[NextAuth Redirect] Same origin, allowing:', url);
           return url;
         }
       } catch (error) {
-        console.error('[NextAuth Redirect] URL parsing error:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[NextAuth Redirect] URL parsing error:', error);
+        }
       }
 
       // For security, don't redirect to external domains
-      // Default to base URL home page
-      console.log('[NextAuth Redirect] Different origin, defaulting to home:', BASE_URL);
-      return BASE_URL;
+      // Default to dashboard
+      return `${BASE_URL}/dashboard`;
     },
   },
 

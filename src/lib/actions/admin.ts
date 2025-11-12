@@ -698,3 +698,168 @@ export async function deleteOrganization(organizationId: string) {
     };
   }
 }
+
+/**
+ * Get extended system metrics for monitoring
+ */
+export async function getSystemMetrics() {
+  await requireAdmin();
+
+  try {
+    // Database health and version
+    let databaseVersion = 'unknown';
+    let databaseSizeBytes = 0;
+    let tablesSize = 0;
+    let indexesSize = 0;
+    let schemaVersion = 'unknown';
+
+    try {
+      // Get PostgreSQL version
+      const versionResult = await db.execute(sql`SELECT version()`);
+      if (versionResult.rows[0]) {
+        const fullVersion = (versionResult.rows[0] as any).version as string;
+        const match = fullVersion.match(/PostgreSQL ([\d.]+)/);
+        if (match) {
+          databaseVersion = match[1];
+        }
+      }
+
+      // Get database size
+      const dbName = process.env.POSTGRES_DB || 'pressograph';
+      const sizeResult = await db.execute(
+        sql`SELECT pg_database_size(${dbName}) as size`
+      );
+      if (sizeResult.rows[0]) {
+        databaseSizeBytes = Number((sizeResult.rows[0] as any).size) || 0;
+      }
+
+      // Get tables and indexes sizes
+      const tablesResult = await db.execute(sql`
+        SELECT
+          pg_size_pretty(sum(pg_total_relation_size(schemaname||'.'||tablename))::bigint) as total,
+          sum(pg_total_relation_size(schemaname||'.'||tablename))::bigint as total_bytes,
+          sum(pg_relation_size(schemaname||'.'||tablename))::bigint as tables_bytes,
+          sum(pg_indexes_size(schemaname||'.'||tablename))::bigint as indexes_bytes
+        FROM pg_tables
+        WHERE schemaname = 'public'
+      `);
+      if (tablesResult.rows[0]) {
+        const row = tablesResult.rows[0] as any;
+        tablesSize = Number(row.tables_bytes) || 0;
+        indexesSize = Number(row.indexes_bytes) || 0;
+      }
+
+      // Get schema version from migrations
+      try {
+        const migrationResult = await db.execute(sql`
+          SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+          AND table_name = '__drizzle_migrations'
+        `);
+        if (migrationResult.rows.length > 0) {
+          const latestMigration = await db.execute(sql`
+            SELECT created_at
+            FROM __drizzle_migrations
+            ORDER BY created_at DESC
+            LIMIT 1
+          `);
+          if (latestMigration.rows[0]) {
+            const migrationDate = new Date((latestMigration.rows[0] as any).created_at);
+            schemaVersion = migrationDate.toISOString().split('T')[0];
+          }
+        }
+      } catch {
+        // Migration table doesn't exist yet
+        schemaVersion = 'initial';
+      }
+    } catch (error) {
+      console.error('[System Metrics] Database query error:', error);
+    }
+
+    // Component versions
+    const nodeVersion = process.version;
+    const nextVersion = require('next/package.json').version;
+    const reactVersion = require('react/package.json').version;
+
+    // System information
+    const platform = process.platform;
+    const architecture = process.arch;
+    const uptimeSeconds = process.uptime();
+
+    // Business metrics
+    const [usersCount, projectsCount, testsCount] = await Promise.all([
+      db.select({ count: count() }).from(users),
+      db.select({ count: count() }).from(projects),
+      db.select({ count: count() }).from(pressureTests),
+    ]);
+
+    // Active sessions (users logged in last 24 hours)
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    const activeSessionsResult = await db
+      .select({ count: count() })
+      .from(users)
+      .where(gte(users.lastLoginAt, oneDayAgo));
+
+    return {
+      database: {
+        healthy: true,
+        version: databaseVersion,
+        sizeBytes: databaseSizeBytes,
+        tablesSize,
+        indexesSize,
+        schemaVersion,
+      },
+      components: {
+        node: nodeVersion,
+        nextjs: nextVersion,
+        react: reactVersion,
+      },
+      system: {
+        platform,
+        architecture,
+        environment: process.env.NODE_ENV || 'development',
+        uptimeSeconds,
+      },
+      metrics: {
+        users: usersCount[0]?.count ?? 0,
+        projects: projectsCount[0]?.count ?? 0,
+        tests: testsCount[0]?.count ?? 0,
+        activeSessions: activeSessionsResult[0]?.count ?? 0,
+      },
+      timestamp: new Date(),
+    };
+  } catch (error) {
+    console.error('[System Metrics] Error:', error);
+    return {
+      database: {
+        healthy: false,
+        version: 'error',
+        sizeBytes: 0,
+        tablesSize: 0,
+        indexesSize: 0,
+        schemaVersion: 'error',
+      },
+      components: {
+        node: process.version,
+        nextjs: 'unknown',
+        react: 'unknown',
+      },
+      system: {
+        platform: process.platform,
+        architecture: process.arch,
+        environment: process.env.NODE_ENV || 'development',
+        uptimeSeconds: process.uptime(),
+      },
+      metrics: {
+        users: 0,
+        projects: 0,
+        tests: 0,
+        activeSessions: 0,
+      },
+      timestamp: new Date(),
+      error: 'Failed to fetch system metrics',
+    };
+  }
+}

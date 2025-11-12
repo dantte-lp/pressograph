@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
 
   typedRoutes: true,
 
+  // Standalone output for production containerization
+  // Creates minimal Node.js server with only required dependencies
+  output: 'standalone',
+
   // Transpile ESM modules for Next.js compatibility
   // Required for ECharts 6 tree-shaking optimization
   transpilePackages: ["echarts", "zrender"],

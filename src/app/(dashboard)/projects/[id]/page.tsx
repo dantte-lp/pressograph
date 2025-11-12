@@ -39,7 +39,6 @@ export default async function ProjectDetailPage({
   const searchParamsResolved = await searchParams;
 
   const t = await getTranslations('projects');
-  const tCommon = await getTranslations('common');
 
   const project = await getProjectById(id);
 

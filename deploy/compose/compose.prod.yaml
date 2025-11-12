@@ -1,0 +1,405 @@
+name: pressograph-prod
+
+# ═══════════════════════════════════════════════════════════════════
+# Pressograph 2.0 - Production Compose Configuration
+# ═══════════════════════════════════════════════════════════════════
+# Compose Spec 2025 - Podman Compose compatible
+# No version field required per Compose Specification
+#
+# Domain: pressograph.infra4.dev
+# Traefik: Automatic SSL via Cloudflare Origin CA
+# Environment: .env.prod (in /opt/projects/repositories/pressograph/deploy/)
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # -----------------------------------------------------------------------
+  # PostgreSQL Database
+  # -----------------------------------------------------------------------
+  db:
+    container_name: pressograph-prod-db
+    image: docker.io/library/postgres:18-trixie
+    hostname: pressograph-prod-db
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pressograph}
+      POSTGRES_USER: ${POSTGRES_USER:-pressograph}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+    expose:
+      - "5432"
+
+    # NO public port mapping for security - only accessible from internal network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pressograph} -d ${POSTGRES_DB:-pressograph}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - pressograph-prod-backend
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+
+    labels:
+      io.podman.compose.project: pressograph-prod
+      com.pressograph.service: database
+      com.pressograph.environment: production
+
+    shm_size: 256mb
+
+  # -----------------------------------------------------------------------
+  # Valkey Cache (Redis-compatible)
+  # -----------------------------------------------------------------------
+  cache:
+    container_name: pressograph-prod-cache
+    image: docker.io/valkey/valkey:9-trixie
+    hostname: pressograph-prod-cache
+
+    volumes:
+      - cache_data:/data
+      - ./redis/valkey.conf:/etc/valkey/valkey.conf:ro
+
+    command: valkey-server /etc/valkey/valkey.conf
+
+    expose:
+      - "6379"
+
+    # NO public port mapping for security
+
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+    networks:
+      - pressograph-prod-backend
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    cap_add:
+      - SETGID
+      - SETUID
+
+    labels:
+      io.podman.compose.project: pressograph-prod
+      com.pressograph.service: cache
+      com.pressograph.environment: production
+
+  # -----------------------------------------------------------------------
+  # Pressograph Application
+  # -----------------------------------------------------------------------
+  app:
+    container_name: pressograph-prod-app
+
+    build:
+      context: /opt/projects/repositories/pressograph
+      dockerfile: deploy/containerfiles/Containerfile.prod
+      args:
+        NODE_ENV: production
+
+    image: pressograph:2.0.0-prod
+    hostname: pressograph-prod-app
+
+    environment:
+      # Core application
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: 1
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
+
+      # Public URL
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://pressograph.infra4.dev}
+
+      # Database connection
+      DATABASE_URL: ${DATABASE_URL}
+
+      # Redis/Valkey cache
+      REDIS_URL: ${REDIS_URL:-redis://cache:6379}
+
+      # Authentication
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://pressograph.infra4.dev}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_SESSION_MAX_AGE: ${NEXTAUTH_SESSION_MAX_AGE:-2592000}
+
+      # Application secrets
+      APP_SECRET: ${APP_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Feature flags
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-true}
+      ENABLE_EMAIL_VERIFICATION: ${ENABLE_EMAIL_VERIFICATION:-false}
+
+      # Rate limiting
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-900000}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-5}
+      AUTH_RATE_LIMIT_WINDOW: ${AUTH_RATE_LIMIT_WINDOW:-300000}
+
+      # Security
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://pressograph.infra4.dev}
+      CSP_ENABLED: ${CSP_ENABLED:-true}
+      FORCE_HTTPS: ${FORCE_HTTPS:-true}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      # Observability (optional)
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-pressograph-prod}
+
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+
+    networks:
+      - pressograph-prod-backend
+      - traefik-public
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    security_opt:
+      - no-new-privileges:true
+
+    labels:
+      # Podman Compose metadata
+      io.podman.compose.project: pressograph-prod
+      com.pressograph.service: application
+      com.pressograph.environment: production
+
+      # Traefik configuration
+      traefik.enable: "true"
+      traefik.docker.network: traefik-public
+
+      # HTTP Router (redirect to HTTPS)
+      traefik.http.routers.pressograph-prod-http.rule: Host(`pressograph.infra4.dev`)
+      traefik.http.routers.pressograph-prod-http.entrypoints: http
+      traefik.http.routers.pressograph-prod-http.middlewares: pressograph-prod-redirect
+      traefik.http.routers.pressograph-prod-http.service: pressograph-prod
+
+      # HTTPS Router (Certificate from Cloudflare Origin CA)
+      traefik.http.routers.pressograph-prod.rule: Host(`pressograph.infra4.dev`)
+      traefik.http.routers.pressograph-prod.entrypoints: https
+      traefik.http.routers.pressograph-prod.tls: "true"
+      traefik.http.routers.pressograph-prod.middlewares: web-standard@file
+      traefik.http.routers.pressograph-prod.service: pressograph-prod
+
+      # Service (port 3000)
+      traefik.http.services.pressograph-prod.loadbalancer.server.port: "3000"
+
+      # Health check for load balancer
+      traefik.http.services.pressograph-prod.loadbalancer.healthcheck.path: /api/health
+      traefik.http.services.pressograph-prod.loadbalancer.healthcheck.interval: 30s
+      traefik.http.services.pressograph-prod.loadbalancer.healthcheck.timeout: 10s
+
+      # Middleware: HTTPS redirect
+      traefik.http.middlewares.pressograph-prod-redirect.redirectscheme.scheme: https
+      traefik.http.middlewares.pressograph-prod-redirect.redirectscheme.permanent: "true"
+
+  # -----------------------------------------------------------------------
+  # PostgreSQL Exporter - Metrics for Monitoring
+  # -----------------------------------------------------------------------
+  postgres-exporter:
+    container_name: pressograph-prod-postgres-exporter
+    image: docker.io/prometheuscommunity/postgres-exporter:latest
+    hostname: postgres-exporter
+
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-pressograph}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pressograph}?sslmode=disable
+      PG_EXPORTER_DISABLE_DEFAULT_METRICS: "false"
+
+    expose:
+      - "9187"
+
+    networks:
+      - pressograph-prod-backend
+
+    restart: unless-stopped
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://0.0.0.0:9187/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+          cpus: '0.2'
+        reservations:
+          memory: 50M
+          cpus: '0.1'
+
+    security_opt:
+      - no-new-privileges:true
+
+    labels:
+      io.podman.compose.project: pressograph-prod
+      com.pressograph.service: postgres-exporter
+      com.pressograph.environment: production
+
+  # -----------------------------------------------------------------------
+  # Redis/Valkey Exporter - Metrics for Monitoring
+  # -----------------------------------------------------------------------
+  redis-exporter:
+    container_name: pressograph-prod-redis-exporter
+    image: docker.io/oliver006/redis_exporter:latest
+    hostname: redis-exporter
+
+    environment:
+      REDIS_ADDR: redis://cache:6379
+      REDIS_EXPORTER_INCLUDE_GO_RUNTIME_METRICS: "true"
+
+    expose:
+      - "9121"
+
+    networks:
+      - pressograph-prod-backend
+
+    restart: unless-stopped
+
+    depends_on:
+      cache:
+        condition: service_healthy
+
+    deploy:
+      resources:
+        limits:
+          memory: 50M
+          cpus: '0.1'
+        reservations:
+          memory: 25M
+          cpus: '0.05'
+
+    security_opt:
+      - no-new-privileges:true
+
+    labels:
+      io.podman.compose.project: pressograph-prod
+      com.pressograph.service: redis-exporter
+      com.pressograph.environment: production
+
+# ═══════════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════════
+volumes:
+  postgres_data:
+    name: pressograph-prod-postgres-data
+    driver: local
+
+  cache_data:
+    name: pressograph-prod-cache-data
+    driver: local
+
+# ═══════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════
+networks:
+  # Internal backend network - isolated from external access
+  pressograph-prod-backend:
+    name: pressograph-prod-backend
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.90.0.0/24
+          gateway: 10.90.0.1
+
+  # External Traefik network - shared across all projects
+  traefik-public:
+    external: true
+    name: traefik-public
+
+# ═══════════════════════════════════════════════════════════════════
+# Deployment Instructions
+# ═══════════════════════════════════════════════════════════════════
+#
+# 1. Navigate to deploy directory:
+#    cd /opt/projects/repositories/pressograph/deploy/compose
+#
+# 2. Build production image:
+#    podman-compose -f compose.prod.yaml build
+#
+# 3. Start services:
+#    podman-compose -f compose.prod.yaml --env-file ../.env.prod up -d
+#
+# 4. Run database migrations:
+#    podman exec pressograph-prod-app pnpm db:push
+#
+# 5. View logs:
+#    podman-compose -f compose.prod.yaml logs -f app
+#
+# 6. Check service health:
+#    podman ps --filter "name=pressograph-prod"
+#    curl -I https://pressograph.infra4.dev
+#
+# 7. Stop services:
+#    podman-compose -f compose.prod.yaml down
+#
+# ═══════════════════════════════════════════════════════════════════

@@ -1,0 +1,163 @@
+# syntax=docker/dockerfile:1.4
+# =============================================================================
+# Pressograph 2.0 - Production Containerfile
+# =============================================================================
+# Multi-stage build for optimized production deployment
+# Built with Next.js 16.0.1 + Turbopack + Drizzle ORM
+#
+# Architecture:
+#   - Stage 1 (deps): Install all dependencies
+#   - Stage 2 (builder): Build Next.js application with standalone output
+#   - Stage 3 (runner): Minimal production runtime
+#
+# Base Image: node:lts-trixie (Debian-based, no Alpine)
+# Package Manager: pnpm 10.x
+# Runtime User: nextjs:1001 (non-root)
+# Signal Handling: tini
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Dependencies
+# -----------------------------------------------------------------------------
+FROM node:lts-trixie AS deps
+
+LABEL maintainer="Pressograph Team"
+LABEL description="Pressograph Production - Dependencies Stage"
+LABEL org.pressograph.stage="deps"
+
+WORKDIR /app
+
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install ALL dependencies (including devDependencies needed for build)
+# Use frozen-lockfile to ensure reproducible builds
+RUN pnpm install --frozen-lockfile
+
+# -----------------------------------------------------------------------------
+# Stage 2: Builder
+# -----------------------------------------------------------------------------
+FROM node:lts-trixie AS builder
+
+LABEL maintainer="Pressograph Team"
+LABEL description="Pressograph Production - Build Stage"
+LABEL org.pressograph.stage="builder"
+
+WORKDIR /app
+
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
+COPY . .
+
+# Set build-time environment variables
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production
+
+# Provide DUMMY environment variables for build time
+# Next.js 16 collects page data during build and requires these vars to exist
+# Real values will be provided at runtime via .env.prod
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build" \
+    REDIS_URL="redis://localhost:6379" \
+    NEXTAUTH_SECRET="build-time-dummy-secret-min-32-chars-long" \
+    APP_SECRET="build-time-dummy-secret-min-32-chars-long" \
+    JWT_SECRET="build-time-dummy-secret-min-32-chars-long" \
+    NEXTAUTH_URL="http://localhost:3000" \
+    NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Build Next.js application with standalone output
+# Standalone mode creates a minimal Node.js server with only required dependencies
+RUN pnpm build
+
+# -----------------------------------------------------------------------------
+# Stage 3: Production Runner
+# -----------------------------------------------------------------------------
+FROM node:lts-trixie AS runner
+
+LABEL maintainer="Pressograph Team"
+LABEL description="Pressograph 2.0 - Production Application"
+LABEL org.pressograph.version="2.0.0"
+LABEL org.pressograph.environment="production"
+LABEL org.pressograph.stage="runner"
+
+WORKDIR /app
+
+# Install runtime dependencies:
+# - curl: for health checks
+# - ca-certificates: for HTTPS/SSL
+# - tini: for proper signal handling and zombie process reaping
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        tini \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable pnpm via corepack (needed for drizzle-kit)
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Create non-root user for security
+# nextjs:1001 matches common Next.js conventions
+RUN groupadd -r nextjs --gid=1001 && \
+    useradd -r -g nextjs --uid=1001 --home-dir=/app --no-create-home nextjs
+
+# Set production environment variables
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME="0.0.0.0"
+
+# Copy built application from builder stage
+# Next.js standalone output includes:
+# - .next/standalone: Minimal server with dependencies
+# - .next/static: Static assets
+# - public: Public files
+COPY --from=builder --chown=nextjs:nextjs /app/public ./public
+COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
+
+# Copy package files for drizzle-kit installation
+COPY --from=builder --chown=nextjs:nextjs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nextjs /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Copy Drizzle ORM configuration and database schemas
+# Required for running migrations in production
+COPY --from=builder --chown=nextjs:nextjs /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder --chown=nextjs:nextjs /app/src/lib/db ./src/lib/db
+
+# Install ONLY production dependencies + drizzle-kit
+# drizzle-kit is needed for database migrations (pnpm db:push)
+# Using --prod excludes devDependencies, then explicitly add drizzle-kit
+RUN pnpm install --prod --frozen-lockfile && \
+    pnpm add -D drizzle-kit && \
+    # Clean pnpm cache to reduce image size
+    pnpm store prune
+
+# Switch to non-root user for security
+USER nextjs
+
+# Expose application port
+EXPOSE 3000
+
+# Health check endpoint
+# Checks /api/health every 30 seconds
+# Allows 40 seconds for app startup
+# Fails after 3 consecutive failures
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Use tini as PID 1 to properly handle signals (SIGTERM, SIGINT)
+# This ensures graceful shutdown and prevents zombie processes
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Start Next.js standalone server
+# The standalone build includes server.js at the root
+CMD ["node", "server.js"]
