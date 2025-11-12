@@ -79,6 +79,8 @@
   "tests": {
     "title": "Pressure Tests",
     "allTests": "Manage all pressure tests across all projects",
+    "project": "Project",
+    "sortBy": "Sort By",
     "createTest": "Create Test",
     "createNewTest": "Create New Test",
     "createDescription": "Create a new pressure test configuration",
@@ -878,9 +880,11 @@
     "markdownHint": "**bold**, *italic*, [link](url), `code`"
   },
   "filters": {
+    "filters": "Filters",
     "clearFilters": "Clear Filters",
     "filterByProject": "Filter by Project",
     "filterByStatus": "Filter by Status",
+    "activeFilters": "{count} active filter(s)",
     "dateFrom": "Date From",
     "dateTo": "Date To"
   },
