@@ -9,6 +9,7 @@ import {
   ArchiveIcon,
   CalendarIcon,
   UserIcon,
+  SettingsIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { getProjectById } from '@/lib/actions/projects';
@@ -107,13 +108,12 @@ export default async function ProjectDetailPage({
               {t('createTest')}
             </Link>
           </Button>
-          {/* TODO: Project settings page not implemented yet */}
-          {/* <Button variant="outline" asChild>
+          <Button variant="outline" asChild>
             <Link href={`/projects/${project.id}/settings` as any}>
               <SettingsIcon className="mr-2 h-4 w-4" />
-              {tCommon('settings')}
+              {t('settings')}
             </Link>
-          </Button> */}
+          </Button>
         </div>
       </div>
 
