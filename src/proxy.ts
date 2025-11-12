@@ -20,7 +20,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { defaultLocale, type Locale } from './i18n';
+import { defaultLocale, type Locale } from './i18n/config';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
