@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **[Admin] Advanced System Resource Monitoring** (2025-11-12)
+  - **Feature**: Real-time CPU, memory, disk, and database connection monitoring
+  - **Implementation**:
+    * Enhanced `getSystemMetrics()` server action with comprehensive resource monitoring:
+      - CPU usage tracking (user + system time percentage)
+      - Memory usage with heap statistics (used/total/percentage)
+      - Disk usage monitoring (configurable via DISK_TOTAL_BYTES env var)
+      - Active database connections with max connections limit
+      - Connection pool utilization percentage
+    * Added visual progress bars for all resource metrics with color coding:
+      - Green: < 60% usage (healthy)
+      - Yellow: 60-80% usage (warning)
+      - Red: > 80% usage (critical)
+    * Real-time metrics update from Node.js process statistics
+  - **UI Enhancements**:
+    * New "System Resources" card with 4 monitoring sections
+    * Horizontal progress bars with percentage indicators
+    * Formatted display showing used/total values
+    * Responsive color-coded warnings based on thresholds
+  - **Database Metrics**:
+    * Active database connections query via pg_stat_activity
+    * Max connections from pg_settings
+    * Connection pool percentage calculation
+    * Database size tracking
+  - **Files Modified**:
+    * `src/lib/actions/admin.ts` - Enhanced getSystemMetrics() (150+ lines added)
+    * `src/app/(dashboard)/admin/system/page.tsx` - Added resource monitoring UI
+  - **Benefit**: Provides real-time visibility into system performance and resource utilization for proactive monitoring
+  - **Technical Details**:
+    * Uses Node.js process.cpuUsage() for CPU metrics
+    * Uses Node.js process.memoryUsage() for memory tracking
+    * PostgreSQL queries for database connection metrics
+    * Environment variable support for custom disk limits
+
 - **[Share Links] Complete Public Sharing Functionality**
   - **Feature**: Full-featured public sharing system for pressure tests without authentication
   - **Backend Implementation**:

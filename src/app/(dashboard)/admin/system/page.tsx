@@ -215,6 +215,111 @@ export default async function AdminSystemPage() {
         </CardContent>
       </Card>
 
+      {/* System Resource Usage */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ActivityIcon className="h-5 w-5" />
+            <CardTitle>System Resources</CardTitle>
+          </div>
+          <CardDescription>
+            Real-time resource utilization metrics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* CPU Usage */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">CPU Usage</span>
+                <span className="text-sm font-mono">{metrics.system.cpu.percent.toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    metrics.system.cpu.percent > 80
+                      ? 'bg-destructive'
+                      : metrics.system.cpu.percent > 60
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
+                  style={{ width: `${Math.min(metrics.system.cpu.percent, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Memory Usage */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Memory Usage</span>
+                <span className="text-sm font-mono">
+                  {formatBytes(metrics.system.memory.usedBytes)} / {formatBytes(metrics.system.memory.totalBytes)}
+                  {' '}({metrics.system.memory.percent.toFixed(1)}%)
+                </span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    metrics.system.memory.percent > 80
+                      ? 'bg-destructive'
+                      : metrics.system.memory.percent > 60
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
+                  style={{ width: `${Math.min(metrics.system.memory.percent, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Disk Usage */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Disk Usage</span>
+                <span className="text-sm font-mono">
+                  {formatBytes(metrics.system.disk.usedBytes)} / {formatBytes(metrics.system.disk.totalBytes)}
+                  {' '}({metrics.system.disk.percent.toFixed(1)}%)
+                </span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    metrics.system.disk.percent > 80
+                      ? 'bg-destructive'
+                      : metrics.system.disk.percent > 60
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
+                  style={{ width: `${Math.min(metrics.system.disk.percent, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Database Connections */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Database Connections</span>
+                <span className="text-sm font-mono">
+                  {metrics.database.activeConnections} / {metrics.database.maxConnections}
+                  {' '}({metrics.database.connectionPercent.toFixed(1)}%)
+                </span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    metrics.database.connectionPercent > 80
+                      ? 'bg-destructive'
+                      : metrics.database.connectionPercent > 60
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
+                  style={{ width: `${Math.min(metrics.database.connectionPercent, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Component Versions */}
       <Card>
         <CardHeader>

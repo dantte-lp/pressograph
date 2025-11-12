@@ -712,6 +712,8 @@ export async function getSystemMetrics() {
     let tablesSize = 0;
     let indexesSize = 0;
     let schemaVersion = 'unknown';
+    let activeConnections = 0;
+    let maxConnections = 0;
 
     try {
       // Get PostgreSQL version
@@ -749,6 +751,20 @@ export async function getSystemMetrics() {
         indexesSize = Number(row.indexes_bytes) || 0;
       }
 
+      // Get active database connections
+      const connectionsResult = await db.execute(sql`
+        SELECT
+          count(*) FILTER (WHERE state = 'active') as active,
+          (SELECT setting::int FROM pg_settings WHERE name = 'max_connections') as max
+        FROM pg_stat_activity
+        WHERE datname = ${dbName}
+      `);
+      if (connectionsResult.rows[0]) {
+        const row = connectionsResult.rows[0] as any;
+        activeConnections = Number(row.active) || 0;
+        maxConnections = Number(row.max) || 100;
+      }
+
       // Get schema version from migrations
       try {
         const migrationResult = await db.execute(sql`
@@ -782,10 +798,25 @@ export async function getSystemMetrics() {
     const nextVersion = require('next/package.json').version;
     const reactVersion = require('react/package.json').version;
 
-    // System information
+    // System information with resource usage
     const platform = process.platform;
     const architecture = process.arch;
     const uptimeSeconds = process.uptime();
+
+    // Memory usage
+    const memoryUsage = process.memoryUsage();
+    const totalMemory = memoryUsage.heapTotal;
+    const usedMemory = memoryUsage.heapUsed;
+    const memoryPercent = (usedMemory / totalMemory) * 100;
+
+    // CPU usage (approximate based on process time)
+    const cpuUsage = process.cpuUsage();
+    const cpuPercent = ((cpuUsage.user + cpuUsage.system) / (uptimeSeconds * 1000000)) * 100;
+
+    // Disk usage - Using environment variable or database size as proxy
+    const diskUsageBytes = databaseSizeBytes; // In containerized environment
+    const diskTotalBytes = parseInt(process.env.DISK_TOTAL_BYTES || '107374182400', 10); // Default 100GB
+    const diskPercent = (diskUsageBytes / diskTotalBytes) * 100;
 
     // Business metrics
     const [usersCount, projectsCount, testsCount] = await Promise.all([
@@ -810,6 +841,9 @@ export async function getSystemMetrics() {
         tablesSize,
         indexesSize,
         schemaVersion,
+        activeConnections,
+        maxConnections,
+        connectionPercent: maxConnections > 0 ? (activeConnections / maxConnections) * 100 : 0,
       },
       components: {
         node: nodeVersion,
@@ -821,6 +855,21 @@ export async function getSystemMetrics() {
         architecture,
         environment: process.env.NODE_ENV || 'development',
         uptimeSeconds,
+        memory: {
+          usedBytes: usedMemory,
+          totalBytes: totalMemory,
+          percent: memoryPercent,
+        },
+        cpu: {
+          percent: Math.min(cpuPercent, 100), // Cap at 100%
+          user: cpuUsage.user,
+          system: cpuUsage.system,
+        },
+        disk: {
+          usedBytes: diskUsageBytes,
+          totalBytes: diskTotalBytes,
+          percent: diskPercent,
+        },
       },
       metrics: {
         users: usersCount[0]?.count ?? 0,
@@ -840,6 +889,9 @@ export async function getSystemMetrics() {
         tablesSize: 0,
         indexesSize: 0,
         schemaVersion: 'error',
+        activeConnections: 0,
+        maxConnections: 0,
+        connectionPercent: 0,
       },
       components: {
         node: process.version,
@@ -851,6 +903,21 @@ export async function getSystemMetrics() {
         architecture: process.arch,
         environment: process.env.NODE_ENV || 'development',
         uptimeSeconds: process.uptime(),
+        memory: {
+          usedBytes: 0,
+          totalBytes: 0,
+          percent: 0,
+        },
+        cpu: {
+          percent: 0,
+          user: 0,
+          system: 0,
+        },
+        disk: {
+          usedBytes: 0,
+          totalBytes: 0,
+          percent: 0,
+        },
       },
       metrics: {
         users: 0,
