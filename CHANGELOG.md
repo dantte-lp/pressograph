@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **[i18n] Fixed Missing Translation Keys in Tests Filter Bar**
+  - **Issue**: 24 console errors with MISSING_MESSAGE for `searchTests`, `filters`, `sortBy`, `project`, and `activeFilters` keys on /tests?page=1
+  - **Root Cause**: TestsFilterBar component uses flat translation keys but several were missing from locale files
+  - **Solution**: Added all missing translation keys to both English and Russian locale files
+  - **Translation Keys Added**:
+    * `filters.filters` - "Filters" / "Фильтры"
+    * `filters.activeFilters` - "{count} active filter(s)" / "Активных фильтров: {count}"
+    * `tests.sortBy` - "Sort By" / "Сортировка"
+    * `tests.project` - "Project" / "Проект"
+  - **Files Modified**:
+    * `messages/en.json` - Added 4 missing keys to tests and filters namespaces
+    * `messages/ru.json` - Added 4 corresponding Russian translations
+  - **Impact**: Fixed all 24 MISSING_MESSAGE console errors on tests listing page
+  - **Commit**: 5b6d9cd1 - fix(i18n): add missing translation keys for tests filter bar
+
 ### Added
 
 - **[i18n] Complete Translation Support for Test Creation Form**
