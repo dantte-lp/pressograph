@@ -7,6 +7,134 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **[Share Links] Complete Public Sharing Functionality**
+  - **Feature**: Full-featured public sharing system for pressure tests without authentication
+  - **Backend Implementation**:
+    * Created `src/lib/actions/share-links.ts` with server actions:
+      - `createShareLink()` - Generate unique secure tokens for test sharing
+      - `getShareLinkByToken()` - Public retrieval with view counting
+      - `getTestShareLinks()` - List all links for a specific test
+      - `getUserShareLinks()` - List all user's share links across tests
+      - `updateShareLink()` - Modify link settings (title, description, permissions)
+      - `deleteShareLink()` - Remove share links
+      - `toggleShareLinkStatus()` - Activate/deactivate links
+    * Secure token generation using crypto.randomBytes (64-char hex)
+    * Configurable expiration dates (1, 7, 30, 90 days, or never)
+    * Download permission control per link
+    * View count tracking with last viewed timestamp
+    * Auto-increment view counter on each access
+    * Authorization checks ensuring only test owners can create/manage links
+  - **Frontend Components**:
+    * `CreateShareLinkDialog` - Modal for creating new share links
+      - Configure expiration duration
+      - Set optional title and description
+      - Toggle download permissions
+      - Copy generated link to clipboard
+      - Open link in new tab
+    * `ShareLinksList` - Component for managing existing links
+      - Display all share links with metadata
+      - Show view count, expiration status, creation date
+      - Copy link to clipboard functionality
+      - Toggle active/inactive status
+      - Delete links with confirmation dialog
+      - Open links in new tab
+      - Badge indicators for active/inactive/expired states
+  - **Public Share Page** (`/share/[token]`):
+    * Token-based authentication (no login required)
+    * Display test configuration with all parameters
+    * Show working pressure, max pressure, test duration, temperature
+    * Display intermediate stages if configured
+    * Project and creator information
+    * Creation date and test status
+    * View count and expiration date display
+    * Conditional download button based on permissions
+    * Link expiration handling with user-friendly messages
+    * Clean public-facing UI without authentication
+    * Responsive gradient background design
+  - **Database Schema**:
+    * `share_links` table already existed in schema
+    * Fields: id, pressureTestId, createdBy, token, expiresAt, allowDownload, isActive, viewCount, lastViewedAt, title, description, createdAt, updatedAt
+    * Foreign keys with cascade delete for data integrity
+  - **Security Features**:
+    * Unique 64-character hex tokens prevent guessing
+    * Expiration date enforcement
+    * Active/inactive status toggle for link control
+    * Owner-only management (create, update, delete)
+    * View analytics without exposing sensitive data
+  - **User Experience**:
+    * One-click copy to clipboard with visual feedback
+    * Success/error toast notifications
+    * Loading states during async operations
+    * Empty states with helpful guidance
+    * Optimistic UI updates
+  - **URL Format**:
+    * Share links: `${NEXT_PUBLIC_APP_URL}/share/${token}`
+    * QR code generation support (planned)
+  - **Files Created**:
+    * `src/lib/actions/share-links.ts` - Share link server actions (462 lines)
+    * `src/app/share/[token]/page.tsx` - Public share page (305 lines)
+    * `src/components/share-links/create-share-link-dialog.tsx` - Create dialog (232 lines)
+    * `src/components/share-links/share-links-list.tsx` - Management component (353 lines)
+    * `src/components/share-links/index.ts` - Component exports
+  - **Related**: Completes share links functionality from sprint plan
+  - **Commits**:
+    * 9dd1709f - feat(share-links): implement server actions for share links management
+    * 184e4472 - feat(share): create public share page for pressure tests
+    * f96bfaab - feat(share-links): create UI components for managing share links
+
+- **[Admin] Enhanced System Monitoring Dashboard**
+  - **Feature**: Comprehensive system health and performance monitoring page at `/admin/system`
+  - **Implementation**:
+    * Enhanced existing page to use `getSystemMetrics()` instead of basic `getSystemHealth()`
+    * Display database health with PostgreSQL version
+    * Show database size, tables size, indexes size (formatted in KB/MB/GB)
+    * Display schema version from Drizzle migrations
+    * Show component versions (Node.js, Next.js, React)
+    * System uptime display with formatted duration (days, hours, minutes)
+    * Business metrics: total users, projects, tests
+    * Active sessions count (users logged in last 24 hours)
+    * Platform, architecture, environment information
+    * Error handling with error banner display
+  - **UI Enhancements**:
+    * 4-card grid layout for key metrics (Database, Users, Projects, Tests)
+    * Detailed database information card with 6 data points
+    * Component versions card with 3-column grid
+    * System information card with platform details
+    * Color-coded status badges (green for healthy, red for errors)
+    * Icons from lucide-react for visual hierarchy
+    * Responsive design with proper spacing
+  - **Helper Functions**:
+    * `formatBytes()` - Convert bytes to human-readable format (Bytes, KB, MB, GB, TB)
+    * `formatUptime()` - Format seconds to "Xd Yh Zm" display
+  - **Data Sources**:
+    * Database: PostgreSQL version, size, schema version via SQL queries
+    * System: Node.js version, platform, architecture, uptime from process
+    * Components: Package.json versions for Next.js and React
+    * Metrics: Database counts for users, projects, tests, active sessions
+  - **Files Modified**:
+    * `src/app/(dashboard)/admin/system/page.tsx` - Enhanced monitoring page (231 insertions, 70 deletions)
+  - **Benefit**: Provides administrators with comprehensive system visibility for monitoring and troubleshooting
+  - **Commit**: 80bf2e43 - feat(admin): enhance system monitoring page with comprehensive metrics
+
+### Changed
+
+- **[Proxy] Next.js 16 Middleware Migration**
+  - **Context**: Removed conflicting middleware.ts to fix 404 routing issues
+  - **Root Cause**: Duplicate middleware files (root middleware.ts and src/proxy.ts) causing routing conflicts
+  - **Solution**: Removed root `middleware.ts` and updated `src/proxy.ts` import path
+  - **Changes**:
+    * Deleted `middleware.ts` from project root
+    * Updated `src/proxy.ts` to import from correct config path: `./i18n/config` instead of `./i18n`
+    * Aligned with Next.js 16 proxy migration strategy documented in `docs/development/NEXT16_PROXY_MIGRATION.md`
+  - **Impact**: Fixes 404 errors and routing conflicts that occurred after middleware changes
+  - **Files Modified**:
+    * Deleted: `middleware.ts`
+    * Modified: `src/proxy.ts` - Fixed import path
+  - **Related Documentation**: `docs/development/NEXT16_PROXY_MIGRATION.md`
+  - **Commit**: dbc44eb1 - refactor(proxy): remove conflicting middleware.ts and update proxy.ts
+
 ### Fixed
 
 - **[i18n] Fixed Missing Translation Keys in Tests Filter Bar**
