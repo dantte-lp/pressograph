@@ -133,6 +133,13 @@ COPY --from=builder --chown=nextjs:nextjs /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder --chown=nextjs:nextjs /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder --chown=nextjs:nextjs /app/src/lib/db ./src/lib/db
 
+# Copy Drizzle migrations (required for drizzle-kit migrate)
+COPY --from=builder --chown=nextjs:nextjs /app/drizzle ./drizzle
+
+# Copy setup utilities required by proxy.ts middleware
+# proxy.ts uses dynamic import('@/lib/db/setup') which needs these files at runtime
+COPY --from=builder --chown=nextjs:nextjs /app/src/lib/setup ./src/lib/setup
+
 # Install ONLY production dependencies + drizzle-kit
 # drizzle-kit is needed for database migrations (pnpm db:push)
 # Using --prod excludes devDependencies, then explicitly add drizzle-kit

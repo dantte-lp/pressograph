@@ -61,10 +61,6 @@ if (!process.env.NEXTAUTH_SECRET) {
 }
 
 export const authOptions: NextAuthOptions = {
-  // Trust host header for NextAuth (fixes CLIENT_FETCH_ERROR in some environments)
-  // This is safe when NEXTAUTH_URL is properly configured
-  trustHost: true,
-
   // NOTE: Adapter is commented out because we're using JWT strategy
   // When using JWT strategy, database adapter is not needed for sessions
   // Uncomment if switching to database sessions (set strategy: 'database' below)

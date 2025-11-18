@@ -11,6 +11,7 @@
  * - Server Actions (auth checks in actions)
  *
  * Handles:
+ * - Setup flow redirection
  * - Internationalization (next-intl)
  * - Theme injection for SSR
  * - Request logging
@@ -22,13 +23,73 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { defaultLocale, type Locale } from './i18n/config';
 
+/**
+ * Routes that should be accessible even during setup
+ */
+const setupAllowedRoutes = [
+  "/setup",
+  "/api/setup/status",
+  "/api/setup/init",
+  "/offline",
+  "/_next",
+  "/favicon.ico",
+  "/manifest.json",
+  "/sw.js",
+  "/workbox-",
+];
+
+/**
+ * Check if route is allowed during setup
+ */
+function isSetupAllowedRoute(pathname: string): boolean {
+  return setupAllowedRoutes.some((route) => {
+    if (pathname === route) return true;
+    if (pathname.startsWith(route)) return true;
+    return false;
+  });
+}
+
+/**
+ * Check if setup is required by directly checking the database
+ * This avoids infinite loops by not calling the API from middleware
+ */
+async function checkSetupStatus(): Promise<boolean> {
+  try {
+    // Import setup check directly to avoid circular dependency
+    const { isSetupRequired } = await import("@/lib/db/setup");
+    return await isSetupRequired();
+  } catch (error) {
+    console.error("[Proxy] Setup status check error:", error);
+    return false; // Assume setup complete on error
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // 1. Setup Flow Handling
+  // Allow setup routes always
+  if (isSetupAllowedRoute(pathname)) {
+    // Continue to i18n and theme handling
+  } else {
+    // Check if setup required (direct database check to avoid loops)
+    const setupRequired = await checkSetupStatus();
+
+    // Redirect to setup if needed
+    if (setupRequired && pathname !== "/setup") {
+      return NextResponse.redirect(new URL("/setup", request.url));
+    }
+
+    // Redirect to signin if setup complete but accessing setup
+    if (!setupRequired && pathname === "/setup") {
+      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    }
+  }
 
   // Create response
   let response = NextResponse.next();
 
-  // 1. Internationalization (i18n)
+  // 2. Internationalization (i18n)
   // Get locale from cookie or use default
   const localeCookie = request.cookies.get('locale');
   const locale = (localeCookie?.value as Locale) || defaultLocale;
@@ -45,11 +106,11 @@ export async function proxy(request: NextRequest) {
   // Set locale header for next-intl
   response.headers.set('x-next-intl-locale', locale);
 
-  // 2. Theme Injection for SSR
+  // 3. Theme Injection for SSR
   const theme = request.cookies.get('theme')?.value || 'system';
   response.headers.set('x-theme', theme);
 
-  // 3. Request logging (development only)
+  // 4. Request logging (development only)
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Proxy] ${request.method} ${pathname} [locale: ${locale}]`);
   }

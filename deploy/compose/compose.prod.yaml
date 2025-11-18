@@ -145,7 +145,7 @@ services:
       args:
         NODE_ENV: production
 
-    image: pressograph:2.0.0-prod
+    image: localhost/pressograph:latest
     hostname: pressograph-prod-app
 
     environment:

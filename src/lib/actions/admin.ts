@@ -16,6 +16,7 @@ import { organizations } from '@/lib/db/schema/organizations';
 import { projects } from '@/lib/db/schema/projects';
 import { pressureTests } from '@/lib/db/schema/pressure-tests';
 import { fileUploads } from '@/lib/db/schema/file-uploads';
+import { packageVersions } from '@/lib/db/schema/package-versions';
 import { requireAdmin } from '@/lib/auth/server-auth';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
@@ -773,15 +774,15 @@ export async function getSystemMetrics() {
           WHERE table_schema = 'public'
           AND table_name = '__drizzle_migrations'
         `);
-        if (migrationResult.rows.length > 0) {
+        if (Array.isArray(migrationResult) && migrationResult.length > 0) {
           const latestMigration = await db.execute(sql`
             SELECT created_at
             FROM __drizzle_migrations
             ORDER BY created_at DESC
             LIMIT 1
           `);
-          if (latestMigration.rows[0]) {
-            const migrationDate = new Date((latestMigration.rows[0] as any).created_at);
+          if (Array.isArray(latestMigration) && latestMigration[0]) {
+            const migrationDate = new Date((latestMigration[0] as any).created_at);
             schemaVersion = migrationDate.toISOString().split('T')[0];
           }
         }
@@ -928,5 +929,433 @@ export async function getSystemMetrics() {
       timestamp: new Date(),
       error: 'Failed to fetch system metrics',
     };
+  }
+}
+
+/**
+ * Package Management Types and Actions
+ */
+
+export interface PackageInfo {
+  name: string;
+  currentVersion: string;
+  latestVersion: string;
+  currentReleaseDate: string | null;
+  latestReleaseDate: string | null;
+  isUpToDate: boolean;
+  type: 'dependency' | 'devDependency';
+  homepage?: string;
+  description?: string;
+}
+
+export interface PackageUpdateSummary {
+  total: number;
+  upToDate: number;
+  outdated: number;
+  packages: PackageInfo[];
+  lastChecked: Date;
+}
+
+interface NpmPackageMetadata {
+  name: string;
+  'dist-tags': {
+    latest: string;
+    [key: string]: string;
+  };
+  time: {
+    [version: string]: string;
+  };
+  description?: string;
+  homepage?: string;
+}
+
+/**
+ * Fetch package metadata from npm registry
+ */
+async function fetchPackageMetadata(packageName: string): Promise<NpmPackageMetadata | null> {
+  try {
+    const response = await fetch(`https://registry.npmjs.org/${packageName}`, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      next: { revalidate: 3600 }, // Cache for 1 hour
+    });
+
+    if (!response.ok) {
+      console.warn(`[fetchPackageMetadata] Failed to fetch ${packageName}: ${response.status}`);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`[fetchPackageMetadata] Error fetching ${packageName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get all package versions and update information
+ */
+export async function getPackageVersions(): Promise<PackageUpdateSummary> {
+  await requireAdmin();
+
+  try {
+    // Read package.json from project root
+    const path = await import('path');
+    const fs = await import('fs/promises');
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent);
+
+    const dependencies = packageJson.dependencies || {};
+    const devDependencies = packageJson.devDependencies || {};
+
+    // Combine all packages
+    const allPackages: Array<{ name: string; version: string; type: 'dependency' | 'devDependency' }> = [
+      ...Object.entries(dependencies).map(([name, version]) => ({
+        name,
+        version: version as string,
+        type: 'dependency' as const,
+      })),
+      ...Object.entries(devDependencies).map(([name, version]) => ({
+        name,
+        version: version as string,
+        type: 'devDependency' as const,
+      })),
+    ];
+
+    // Fetch metadata for all packages in parallel (with concurrency limit)
+    const chunkSize = 10; // Process 10 packages at a time
+    const packages: PackageInfo[] = [];
+
+    for (let i = 0; i < allPackages.length; i += chunkSize) {
+      const chunk = allPackages.slice(i, i + chunkSize);
+      const chunkResults = await Promise.all(
+        chunk.map(async (pkg) => {
+          const metadata = await fetchPackageMetadata(pkg.name);
+
+          if (!metadata) {
+            return {
+              name: pkg.name,
+              currentVersion: pkg.version.replace(/[\^~]/, ''),
+              latestVersion: pkg.version.replace(/[\^~]/, ''),
+              currentReleaseDate: null,
+              latestReleaseDate: null,
+              isUpToDate: true,
+              type: pkg.type,
+            };
+          }
+
+          const currentVersion = pkg.version.replace(/[\^~]/, '');
+          const latestVersion = metadata['dist-tags']?.latest || currentVersion;
+
+          const currentReleaseDate = metadata.time?.[currentVersion] || null;
+          const latestReleaseDate = metadata.time?.[latestVersion] || null;
+
+          return {
+            name: pkg.name,
+            currentVersion,
+            latestVersion,
+            currentReleaseDate,
+            latestReleaseDate,
+            isUpToDate: currentVersion === latestVersion,
+            type: pkg.type,
+            homepage: metadata.homepage,
+            description: metadata.description,
+          };
+        })
+      );
+
+      packages.push(...chunkResults);
+    }
+
+    // Sort: outdated first, then by name
+    packages.sort((a, b) => {
+      if (a.isUpToDate !== b.isUpToDate) {
+        return a.isUpToDate ? 1 : -1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    const outdated = packages.filter((p) => !p.isUpToDate).length;
+    const upToDate = packages.filter((p) => p.isUpToDate).length;
+
+    return {
+      total: packages.length,
+      upToDate,
+      outdated,
+      packages,
+      lastChecked: new Date(),
+    };
+  } catch (error) {
+    console.error('[getPackageVersions] Error:', error);
+    throw new Error('Failed to fetch package versions');
+  }
+}
+
+/**
+ * Check if there are any package updates available (lightweight check)
+ */
+export async function checkForUpdates(): Promise<{ hasUpdates: boolean; outdatedCount: number }> {
+  await requireAdmin();
+
+  try {
+    const summary = await getPackageVersions();
+    return {
+      hasUpdates: summary.outdated > 0,
+      outdatedCount: summary.outdated,
+    };
+  } catch (error) {
+    console.error('[checkForUpdates] Error:', error);
+    return {
+      hasUpdates: false,
+      outdatedCount: 0,
+    };
+  }
+}
+
+/**
+ * Database-backed Package Version Management
+ * ==========================================
+ *
+ * These functions implement a caching layer for npm package metadata:
+ * - syncPackageVersions(): Fetches fresh data from npm (slow, runs in background)
+ * - getPackageVersionsFromDB(): Reads cached data from database (fast, instant)
+ */
+
+export interface SyncResult {
+  success: boolean;
+  packagesProcessed: number;
+  packagesUpdated: number;
+  packagesCreated: number;
+  errors: number;
+  duration: number;
+  timestamp: Date;
+  error?: string;
+}
+
+/**
+ * Sync package versions from npm registry to database
+ *
+ * This function fetches fresh metadata from npm for all packages
+ * and stores/updates them in the database. It's designed to run
+ * in the background and can take time (30-60 seconds).
+ *
+ * Use cases:
+ * - Manual sync via admin UI
+ * - Scheduled cron job
+ * - Initial database population
+ */
+export async function syncPackageVersions(): Promise<SyncResult> {
+  await requireAdmin();
+
+  const startTime = Date.now();
+  let packagesProcessed = 0;
+  let packagesUpdated = 0;
+  let packagesCreated = 0;
+  let errors = 0;
+
+  try {
+    console.log('[syncPackageVersions] Starting package sync from npm registry...');
+
+    // Read package.json
+    const path = await import('path');
+    const fs = await import('fs/promises');
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent);
+
+    const dependencies = packageJson.dependencies || {};
+    const devDependencies = packageJson.devDependencies || {};
+
+    // Combine all packages
+    const allPackages: Array<{ name: string; version: string; type: 'dependency' | 'devDependency' }> = [
+      ...Object.entries(dependencies).map(([name, version]) => ({
+        name,
+        version: version as string,
+        type: 'dependency' as const,
+      })),
+      ...Object.entries(devDependencies).map(([name, version]) => ({
+        name,
+        version: version as string,
+        type: 'devDependency' as const,
+      })),
+    ];
+
+    console.log(`[syncPackageVersions] Found ${allPackages.length} packages to sync`);
+
+    // Process packages in chunks to avoid overwhelming the npm registry
+    const chunkSize = 5; // Reduced from 10 for more reliability
+    const syncTimestamp = new Date();
+
+    for (let i = 0; i < allPackages.length; i += chunkSize) {
+      const chunk = allPackages.slice(i, i + chunkSize);
+      console.log(`[syncPackageVersions] Processing chunk ${Math.floor(i / chunkSize) + 1}/${Math.ceil(allPackages.length / chunkSize)}...`);
+
+      await Promise.all(
+        chunk.map(async (pkg) => {
+          try {
+            const metadata = await fetchPackageMetadata(pkg.name);
+            packagesProcessed++;
+
+            if (!metadata) {
+              console.warn(`[syncPackageVersions] No metadata for ${pkg.name}, skipping`);
+              errors++;
+              return;
+            }
+
+            const currentVersion = pkg.version.replace(/[\^~]/, '');
+            const latestVersion = metadata['dist-tags']?.latest || currentVersion;
+            const currentReleaseDate = metadata.time?.[currentVersion]
+              ? new Date(metadata.time[currentVersion])
+              : null;
+            const latestReleaseDate = metadata.time?.[latestVersion]
+              ? new Date(metadata.time[latestVersion])
+              : null;
+
+            // Check if package already exists in database
+            const existingPackage = await db
+              .select()
+              .from(packageVersions)
+              .where(eq(packageVersions.name, pkg.name))
+              .limit(1);
+
+            if (existingPackage.length > 0) {
+              // Update existing package
+              await db
+                .update(packageVersions)
+                .set({
+                  type: pkg.type,
+                  currentVersion,
+                  latestVersion,
+                  currentReleaseDate,
+                  latestReleaseDate,
+                  isUpToDate: currentVersion === latestVersion,
+                  description: metadata.description || null,
+                  homepage: metadata.homepage || null,
+                  lastChecked: syncTimestamp,
+                  updatedAt: new Date(),
+                })
+                .where(eq(packageVersions.name, pkg.name));
+              packagesUpdated++;
+            } else {
+              // Insert new package
+              await db.insert(packageVersions).values({
+                name: pkg.name,
+                type: pkg.type,
+                currentVersion,
+                latestVersion,
+                currentReleaseDate,
+                latestReleaseDate,
+                isUpToDate: currentVersion === latestVersion,
+                description: metadata.description || null,
+                homepage: metadata.homepage || null,
+                lastChecked: syncTimestamp,
+              });
+              packagesCreated++;
+            }
+          } catch (error) {
+            console.error(`[syncPackageVersions] Error processing ${pkg.name}:`, error);
+            errors++;
+          }
+        })
+      );
+
+      // Small delay between chunks to be nice to npm registry
+      if (i + chunkSize < allPackages.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[syncPackageVersions] Sync completed in ${duration}ms: ${packagesCreated} created, ${packagesUpdated} updated, ${errors} errors`);
+
+    // Revalidate the components page
+    revalidatePath('/admin/system/components');
+
+    return {
+      success: true,
+      packagesProcessed,
+      packagesUpdated,
+      packagesCreated,
+      errors,
+      duration,
+      timestamp: syncTimestamp,
+    };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[syncPackageVersions] Fatal error during sync:', error);
+    return {
+      success: false,
+      packagesProcessed,
+      packagesUpdated,
+      packagesCreated,
+      errors: errors + 1,
+      duration,
+      timestamp: new Date(),
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Get package versions from database (fast, cached)
+ *
+ * This function reads package version data from the database
+ * instead of fetching from npm. It's instant and won't timeout.
+ *
+ * Returns cached data with the last sync timestamp.
+ */
+export async function getPackageVersionsFromDB(): Promise<PackageUpdateSummary | null> {
+  await requireAdmin();
+
+  try {
+    // Fetch all packages from database
+    const packages = await db
+      .select()
+      .from(packageVersions)
+      .orderBy(
+        sql`CASE WHEN ${packageVersions.isUpToDate} THEN 1 ELSE 0 END`,
+        packageVersions.name
+      );
+
+    if (packages.length === 0) {
+      console.log('[getPackageVersionsFromDB] No packages in database, needs initial sync');
+      return null;
+    }
+
+    // Get the most recent sync time
+    const mostRecentSync = packages.reduce((latest, pkg) => {
+      return pkg.lastChecked > latest ? pkg.lastChecked : latest;
+    }, packages[0].lastChecked);
+
+    // Transform to PackageInfo format
+    const packageInfos: PackageInfo[] = packages.map(pkg => ({
+      name: pkg.name,
+      currentVersion: pkg.currentVersion,
+      latestVersion: pkg.latestVersion,
+      currentReleaseDate: pkg.currentReleaseDate?.toISOString() || null,
+      latestReleaseDate: pkg.latestReleaseDate?.toISOString() || null,
+      isUpToDate: pkg.isUpToDate,
+      type: pkg.type as 'dependency' | 'devDependency',
+      homepage: pkg.homepage || undefined,
+      description: pkg.description || undefined,
+    }));
+
+    const outdated = packageInfos.filter(p => !p.isUpToDate).length;
+    const upToDate = packageInfos.filter(p => p.isUpToDate).length;
+
+    console.log(`[getPackageVersionsFromDB] Loaded ${packages.length} packages from DB (last sync: ${mostRecentSync.toISOString()})`);
+
+    return {
+      total: packageInfos.length,
+      upToDate,
+      outdated,
+      packages: packageInfos,
+      lastChecked: mostRecentSync,
+    };
+  } catch (error) {
+    console.error('[getPackageVersionsFromDB] Error reading from database:', error);
+    throw new Error('Failed to read package versions from database');
   }
 }

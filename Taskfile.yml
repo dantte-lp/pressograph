@@ -1,261 +1,656 @@
+# ===================================================================
+# Taskfile for Pressograph 2.0 - Pressure Test Visualization Platform
+# Modern DevOps Workflow - 2025
+# ===================================================================
+# Tool: https://taskfile.dev
+# Install: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+#
+# Quick Start:
+#   task                    # Show all available tasks
+#   task dev                # Start development server
+#   task prod:deploy        # Build and deploy production
+#   task clean              # Clean all artifacts
+# ===================================================================
+
 version: '3'
 
+# ===================================================================
+# Variables
+# ===================================================================
 vars:
-  COMPOSE_FILE: deploy/compose/compose.dev.yaml
-  CONTAINER: pressograph-dev-workspace
+  PROJECT_NAME: pressograph
+  IMAGE_NAME: localhost/{{.PROJECT_NAME}}
+  VERSION:
+    sh: cat package.json | grep '"version"' | head -1 | awk -F '"' '{print $4}'
+  BUILD_DATE:
+    sh: date -u +'%Y-%m-%dT%H:%M:%SZ'
+  GIT_COMMIT:
+    sh: git rev-parse --short HEAD 2>/dev/null || echo "dev"
 
+  # File paths
+  COMPOSE_DEV: deploy/compose/compose.dev.yaml
+  COMPOSE_PROD: deploy/compose/compose.prod.yaml
+  CONTAINERFILE_PROD: deploy/containerfiles/Containerfile.prod
+
+  # Container names
+  CONTAINER_DEV: pressograph-dev-workspace
+  CONTAINER_PROD_APP: pressograph-prod-app
+  CONTAINER_PROD_DB: pressograph-prod-db
+  CONTAINER_PROD_CACHE: pressograph-prod-cache
+
+# ===================================================================
+# Environment Variables
+# ===================================================================
+env:
+  BUILD_DATE: '{{.BUILD_DATE}}'
+  GIT_COMMIT: '{{.GIT_COMMIT}}'
+  VERSION: '{{.VERSION}}'
+
+# ===================================================================
+# Task Configuration
+# ===================================================================
+silent: false
+set: [errexit, pipefail]
+
+# ===================================================================
+# Default Task
+# ===================================================================
 tasks:
-  # Environment and secrets management
+  default:
+    desc: "Show all available tasks"
+    summary: |
+      Pressograph 2.0 - Available Commands
+
+      Development:
+        dev:setup       - Setup development environment
+        dev:start       - Start development containers
+        dev:enter       - Enter development container
+        dev:logs        - View development logs
+        dev:stop        - Stop development containers
+
+      Testing & Quality:
+        test            - Run all tests
+        type-check      - Run TypeScript type checking
+        lint            - Run ESLint
+        format          - Format code with Prettier
+
+      Database:
+        db:push         - Push database schema
+        db:studio       - Open Drizzle Studio
+        db:seed         - Seed database
+
+      Production Build:
+        prod:build      - Build production image with buildah
+        prod:build-nc   - Build without cache
+        prod:images     - Show container images
+
+      Production Deploy:
+        prod:deploy     - Deploy production stack
+        prod:restart    - Restart production services
+        prod:down       - Stop production stack
+        prod:logs       - View production logs
+        prod:health     - Check production health
+        prod:shell      - Shell into production app container
+
+      Maintenance:
+        clean           - Clean build artifacts
+        clean:all       - Deep clean including volumes
+        prune           - Prune unused Podman resources
+
+      Use 'task <command>' to run a task.
+      Use 'task --list-all' to see all tasks.
+    cmds:
+      - task --list
+
+  # ===================================================================
+  # Development Environment Tasks
+  # ===================================================================
+
+  dev:setup:
+    desc: "Setup development environment"
+    summary: |
+      Initializes the complete development environment:
+        1. Creates necessary directories
+        2. Generates environment files
+        3. Builds development containers
+        4. Starts all services
+    cmds:
+      - echo "Setting up development environment..."
+      - chmod +x deploy/scripts/*.sh
+      - ./deploy/scripts/dev-setup.sh
+
+  dev:start:
+    desc: "Start development containers"
+    cmds:
+      - echo "Starting development containers..."
+      - podman-compose -f {{.COMPOSE_DEV}} up -d --force-recreate
+      - echo "[OK] Development environment started!"
+      - 'echo "Access at: https://dev-pressograph.infra4.dev"'
+
+  dev:stop:
+    desc: "Stop development containers"
+    cmds:
+      - echo "Stopping development containers..."
+      - podman-compose -f {{.COMPOSE_DEV}} stop
+
+  dev:restart:
+    desc: "Restart development containers"
+    deps:
+      - task: dev:stop
+      - task: dev:start
+
+  dev:enter:
+    desc: "Enter development container"
+    summary: |
+      Opens an interactive shell in the development container.
+      Useful for debugging and running commands.
+    cmds:
+      - echo "Entering development container..."
+      - ./deploy/scripts/dev-enter.sh
+
+  dev:logs:
+    desc: "View development container logs"
+    cmds:
+      - echo "Showing development logs..."
+      - ./deploy/scripts/dev-logs.sh {{.CLI_ARGS}}
+
+  dev:destroy:
+    desc: "Destroy development environment"
+    summary: |
+      WARNING: This will remove all development containers and volumes!
+      Use with caution.
+    cmds:
+      - echo "Destroying development environment..."
+      - ./deploy/scripts/dev-destroy.sh
+
+  dev:rebuild:
+    desc: "Rebuild development environment"
+    deps:
+      - task: dev:destroy
+      - task: dev:setup
+
+  # ===================================================================
+  # Next.js Development Commands
+  # ===================================================================
+
+  dev:
+    desc: "Start Next.js dev server (inside dev container)"
+    cmds:
+      - podman exec -it {{.CONTAINER_DEV}} pnpm dev
+
+  build:
+    desc: "Build Next.js application (inside dev container)"
+    cmds:
+      - echo "Building Next.js application..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm build
+
+  start:
+    desc: "Start production Next.js server (inside dev container)"
+    cmds:
+      - podman exec -it {{.CONTAINER_DEV}} pnpm start
+
+  # ===================================================================
+  # Package Management
+  # ===================================================================
+
+  install:
+    desc: "Install dependencies"
+    cmds:
+      - echo "Installing dependencies..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm install
+
+  update:
+    desc: "Update dependencies"
+    cmds:
+      - echo "Updating dependencies..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm update
+
+  # ===================================================================
+  # Database Commands
+  # ===================================================================
+
+  db:push:
+    desc: "Push database schema"
+    cmds:
+      - echo "Pushing database schema..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm db:push
+
+  db:studio:
+    desc: "Open Drizzle Studio"
+    cmds:
+      - echo "Opening Drizzle Studio..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm db:studio
+
+  db:migrate:
+    desc: "Generate migrations"
+    cmds:
+      - echo "Generating migrations..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm db:generate
+
+  db:seed:
+    desc: "Seed database"
+    cmds:
+      - echo "Seeding database..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm db:seed
+
+  db:health:
+    desc: "Check database health"
+    cmds:
+      - podman exec -it {{.CONTAINER_DEV}} pnpm db:health
+
+  # Production database commands
+  db:prod:migrate:
+    desc: "Run production database migrations"
+    cmds:
+      - echo "Running production migrations..."
+      - podman exec -it {{.CONTAINER_PROD_APP}} pnpm db:push
+
+  db:prod:seed:
+    desc: "Seed production database"
+    cmds:
+      - echo "Seeding production database..."
+      - podman exec -it {{.CONTAINER_PROD_APP}} pnpm db:seed
+
+  # ===================================================================
+  # Code Quality Tasks
+  # ===================================================================
+
+  test:
+    desc: "Run tests"
+    cmds:
+      - echo "Running tests..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm test
+
+  test:watch:
+    desc: "Run tests in watch mode"
+    cmds:
+      - podman exec -it {{.CONTAINER_DEV}} pnpm test:watch
+
+  test:ui:
+    desc: "Run tests with UI"
+    cmds:
+      - podman exec -it {{.CONTAINER_DEV}} pnpm test:ui
+
+  type-check:
+    desc: "Run TypeScript type checking"
+    cmds:
+      - echo "Running TypeScript type checking..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm type-check
+
+  lint:
+    desc: "Run ESLint"
+    cmds:
+      - echo "Running ESLint..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm lint
+
+  format:
+    desc: "Format code with Prettier"
+    cmds:
+      - echo "Formatting code..."
+      - podman exec -it {{.CONTAINER_DEV}} pnpm format
+
+  format:check:
+    desc: "Check code formatting"
+    cmds:
+      - podman exec -it {{.CONTAINER_DEV}} pnpm format:check
+
+  check:all:
+    desc: "Run all checks (test, type-check, format:check)"
+    summary: |
+      Runs all quality checks:
+        - Tests
+        - TypeScript type checking
+        - Code formatting validation
+
+      Use this before committing code.
+    deps:
+      - task: test
+      - task: type-check
+      - task: format:check
+    cmds:
+      - echo "[OK] All checks completed successfully!"
+
+  # ===================================================================
+  # Production Build Tasks
+  # ===================================================================
+
+  prod:build:
+    desc: "Build production container with buildah"
+    summary: |
+      Builds the production container using Next.js standalone mode.
+
+      Build arguments:
+        VERSION={{.VERSION}}
+        BUILD_DATE={{.BUILD_DATE}}
+        GIT_COMMIT={{.GIT_COMMIT}}
+
+      Image tags:
+        - {{.IMAGE_NAME}}:latest
+        - {{.IMAGE_NAME}}:{{.VERSION}}
+        - {{.IMAGE_NAME}}:{{.GIT_COMMIT}}
+    cmds:
+      - echo "Building production container..."
+      - echo "Version={{.VERSION}} | Build Date={{.BUILD_DATE}} | Git Commit={{.GIT_COMMIT}}"
+      - |
+        buildah bud \
+          --format=docker \
+          --file={{.CONTAINERFILE_PROD}} \
+          --tag={{.IMAGE_NAME}}:latest \
+          --tag={{.IMAGE_NAME}}:{{.VERSION}} \
+          --tag={{.IMAGE_NAME}}:{{.GIT_COMMIT}} \
+          --build-arg VERSION="{{.VERSION}}" \
+          --build-arg BUILD_DATE="{{.BUILD_DATE}}" \
+          --build-arg GIT_COMMIT="{{.GIT_COMMIT}}" \
+          --layers \
+          /opt/projects/repositories/pressograph
+      - echo "[OK] Build complete!"
+      - podman images {{.IMAGE_NAME}}
+
+  prod:build-nc:
+    desc: "Build production without cache"
+    summary: |
+      Builds production container from scratch without using cache.
+      Use when you need to ensure a completely fresh build.
+    cmds:
+      - echo "Building production container (no cache)..."
+      - |
+        buildah bud \
+          --format=docker \
+          --file={{.CONTAINERFILE_PROD}} \
+          --tag={{.IMAGE_NAME}}:latest \
+          --tag={{.IMAGE_NAME}}:{{.VERSION}} \
+          --tag={{.IMAGE_NAME}}:{{.GIT_COMMIT}} \
+          --build-arg VERSION="{{.VERSION}}" \
+          --build-arg BUILD_DATE="{{.BUILD_DATE}}" \
+          --build-arg GIT_COMMIT="{{.GIT_COMMIT}}" \
+          --no-cache \
+          /opt/projects/repositories/pressograph
+      - echo "[OK] Build complete!"
+
+  prod:images:
+    desc: "Show container images"
+    cmds:
+      - 'echo "Project images:"'
+      - podman images | grep -E "{{.PROJECT_NAME}}|REPOSITORY" || echo "No images found"
+
+  # ===================================================================
+  # Production Deployment Tasks
+  # ===================================================================
+
+  prod:deploy:
+    desc: "Deploy production stack"
+    summary: |
+      Starts the production stack with:
+        - PostgreSQL database
+        - Valkey cache
+        - Pressograph application
+        - Prometheus exporters
+
+      Access points:
+        - https://pressograph.infra4.dev
+    cmds:
+      - echo "Deploying production stack..."
+      - podman-compose -f {{.COMPOSE_PROD}} --env-file deploy/.env.prod up -d
+      - sleep 5
+      - echo "[OK] Production stack deployed!"
+      - echo ""
+      - echo "Services:"
+      - podman ps --filter "label=io.podman.compose.project=pressograph-prod" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+      - echo ""
+      - 'echo "Site available at: https://pressograph.infra4.dev"'
+
+  prod:deploy-build:
+    desc: "Build and deploy production"
+    summary: |
+      Complete production deployment:
+        1. Build production image
+        2. Deploy production stack
+        3. Run database migrations
+        4. Verify health
+
+      This is the primary deployment command.
+    deps:
+      - task: prod:build
+    cmds:
+      - task: prod:deploy
+      - sleep 10
+      - task: db:prod:migrate
+      - task: prod:health
+
+  prod:down:
+    desc: "Stop production stack"
+    cmds:
+      - echo "Stopping production stack..."
+      - podman-compose -f {{.COMPOSE_PROD}} down
+
+  prod:restart:
+    desc: "Restart production stack"
+    cmds:
+      - task: prod:down
+      - sleep 2
+      - task: prod:deploy
+
+  prod:logs:
+    desc: "View production logs"
+    summary: |
+      Shows production logs for all services.
+      Use Ctrl+C to exit.
+
+      Examples:
+        task prod:logs                    # All services
+        task prod:logs -- app             # Just app
+        task prod:logs -- app db cache    # Multiple services
+    cmds:
+      - echo "Showing production logs..."
+      - podman-compose -f {{.COMPOSE_PROD}} logs -f {{.CLI_ARGS}}
+
+  prod:logs:app:
+    desc: "View production app logs only"
+    cmds:
+      - podman logs -f {{.CONTAINER_PROD_APP}}
+
+  prod:health:
+    desc: "Check production health"
+    summary: |
+      Shows health status of all production containers.
+    cmds:
+      - echo "Checking production health..."
+      - echo ""
+      - echo "Container Status:"
+      - podman ps --filter "label=io.podman.compose.project=pressograph-prod" --format "table {{.Names}}\t{{.Status}}\t{{.Health}}"
+      - echo ""
+      - echo "Application Health Check:"
+      - curl -sf https://pressograph.infra4.dev/api/health | jq . || echo "Health check failed"
+
+  prod:shell:
+    desc: "Shell into production app container"
+    cmds:
+      - echo "Opening shell in production app container..."
+      - podman exec -it {{.CONTAINER_PROD_APP}} /bin/sh
+
+  prod:shell:db:
+    desc: "Shell into production database container"
+    cmds:
+      - echo "Opening PostgreSQL shell..."
+      - podman exec -it {{.CONTAINER_PROD_DB}} psql -U pressograph -d pressograph
+
+  prod:shell:cache:
+    desc: "Shell into production cache container"
+    cmds:
+      - echo "Opening Valkey shell..."
+      - podman exec -it {{.CONTAINER_PROD_CACHE}} valkey-cli
+
+  prod:stats:
+    desc: "Show production resource usage"
+    cmds:
+      - echo "Production resource usage:"
+      - podman stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" {{.CONTAINER_PROD_APP}} {{.CONTAINER_PROD_DB}} {{.CONTAINER_PROD_CACHE}}
+
+  # ===================================================================
+  # Observability Tasks
+  # ===================================================================
+
+  metrics:start:
+    desc: "Start VictoriaMetrics observability stack"
+    cmds:
+      - podman-compose -f deploy/compose/compose.victoria.yaml up -d
+      - echo "VictoriaMetrics stack started"
+      - echo "  Grafana - https://dev-grafana.infra4.dev"
+
+  metrics:stop:
+    desc: "Stop VictoriaMetrics observability stack"
+    cmds:
+      - podman-compose -f deploy/compose/compose.victoria.yaml down
+
+  uptrace:start:
+    desc: "Start Uptrace observability stack"
+    cmds:
+      - podman-compose -f deploy/compose/compose.uptrace.yaml up -d
+      - echo "Uptrace stack started"
+      - echo "  Uptrace UI - https://dev-uptrace.infra4.dev"
+
+  uptrace:stop:
+    desc: "Stop Uptrace observability stack"
+    cmds:
+      - podman-compose -f deploy/compose/compose.uptrace.yaml down
+
+  # ===================================================================
+  # Maintenance Tasks
+  # ===================================================================
+
+  clean:
+    desc: "Clean build artifacts and containers"
+    summary: |
+      Removes:
+        - Development containers and volumes
+        - .next build directory
+        - node_modules cache
+
+      Preserves: node_modules, pnpm-lock.yaml
+    cmds:
+      - echo "Cleaning up..."
+      - podman-compose -f {{.COMPOSE_DEV}} down -v 2>/dev/null || true
+      - rm -rf .next 2>/dev/null || true
+      - rm -rf node_modules/.cache 2>/dev/null || true
+      - echo "[OK] Cleanup complete!"
+
+  clean:all:
+    desc: "Deep clean including volumes and images"
+    summary: |
+      WARNING: This removes EVERYTHING including:
+        - All containers (dev and prod)
+        - All volumes (databases will be lost!)
+        - Container images
+        - Build artifacts
+        - node_modules
+
+      Use this for a complete fresh start.
+    prompt: "Are you sure you want to deep clean? This will delete databases! (y/n)"
+    cmds:
+      - echo "Performing deep clean..."
+      - podman-compose -f {{.COMPOSE_DEV}} down -v 2>/dev/null || true
+      - podman-compose -f {{.COMPOSE_PROD}} down -v 2>/dev/null || true
+      - podman rmi {{.IMAGE_NAME}}:latest 2>/dev/null || true
+      - podman volume rm pressograph-prod-postgres-data 2>/dev/null || true
+      - podman volume rm pressograph-prod-cache-data 2>/dev/null || true
+      - rm -rf .next node_modules 2>/dev/null || true
+      - echo "[OK] Deep clean complete!"
+
+  prune:
+    desc: "Prune unused Podman resources"
+    summary: |
+      Removes unused:
+        - Containers
+        - Images
+        - Volumes
+        - Networks
+
+      Frees up disk space.
+    cmds:
+      - echo "Pruning unused Podman resources..."
+      - podman system prune -f
+      - podman volume prune -f
+      - echo "[OK] Prune complete!"
+
+  # ===================================================================
+  # Information Tasks
+  # ===================================================================
+
+  info:
+    desc: "Show project information"
+    cmds:
+      - echo "======================================================="
+      - echo "  Pressograph 2.0 - Project Information"
+      - echo "======================================================="
+      - 'echo "Project Name:      {{.PROJECT_NAME}}"'
+      - 'echo "Version:           {{.VERSION}}"'
+      - 'echo "Image Name:        {{.IMAGE_NAME}}"'
+      - 'echo "Build Date:        {{.BUILD_DATE}}"'
+      - 'echo "Git Commit:        {{.GIT_COMMIT}}"'
+      - echo ""
+      - 'echo "Production URL:    https://pressograph.infra4.dev"'
+      - 'echo "Development URL:   https://dev-pressograph.infra4.dev"'
+      - echo ""
+      - 'echo "Technology Stack:"'
+      - echo "  - Next.js 16.0.3 (App Router)"
+      - echo "  - React 19.2.0"
+      - echo "  - TypeScript 5.9.3"
+      - echo "  - Tailwind CSS 4.1.17"
+      - echo "  - Drizzle ORM 0.44.7"
+      - echo "  - PostgreSQL 18"
+      - echo "  - Valkey 9 (Redis-compatible)"
+      - echo "  - Podman + Compose Spec 2025"
+      - echo ""
+      - echo "======================================================="
+
+  ps:
+    desc: "Show all containers (dev + prod)"
+    cmds:
+      - echo "Development containers:"
+      - podman ps --filter "label=com.pressograph.environment=development" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || echo "  None running"
+      - echo ""
+      - echo "Production containers:"
+      - podman ps --filter "label=com.pressograph.environment=production" --format "table {{.Names}}\t{{.Status}}\t{{.Health}}" || echo "  None running"
+
+  # ===================================================================
+  # Secrets Management Tasks
+  # ===================================================================
+
   secrets:generate:
-    desc: Generate secure secrets for .env.local
+    desc: "Generate development secrets"
     cmds:
       - chmod +x deploy/scripts/generate-secrets.sh
       - ./deploy/scripts/generate-secrets.sh
 
   secrets:generate:prod:
-    desc: Generate production secrets
+    desc: "Generate production secrets"
     cmds:
       - chmod +x deploy/scripts/generate-secrets.sh
       - ./deploy/scripts/generate-secrets.sh --env prod
 
-  secrets:rotate:
-    desc: Rotate all secrets (regenerate .env.local)
-    cmds:
-      - rm -f .env.local
-      - task: secrets:generate
+  # ===================================================================
+  # Quick Helper Tasks
+  # ===================================================================
 
-  env:template:
-    desc: Copy environment template
+  quickstart:
+    desc: "Show quick start guide"
     cmds:
-      - |
-        if [ ! -f .env.local ]; then
-          cp .env.dev.example .env.local
-          echo "Created .env.local from template"
-          echo "IMPORTANT: Run 'task secrets:generate' to generate secure secrets"
-        else
-          echo ".env.local already exists. Use 'task secrets:rotate' to regenerate."
-        fi
-
-  # Development environment management
-  dev:setup:
-    desc: Setup development environment
-    cmds:
-      - chmod +x deploy/scripts/*.sh
-      - ./deploy/scripts/dev-setup.sh
-
-  dev:start:
-    desc: Start development containers
-    cmds:
-      - podman-compose -f {{.COMPOSE_FILE}} up -d --force-recreate
-
-  dev:stop:
-    desc: Stop development containers
-    cmds:
-      - podman-compose -f {{.COMPOSE_FILE}} stop
-
-  dev:restart:
-    desc: Restart development containers
-    cmds:
-      - task: dev:stop
-      - task: dev:start
-
-  dev:enter:
-    desc: Enter development container
-    cmds:
-      - ./deploy/scripts/dev-enter.sh
-
-  dev:logs:
-    desc: View development container logs
-    cmds:
-      - ./deploy/scripts/dev-logs.sh {{.CLI_ARGS}}
-
-  dev:destroy:
-    desc: Destroy development environment
-    cmds:
-      - ./deploy/scripts/dev-destroy.sh
-
-  dev:rebuild:
-    desc: Rebuild development environment
-    cmds:
-      - task: dev:destroy
-      - task: dev:setup
-
-  # Container execution
-  exec:
-    desc: Execute command in dev container
-    cmds:
-      - podman exec -it {{.CONTAINER}} {{.CLI_ARGS}}
-
-  exec:root:
-    desc: Execute command as root in dev container
-    cmds:
-      - podman exec -it -u root {{.CONTAINER}} {{.CLI_ARGS}}
-
-  # Next.js commands
-  dev:next:
-    desc: Start Next.js dev server
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm dev
-
-  build:
-    desc: Build Next.js application
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm build
-
-  start:
-    desc: Start production Next.js server
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm start
-
-  # Package management
-  install:
-    desc: Install dependencies
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm install
-
-  update:
-    desc: Update dependencies
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm update
-
-  # Database commands
-  db:push:
-    desc: Push database schema
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm db:push
-
-  db:studio:
-    desc: Open Drizzle Studio
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm db:studio
-
-  db:migrate:
-    desc: Generate migrations
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm db:generate
-
-  db:seed:
-    desc: Seed database
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm db:seed
-
-  # Code quality
-  lint:
-    desc: Run ESLint
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm lint
-
-  lint:fix:
-    desc: Fix ESLint errors
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm lint:fix
-
-  format:
-    desc: Format code with Prettier
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm format
-
-  type-check:
-    desc: Run TypeScript type checking
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm type-check
-
-  # Testing
-  test:
-    desc: Run tests
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm test
-
-  test:watch:
-    desc: Run tests in watch mode
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm test:watch
-
-  test:coverage:
-    desc: Generate test coverage
-    cmds:
-      - podman exec -it {{.CONTAINER}} pnpm test:coverage
-
-  # Observability (OpenTelemetry + VictoriaMetrics)
-  metrics:start:
-    desc: Start VictoriaMetrics observability stack
-    cmds:
-      - podman-compose -f deploy/compose/compose.victoria.yaml up -d
-      - echo "VictoriaMetrics stack started"
-      - echo "  Grafana - https://dev-grafana.infra4.dev (admin/admin)"
-      - echo "  VictoriaMetrics - https://dev-vm.infra4.dev"
-      - echo "  VictoriaLogs - https://dev-vl.infra4.dev"
-      - echo "  VictoriaTraces - https://dev-vt.infra4.dev"
-
-  metrics:stop:
-    desc: Stop VictoriaMetrics observability stack
-    cmds:
-      - podman-compose -f deploy/compose/compose.victoria.yaml down
-
-  metrics:restart:
-    desc: Restart VictoriaMetrics observability stack
-    cmds:
-      - task: metrics:stop
-      - task: metrics:start
-
-  metrics:logs:
-    desc: View VictoriaMetrics stack logs
-    cmds:
-      - podman-compose -f deploy/compose/compose.victoria.yaml logs -f {{.CLI_ARGS}}
-
-  metrics:status:
-    desc: Show VictoriaMetrics stack status
-    cmds:
-      - podman-compose -f deploy/compose/compose.victoria.yaml ps
-
-  grafana:open:
-    desc: Open Grafana in browser
-    cmds:
-      - open https://dev-grafana.infra4.dev || xdg-open https://dev-grafana.infra4.dev || echo "Open https://dev-grafana.infra4.dev manually"
-
-  # Uptrace (OpenTelemetry APM)
-  uptrace:start:
-    desc: Start Uptrace observability stack
-    cmds:
-      - podman-compose -f deploy/compose/compose.uptrace.yaml up -d
-      - echo "Uptrace stack started"
-      - echo "  Uptrace UI - https://dev-uptrace.infra4.dev"
-      - echo "  OTLP gRPC  - localhost:14317"
-      - echo "  OTLP HTTP  - localhost:14318"
-
-  uptrace:stop:
-    desc: Stop Uptrace observability stack
-    cmds:
-      - podman-compose -f deploy/compose/compose.uptrace.yaml down
-
-  uptrace:restart:
-    desc: Restart Uptrace observability stack
-    cmds:
-      - task: uptrace:stop
-      - task: uptrace:start
-
-  uptrace:logs:
-    desc: View Uptrace stack logs
-    cmds:
-      - podman-compose -f deploy/compose/compose.uptrace.yaml logs -f {{.CLI_ARGS}}
-
-  uptrace:status:
-    desc: Show Uptrace stack status
-    cmds:
-      - podman-compose -f deploy/compose/compose.uptrace.yaml ps
-
-  uptrace:open:
-    desc: Open Uptrace in browser
-    cmds:
-      - open https://dev-uptrace.infra4.dev || xdg-open https://dev-uptrace.infra4.dev || echo "Open https://dev-uptrace.infra4.dev manually"
-
-  # Container status
-  ps:
-    desc: Show container status
-    cmds:
-      - podman-compose -f {{.COMPOSE_FILE}} ps
-
-  stats:
-    desc: Show container resource usage
-    cmds:
-      - podman stats pressograph-dev-workspace pressograph-dev-db pressograph-dev-cache
+      - echo "Quick Start Guide:"
+      - echo ""
+      - echo "Development:"
+      - echo "  task dev:setup        # Setup dev environment"
+      - echo "  task dev:start        # Start dev containers"
+      - echo "  task dev:enter        # Enter dev container"
+      - echo "  task dev              # Start Next.js dev server"
+      - echo ""
+      - echo "Production:"
+      - echo "  task prod:build       # Build production image"
+      - echo "  task prod:deploy      # Deploy production"
+      - echo "  task prod:logs        # View logs"
+      - echo "  task prod:health      # Check health"
+      - echo ""
+      - echo "Testing:"
+      - echo "  task check:all        # Run all checks"
+      - echo "  task test             # Run tests"
+      - echo ""
+      - 'echo "For full help: task --list"'

@@ -1,9 +1,6 @@
 /* TailwindCSS v4 Import */
 @import "tailwindcss";
 
-/* Animations (replaces tailwindcss-animate) */
-@import "tw-animate-css";
-
 /* Light Theme Variables - Industrial Design */
 :root {
   /* Base colors */

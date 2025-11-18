@@ -20,6 +20,7 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { LocaleSwitcher, type Locale } from '@/components/locale-switcher';
 import { UserMenu } from '@/components/layout/user-menu';
 import { MobileMenuToggle } from '@/components/layout/dashboard-header-client';
+import { UpdateNotificationBadge } from '@/components/admin/update-notification-badge';
 
 interface DashboardHeaderClientProps {
   /**
@@ -69,6 +70,9 @@ export function DashboardHeaderClient({
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
+          {/* Update Notification Badge - Only visible to admins */}
+          <UpdateNotificationBadge />
+
           {/* Language Switcher - Pass locale from server */}
           <LocaleSwitcher currentLocale={locale} size="sm" />
 

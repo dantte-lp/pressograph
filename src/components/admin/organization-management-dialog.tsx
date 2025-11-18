@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useTranslation } from '@/hooks/use-translation';
+import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -85,7 +85,7 @@ export function OrganizationManagementDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationFormSchema),

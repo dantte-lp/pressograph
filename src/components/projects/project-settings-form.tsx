@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { updateProjectSettings } from '@/lib/actions/projects';
+import { updateProject } from '@/lib/actions/projects';
 import type { Project } from '@/lib/db/schema/projects';
 import { useTranslation } from '@/hooks/use-translation';
 import { SaveIcon, LoaderIcon } from 'lucide-react';
@@ -74,7 +74,7 @@ export function ProjectSettingsForm({ project }: ProjectSettingsFormProps) {
     setIsSubmitting(true);
 
     try {
-      const { error } = await updateProjectSettings(project.id, {
+      const { error } = await updateProject(project.id, {
         name: values.name,
         description: values.description,
         settings: {

@@ -7,9 +7,10 @@
  */
 
 import { requireAdmin } from '@/lib/auth/server-auth';
-import { getSystemMetrics } from '@/lib/actions/admin';
+import { getSystemMetrics, checkForUpdates } from '@/lib/actions/admin';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   ActivityIcon,
   CheckCircle2Icon,
@@ -21,8 +22,10 @@ import {
   FolderIcon,
   FlaskConicalIcon,
   ClockIcon,
+  AlertTriangleIcon,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'System Monitoring | Admin | Pressograph',
@@ -54,7 +57,10 @@ function formatUptime(seconds: number): string {
 export default async function AdminSystemPage() {
   await requireAdmin();
 
-  const metrics = await getSystemMetrics();
+  const [metrics, updateStatus] = await Promise.all([
+    getSystemMetrics(),
+    checkForUpdates(),
+  ]);
   const hasError = 'error' in metrics;
 
   return (
@@ -82,6 +88,31 @@ export default async function AdminSystemPage() {
             </CardTitle>
             <CardDescription>
               {metrics.error || 'Failed to fetch system metrics'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      {/* Update Notification Banner */}
+      {updateStatus.hasUpdates && (
+        <Card className="border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangleIcon className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+                <CardTitle className="text-amber-900 dark:text-amber-100">
+                  Package Updates Available
+                </CardTitle>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={"/admin/system/components" as any} prefetch={false}>
+                  View Details
+                </Link>
+              </Button>
+            </div>
+            <CardDescription className="text-amber-700 dark:text-amber-300">
+              {updateStatus.outdatedCount} package{updateStatus.outdatedCount !== 1 ? 's' : ''} can be updated to newer versions.
+              Review the component versions page for details.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -323,9 +354,17 @@ export default async function AdminSystemPage() {
       {/* Component Versions */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <PackageIcon className="h-5 w-5" />
-            <CardTitle>Component Versions</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PackageIcon className="h-5 w-5" />
+              <CardTitle>Component Versions</CardTitle>
+            </div>
+            <Link href={"/admin/system/components" as any} prefetch={false}>
+              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
+                <PackageIcon className="h-4 w-4" />
+                View All Packages
+              </button>
+            </Link>
           </div>
           <CardDescription>
             Runtime environment and framework versions

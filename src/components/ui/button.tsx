@@ -47,6 +47,7 @@ function Button({ className, variant, size, asChild = false, ref, ...props }: Bu
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
       ref={ref}
+      suppressHydrationWarning
       {...props}
     />
   );

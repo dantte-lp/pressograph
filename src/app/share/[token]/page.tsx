@@ -45,7 +45,7 @@ export default async function ShareLinkPage({ params }: PageProps) {
   const { shareLink } = result;
   const { test } = shareLink;
 
-  const isExpired = shareLink.expiresAt && new Date(shareLink.expiresAt) < new Date();
+  const isExpired = !!(shareLink.expiresAt && new Date(shareLink.expiresAt) < new Date());
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -203,12 +203,6 @@ export default async function ShareLinkPage({ params }: PageProps) {
                       <span className="font-medium">
                         {test.config.allowablePressureDrop} {test.config.pressureUnit || 'MPa'}
                       </span>
-                    </div>
-                  )}
-                  {test.config.templateType && (
-                    <div className="flex justify-between items-center border rounded-lg p-3">
-                      <span className="text-sm text-muted-foreground">Template Type</span>
-                      <span className="font-medium capitalize">{test.config.templateType}</span>
                     </div>
                   )}
                 </div>

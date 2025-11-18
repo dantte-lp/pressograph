@@ -20,6 +20,7 @@ export * from "./share-links";
 export * from "./audit-logs";
 export * from "./api-keys";
 export * from "./notifications";
+export * from "./package-versions";
 
 // NextAuth tables
 export * from "./nextauth";
